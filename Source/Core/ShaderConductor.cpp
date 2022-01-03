@@ -581,7 +581,7 @@ namespace
             dxcArgs.push_back(arg.c_str());
         }
 
-        CComPtr<IDxcIncludeHandler> includeHandler = new ScIncludeHandler(std::move(source.loadIncludeCallback));
+        CComPtr<IDxcIncludeHandler> includeHandler = new ScIncludeHandler(source.loadIncludeCallback);
         CComPtr<IDxcOperationResult> compileResult;
         IFT(Dxcompiler::Instance().Compiler()->Compile(sourceBlob, shaderNameUtf16.c_str(), entryPointUtf16.c_str(), shaderProfile.c_str(),
                                                        dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()), dxcDefines.data(),
@@ -623,7 +623,8 @@ namespace
             if ((source.stage == ShaderStage::GeometryShader) || (source.stage == ShaderStage::HullShader) ||
                 (source.stage == ShaderStage::DomainShader))
             {
-                // Check https://github.com/KhronosGroup/SPIRV-Cross/issues/121 for details
+                // Check https://github.com/KhronosGroup/SPIRV-Cross/issues/904, https://github.com/KhronosGroup/SPIRV-Cross/issues/905, and
+                // https://github.com/KhronosGroup/SPIRV-Cross/issues/906 for details
                 AppendError(ret, "GS, HS, and DS has not been supported yet.");
                 return ret;
             }
@@ -2933,10 +2934,13 @@ namespace ShaderConductor
         {
             if (targets[i].language == ShadingLanguage::Dxil)
             {
-                hasDxil = true;
                 if (targets[i].asModule)
                 {
                     hasDxilModule = true;
+                }
+                else
+                {
+                    hasDxil = true;
                 }
             }
             else
