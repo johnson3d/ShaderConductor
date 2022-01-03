@@ -310,6 +310,36 @@ namespace ShaderConductor
             Quad,
         };
 
+        class SC_API Function
+        {
+            friend class ReflectionImpl;
+
+        public:
+            Function() noexcept;
+            Function(const Function& other);
+            Function(Function&& other) noexcept;
+            ~Function() noexcept;
+
+            Function& operator=(const Function& other);
+            Function& operator=(Function&& other) noexcept;
+
+            bool Valid() const noexcept;
+
+            const char* Name() const noexcept;
+
+            uint32_t NumResources() const noexcept;
+            const ResourceDesc* ResourceByIndex(uint32_t index) const noexcept;
+            const ResourceDesc* ResourceByName(const char* name) const noexcept;
+
+            uint32_t NumConstantBuffers() const noexcept;
+            const ConstantBuffer* ConstantBufferByIndex(uint32_t index) const noexcept;
+            const ConstantBuffer* ConstantBufferByName(const char* name) const noexcept;
+
+        private:
+            class FunctionImpl;
+            FunctionImpl* m_impl = nullptr;
+        };
+
     public:
         Reflection() noexcept;
         Reflection(const Reflection& other);
@@ -350,6 +380,10 @@ namespace ShaderConductor
         uint32_t CSBlockSizeX() const noexcept;
         uint32_t CSBlockSizeY() const noexcept;
         uint32_t CSBlockSizeZ() const noexcept;
+
+        uint32_t NumFunctions() const noexcept;
+        const Function* FunctionByIndex(uint32_t index) const noexcept;
+        const Function* FunctionByName(const char* name) const noexcept;
 
     private:
         ReflectionImpl* m_impl = nullptr;

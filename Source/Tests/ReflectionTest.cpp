@@ -1102,4 +1102,287 @@ namespace
             }
         }
     }
+
+    std::tuple<Compiler::ModuleDesc, Reflection> CompileToModule(const char* moduleName, const std::string& inputFileName,
+                                                                 const Compiler::TargetDesc& target)
+    {
+        std::vector<uint8_t> input = LoadFile(inputFileName, true);
+        const std::string source = std::string(reinterpret_cast<char*>(input.data()), input.size());
+
+        Compiler::Options options{};
+        options.needReflection = true;
+        const auto result = Compiler::Compile({source.c_str(), inputFileName.c_str(), "", ShaderStage::PixelShader}, options, target);
+
+        EXPECT_FALSE(result.hasError);
+        EXPECT_FALSE(result.isText);
+
+        return {{moduleName, std::move(result.target)}, std::move(result.reflection)};
+    }
+
+    TEST(ReflectionTest, LinkDxil)
+    {
+        if (!Compiler::LinkSupport())
+        {
+            GTEST_SKIP_("Link is not supported on this platform");
+        }
+
+        const Compiler::TargetDesc target = {ShadingLanguage::Dxil, "", true};
+        const std::tuple<Compiler::ModuleDesc, Reflection> dxilModules[] = {
+            CompileToModule("CalcLight", TEST_DATA_DIR "Input/CalcLight.hlsl", target),
+            CompileToModule("CalcLightDiffuse", TEST_DATA_DIR "Input/CalcLightDiffuse.hlsl", target),
+            CompileToModule("CalcLightDiffuseSpecular", TEST_DATA_DIR "Input/CalcLightDiffuseSpecular.hlsl", target),
+        };
+
+        const Compiler::ModuleDesc* testModules[][2] = {
+            {&std::get<0>(dxilModules[0]), &std::get<0>(dxilModules[1])},
+            {&std::get<0>(dxilModules[0]), &std::get<0>(dxilModules[2])},
+        };
+
+        {
+            const Reflection& module_reflection = std::get<1>(dxilModules[0]);
+            if (!module_reflection.Valid())
+            {
+                GTEST_SKIP_("Dxil Module Reflection is not supported on this platform");
+            }
+
+            EXPECT_EQ(module_reflection.NumFunctions(), 1U);
+            {
+                const Reflection::Function* func = module_reflection.FunctionByIndex(0);
+                EXPECT_NE(func, nullptr);
+                EXPECT_STREQ(func->Name(), "main");
+
+                EXPECT_EQ(func->NumResources(), 1U);
+                {
+                    const Reflection::ResourceDesc* resource = func->ResourceByName("cbPS");
+                    EXPECT_NE(resource, nullptr);
+                    EXPECT_STREQ(resource->name, "cbPS");
+                    EXPECT_EQ(resource->type, ShaderResourceType::ConstantBuffer);
+                    EXPECT_EQ(resource->space, 0U);
+                    EXPECT_EQ(resource->bindPoint, 0U);
+                    EXPECT_EQ(resource->bindCount, 1U);
+
+                    const Reflection::ConstantBuffer* cbuffer = func->ConstantBufferByIndex(0);
+                    EXPECT_NE(cbuffer, nullptr);
+                    EXPECT_STREQ(cbuffer->Name(), "cbPS");
+                    EXPECT_EQ(cbuffer->Size(), 32U);
+
+                    EXPECT_EQ(cbuffer->NumVariables(), 3U);
+                    {
+                        const Reflection::VariableDesc* variable = cbuffer->VariableByIndex(0);
+                        EXPECT_NE(variable, nullptr);
+                        EXPECT_STREQ(variable->name, "diffColor");
+                        EXPECT_STREQ(variable->type.Name(), "float3");
+                        EXPECT_EQ(variable->type.Type(), Reflection::VariableType::DataType::Float);
+                        EXPECT_EQ(variable->type.Rows(), 1U);
+                        EXPECT_EQ(variable->type.Columns(), 3U);
+                        EXPECT_EQ(variable->type.Elements(), 0U);
+                        EXPECT_EQ(variable->type.ElementStride(), 0U);
+                        EXPECT_EQ(variable->offset, 0U);
+                        EXPECT_EQ(variable->size, 12U);
+                    }
+                    {
+                        const Reflection::VariableDesc* variable = cbuffer->VariableByIndex(1);
+                        EXPECT_NE(variable, nullptr);
+                        EXPECT_STREQ(variable->name, "specColor");
+                        EXPECT_STREQ(variable->type.Name(), "float3");
+                        EXPECT_EQ(variable->type.Type(), Reflection::VariableType::DataType::Float);
+                        EXPECT_EQ(variable->type.Rows(), 1U);
+                        EXPECT_EQ(variable->type.Columns(), 3U);
+                        EXPECT_EQ(variable->type.Elements(), 0U);
+                        EXPECT_EQ(variable->type.ElementStride(), 0U);
+                        EXPECT_EQ(variable->offset, 16U);
+                        EXPECT_EQ(variable->size, 12U);
+                    }
+                    {
+                        const Reflection::VariableDesc* variable = cbuffer->VariableByIndex(2);
+                        EXPECT_NE(variable, nullptr);
+                        EXPECT_STREQ(variable->name, "shininess");
+                        EXPECT_STREQ(variable->type.Name(), "float");
+                        EXPECT_EQ(variable->type.Type(), Reflection::VariableType::DataType::Float);
+                        EXPECT_EQ(variable->type.Rows(), 1U);
+                        EXPECT_EQ(variable->type.Columns(), 1U);
+                        EXPECT_EQ(variable->type.Elements(), 0U);
+                        EXPECT_EQ(variable->type.ElementStride(), 0U);
+                        EXPECT_EQ(variable->offset, 28U);
+                        EXPECT_EQ(variable->size, 4U);
+                    }
+                }
+            }
+        }
+        {
+            const Reflection& module_reflection = std::get<1>(dxilModules[1]);
+            if (!module_reflection.Valid())
+            {
+                GTEST_SKIP_("Dxil Module Reflection is not supported on this platform");
+            }
+
+            EXPECT_EQ(module_reflection.NumFunctions(), 1U);
+            {
+                const Reflection::Function* func = module_reflection.FunctionByIndex(0);
+                EXPECT_NE(func, nullptr);
+                EXPECT_STREQ(func->Name(), "\x1?CalcBrdf@@YA?AV?$vector@M$02@@V1@0M000@Z");
+
+                EXPECT_EQ(func->NumResources(), 0U);
+                EXPECT_EQ(func->NumConstantBuffers(), 0U);
+            }
+        }
+        {
+            const Reflection& module_reflection = std::get<1>(dxilModules[2]);
+            if (!module_reflection.Valid())
+            {
+                GTEST_SKIP_("Dxil Module Reflection is not supported on this platform");
+            }
+
+            EXPECT_EQ(module_reflection.NumFunctions(), 5U);
+            {
+                {
+                    const Reflection::Function* func = module_reflection.FunctionByIndex(0);
+                    EXPECT_NE(func, nullptr);
+                    EXPECT_STREQ(func->Name(), "\x1?CalcBrdf@@YA?AV?$vector@M$02@@V1@0M000@Z");
+
+                    EXPECT_EQ(func->NumResources(), 0U);
+                    EXPECT_EQ(func->NumConstantBuffers(), 0U);
+                }
+                {
+                    const Reflection::Function* func = module_reflection.FunctionByIndex(1);
+                    EXPECT_NE(func, nullptr);
+                    EXPECT_STREQ(func->Name(), "\x1?DistributionTerm@@YA?AV?$vector@M$02@@V1@0M@Z");
+
+                    EXPECT_EQ(func->NumResources(), 0U);
+                    EXPECT_EQ(func->NumConstantBuffers(), 0U);
+                }
+                {
+                    const Reflection::Function* func = module_reflection.FunctionByIndex(2);
+                    EXPECT_NE(func, nullptr);
+                    EXPECT_STREQ(func->Name(), "\x1?FresnelTerm@@YA?AV?$vector@M$02@@V1@00@Z");
+
+                    EXPECT_EQ(func->NumResources(), 0U);
+                    EXPECT_EQ(func->NumConstantBuffers(), 0U);
+                }
+                {
+                    const Reflection::Function* func = module_reflection.FunctionByIndex(3);
+                    EXPECT_NE(func, nullptr);
+                    EXPECT_STREQ(func->Name(), "\x1?SpecularNormalizeFactor@@YAMM@Z");
+
+                    EXPECT_EQ(func->NumResources(), 0U);
+                    EXPECT_EQ(func->NumConstantBuffers(), 0U);
+                }
+                {
+                    const Reflection::Function* func = module_reflection.FunctionByIndex(4);
+                    EXPECT_NE(func, nullptr);
+                    EXPECT_STREQ(func->Name(), "\x1?SpecularTerm@@YA?AV?$vector@M$02@@V1@000M@Z");
+
+                    EXPECT_EQ(func->NumResources(), 0U);
+                    EXPECT_EQ(func->NumConstantBuffers(), 0U);
+                }
+            }
+        }
+
+        for (size_t i = 0; i < 2; ++i)
+        {
+            Compiler::Options options{};
+            options.needReflection = true;
+
+            const auto linkedResult =
+                Compiler::Link({"main", ShaderStage::PixelShader, testModules[i], sizeof(testModules[i]) / sizeof(testModules[i][0])},
+                               options, {ShadingLanguage::Dxil, ""});
+
+            EXPECT_FALSE(linkedResult.hasError);
+            EXPECT_FALSE(linkedResult.isText);
+
+            if (!linkedResult.reflection.Valid())
+            {
+                GTEST_SKIP_("Dxil Reflection is not supported on this platform");
+            }
+
+            EXPECT_EQ(linkedResult.reflection.NumInputParameters(), 4U);
+            {
+                {
+                    const Reflection::SignatureParameterDesc* inputParam = linkedResult.reflection.InputParameter(0);
+                    EXPECT_NE(inputParam, nullptr);
+                    EXPECT_STRCASEEQ(inputParam->semantic, "SV_Position");
+                    EXPECT_EQ(inputParam->semanticIndex, 0U);
+                    EXPECT_EQ(inputParam->location, 0U);
+                    EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
+                    EXPECT_EQ(inputParam->mask, Reflection::ComponentMask::X | Reflection::ComponentMask::Y | Reflection::ComponentMask::Z |
+                                                    Reflection::ComponentMask::W);
+                }
+                {
+                    const Reflection::SignatureParameterDesc* inputParam = linkedResult.reflection.InputParameter(1);
+                    EXPECT_NE(inputParam, nullptr);
+                    EXPECT_STRCASEEQ(inputParam->semantic, "NORMAL");
+                    EXPECT_EQ(inputParam->semanticIndex, 0U);
+                    EXPECT_EQ(inputParam->location, 1U);
+                    EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
+                    EXPECT_EQ(inputParam->mask, Reflection::ComponentMask::X | Reflection::ComponentMask::Y | Reflection::ComponentMask::Z);
+                }
+                {
+                    const Reflection::SignatureParameterDesc* inputParam = linkedResult.reflection.InputParameter(2);
+                    EXPECT_NE(inputParam, nullptr);
+                    EXPECT_STRCASEEQ(inputParam->semantic, "TEXCOORD");
+                    EXPECT_EQ(inputParam->semanticIndex, 0U);
+                    EXPECT_EQ(inputParam->location, 2U);
+                    EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
+                    EXPECT_EQ(inputParam->mask, Reflection::ComponentMask::X | Reflection::ComponentMask::Y | Reflection::ComponentMask::Z);
+                }
+                {
+                    const Reflection::SignatureParameterDesc* inputParam = linkedResult.reflection.InputParameter(3);
+                    EXPECT_NE(inputParam, nullptr);
+                    EXPECT_STRCASEEQ(inputParam->semantic, "TEXCOORD");
+                    EXPECT_EQ(inputParam->semanticIndex, 1U);
+                    EXPECT_EQ(inputParam->location, 3U);
+                    EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
+                    EXPECT_EQ(inputParam->mask, Reflection::ComponentMask::X | Reflection::ComponentMask::Y | Reflection::ComponentMask::Z);
+                }
+            }
+
+            EXPECT_EQ(linkedResult.reflection.NumOutputParameters(), 1U);
+            {
+                const Reflection::SignatureParameterDesc* outputParam = linkedResult.reflection.OutputParameter(0);
+                EXPECT_NE(outputParam, nullptr);
+                EXPECT_STRCASEEQ(outputParam->semantic, "SV_Target");
+                EXPECT_EQ(outputParam->semanticIndex, 0U);
+                EXPECT_EQ(outputParam->location, 0U);
+                EXPECT_EQ(outputParam->componentType, Reflection::VariableType::DataType::Float);
+                EXPECT_EQ(outputParam->mask, Reflection::ComponentMask::X | Reflection::ComponentMask::Y | Reflection::ComponentMask::Z |
+                                                 Reflection::ComponentMask::W);
+            }
+
+            EXPECT_EQ(linkedResult.reflection.GSHSInputPrimitive(), Reflection::PrimitiveTopology::Undefined);
+            EXPECT_EQ(linkedResult.reflection.GSOutputTopology(), Reflection::PrimitiveTopology::Undefined);
+            EXPECT_EQ(linkedResult.reflection.GSMaxNumOutputVertices(), 0U);
+            EXPECT_EQ(linkedResult.reflection.GSNumInstances(), 0U);
+
+            EXPECT_EQ(linkedResult.reflection.HSOutputPrimitive(), Reflection::TessellatorOutputPrimitive::Undefined);
+            EXPECT_EQ(linkedResult.reflection.HSPartitioning(), Reflection::TessellatorPartitioning::Undefined);
+
+            EXPECT_EQ(linkedResult.reflection.HSDSTessellatorDomain(), Reflection::TessellatorDomain::Undefined);
+            EXPECT_EQ(linkedResult.reflection.HSDSNumPatchConstantParameters(), 0U);
+            EXPECT_EQ(linkedResult.reflection.HSDSNumConrolPoints(), 0U);
+
+            EXPECT_EQ(linkedResult.reflection.CSBlockSizeX(), 0U);
+            EXPECT_EQ(linkedResult.reflection.CSBlockSizeY(), 0U);
+            EXPECT_EQ(linkedResult.reflection.CSBlockSizeZ(), 0U);
+
+            EXPECT_EQ(linkedResult.reflection.NumResources(), 1U);
+            {
+                const Reflection::ResourceDesc* resource = linkedResult.reflection.ResourceByName("cbPS");
+                EXPECT_NE(resource, nullptr);
+                EXPECT_STREQ(resource->name, "cbPS");
+                EXPECT_EQ(resource->type, ShaderResourceType::ConstantBuffer);
+                EXPECT_EQ(resource->space, 0U);
+                EXPECT_EQ(resource->bindPoint, 0U);
+                EXPECT_EQ(resource->bindCount, 1U);
+
+                const Reflection::ConstantBuffer* cbuffer = linkedResult.reflection.ConstantBufferByIndex(0);
+                EXPECT_NE(cbuffer, nullptr);
+                EXPECT_STREQ(cbuffer->Name(), "cbPS");
+                EXPECT_EQ(cbuffer->Size(), 32U);
+
+                // Dxc has issues to reflect cbuffer from a linked shader. Check
+                // https://github.com/microsoft/DirectXShaderCompiler/issues/4168 for details.
+                EXPECT_EQ(cbuffer->NumVariables(), 0U);
+            }
+        }
+    }
 } // namespace
