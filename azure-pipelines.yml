@@ -1,6 +1,22 @@
 variables:
   configuration: Release
   platform: x64
+  testCommand_Windows: './$(buildFolder)/bin/ShaderConductorTest.exe'
+  testCommand_Linux: './$(buildFolder)/bin/ShaderConductorTest'
+  testCommand_macOS: './$(buildFolder)/bin/ShaderConductorTest'
+  artifactBinaries_Windows: |
+    bin/ShaderConductor.dll
+    bin/ShaderConductorCmd.exe
+    bin/dxcompiler.dll
+    lib/ShaderConductor.lib
+  artifactBinaries_Linux: |
+    bin/ShaderConductorCmd
+    lib/libdxcompiler.so
+    lib/libShaderConductor.so
+  artifactBinaries_macOS: |
+    bin/ShaderConductorCmd
+    lib/libdxcompiler.dylib
+    lib/libShaderConductor.dylib
 
 resources:
 - repo: self
@@ -45,12 +61,8 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja python3'
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest.exe'
-      artifactBinaries: |
-        Bin/ShaderConductor.dll
-        Bin/ShaderConductorCmd.exe
-        Bin/dxcompiler.dll
-        Lib/ShaderConductor.lib
+      testCommand: $(testCommand_Windows)
+      artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
@@ -65,12 +77,8 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja python3'
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest.exe'
-      artifactBinaries: |
-        Bin/ShaderConductor.dll
-        Bin/ShaderConductorCmd.exe
-        Bin/dxcompiler.dll
-        Lib/ShaderConductor.lib
+      testCommand: $(testCommand_Windows)
+      artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
@@ -84,12 +92,8 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja python3'
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest.exe'
-      artifactBinaries: |
-        Bin/ShaderConductor.dll
-        Bin/ShaderConductorCmd.exe
-        Bin/dxcompiler.dll
-        Lib/ShaderConductor.lib
+      testCommand: $(testCommand_Windows)
+      artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
@@ -104,12 +108,8 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja'
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest.exe'
-      artifactBinaries: |
-        Bin/ShaderConductor.dll
-        Bin/ShaderConductorCmd.exe
-        Bin/dxcompiler.dll
-        Lib/ShaderConductor.lib
+      testCommand: $(testCommand_Windows)
+      artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
@@ -123,12 +123,8 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja'
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest.exe'
-      artifactBinaries: |
-        Bin/ShaderConductor.dll
-        Bin/ShaderConductorCmd.exe
-        Bin/dxcompiler.dll
-        Lib/ShaderConductor.lib
+      testCommand: $(testCommand_Windows)
+      artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
@@ -144,11 +140,7 @@ stages:
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja'
       testCommand: ''
-      artifactBinaries: |
-        Bin/ShaderConductor.dll
-        Bin/ShaderConductorCmd.exe
-        Bin/dxcompiler.dll
-        Lib/ShaderConductor.lib
+      artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
@@ -162,12 +154,8 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja'
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest.exe'
-      artifactBinaries: |
-        Bin/ShaderConductor.dll
-        Bin/ShaderConductorCmd.exe
-        Bin/dxcompiler.dll
-        Lib/ShaderConductor.lib
+      testCommand: $(testCommand_Windows)
+      artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
@@ -183,11 +171,7 @@ stages:
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja'
       testCommand: ''
-      artifactBinaries: |
-        Bin/ShaderConductor.dll
-        Bin/ShaderConductorCmd.exe
-        Bin/dxcompiler.dll
-        Lib/ShaderConductor.lib
+      artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
@@ -204,11 +188,8 @@ stages:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
         sudo apt-get install g++-7 ninja-build python3
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest'
-      artifactBinaries: |
-        Bin/ShaderConductorCmd
-        Lib/libdxcompiler.so
-        Lib/libShaderConductor.so
+      testCommand: $(testCommand_Linux)
+      artifactBinaries: $(artifactBinaries_Linux)
       CC: gcc-7
       CXX: g++-7
 
@@ -227,11 +208,8 @@ stages:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
         sudo apt-get install g++-8 ninja-build python3
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest'
-      artifactBinaries: |
-        Bin/ShaderConductorCmd
-        Lib/libdxcompiler.so
-        Lib/libShaderConductor.so
+      testCommand: $(testCommand_Linux)
+      artifactBinaries: $(artifactBinaries_Linux)
       CC: gcc-8
       CXX: g++-8
 
@@ -252,11 +230,8 @@ stages:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
         sudo apt-get install clang-7 libc++-7-dev libc++abi-7-dev lld-7 ninja-build python3
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest'
-      artifactBinaries: |
-        Bin/ShaderConductorCmd
-        Lib/libdxcompiler.so
-        Lib/libShaderConductor.so
+      testCommand: $(testCommand_Linux)
+      artifactBinaries: $(artifactBinaries_Linux)
       CC: clang-7
       CXX: clang++-7
 
@@ -277,11 +252,8 @@ stages:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
         sudo apt-get install clang-8 libc++-8-dev libc++abi-8-dev lld-8 ninja-build python3
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest'
-      artifactBinaries: |
-        Bin/ShaderConductorCmd
-        Lib/libdxcompiler.so
-        Lib/libShaderConductor.so
+      testCommand: $(testCommand_Linux)
+      artifactBinaries: $(artifactBinaries_Linux)
       CC: clang-8
       CXX: clang++-8
 
@@ -296,13 +268,9 @@ stages:
       compiler: clang9
       combination: 'osx-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
-      installCommand: |
-        brew install ninja
-      testCommand: './$(buildFolder)/Bin/ShaderConductorTest'
-      artifactBinaries: |
-        Bin/ShaderConductorCmd
-        Lib/libdxcompiler.dylib
-        Lib/libShaderConductor.dylib
+      installCommand: brew install ninja
+      testCommand: $(testCommand_macOS)
+      artifactBinaries: $(artifactBinaries_macOS)
       CC: clang
       CXX: clang++
 
