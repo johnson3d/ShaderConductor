@@ -81,3 +81,42 @@ if(WIN32)
         set_target_properties(${target} PROPERTIES FOLDER "External/DirectXShaderCompiler/${vsFolder}")
     endforeach()
 endif()
+
+set(usePrebuilt FALSE)
+if(SC_PREBUILT_DXC_DIR)
+    if(WIN32)
+        set(dxcompilerName "dxcompiler.dll")
+        set(dxcompilerLibDir "bin")
+    else()
+        if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+            set(dxcompilerName "libdxcompiler.3.7.dylib")
+        else()
+            set(dxcompilerName "libdxcompiler.so.3.7")
+        endif()
+        set(dxcompilerLibDir "lib")
+    endif()
+
+    find_file(prebuiltDxcBinary
+        ${dxcompilerName}
+        PATHS ${SC_PREBUILT_DXC_DIR}/${dxcompilerLibDir}
+        NO_DEFAULT_PATH
+    )
+    find_path(prebuiltDxcIncludeDir
+        dxc/dxcapi.h
+        PATHS ${SC_PREBUILT_DXC_DIR}/include
+        NO_DEFAULT_PATH
+    )
+    if(prebuiltDxcBinary AND prebuiltDxcIncludeDir)
+        set(usePrebuilt TRUE)
+    endif()
+endif()
+
+if(usePrebuilt)
+    set(dxcompilerBinary ${prebuiltDxcBinary} CACHE INTERNAL "" FORCE)
+    set(dxcompilerIncludeDir ${prebuiltDxcIncludeDir} CACHE INTERNAL "" FORCE)
+    message(STATUS "Using prebuilt dxc binary from ${prebuiltDxcBinary}.")
+else()
+    set(dxcompilerBinary "${SC_BUILD_DIR}/External/DirectXShaderCompiler/${CMAKE_CFG_INTDIR}/${dxcompilerLibDir}/${dxcompilerName}" CACHE INTERNAL "" FORCE)
+endif()
+
+set(dxcompileUsePrebuilt ${usePrebuilt} CACHE INTERNAL "" FORCE)

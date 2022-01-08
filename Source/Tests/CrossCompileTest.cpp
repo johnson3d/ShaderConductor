@@ -575,11 +575,8 @@ namespace
             {&dxilModules[0], &dxilModules[2]},
         };
 
-#ifdef NDEBUG
-        const std::string expectedNames[] = {"CalcLight+Diffuse.Release.dxilasm", "CalcLight+DiffuseSpecular.Release.dxilasm"};
-#else
-        const std::string expectedNames[] = {"CalcLight+Diffuse.Debug.dxilasm", "CalcLight+DiffuseSpecular.Debug.dxilasm"};
-#endif
+        const std::string expectedNames[][2] = {{"CalcLight+Diffuse.Debug.dxilasm", "CalcLight+Diffuse.Release.dxilasm"},
+                                                {"CalcLight+DiffuseSpecular.Release.dxilasm", "CalcLight+DiffuseSpecular.Debug.dxilasm"}};
 
         for (size_t i = 0; i < 2; ++i)
         {
@@ -598,7 +595,7 @@ namespace
 
             const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(disasmResult.target.Data());
             CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + disasmResult.target.Size()), disasmResult.isText,
-                                expectedNames[i]);
+                                expectedNames[i], 2);
         }
     }
 } // namespace

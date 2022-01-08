@@ -111,6 +111,8 @@ else()
     endif()
 endif()
 
+set(SC_PREBUILT_DXC_DIR "" CACHE STRING "The directory of prebuilt dxc")
+
 add_subdirectory(External)
 add_subdirectory(Source)
 

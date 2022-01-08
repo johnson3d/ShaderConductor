@@ -2,28 +2,25 @@
 # Licensed under the MIT License.
 
 if(WIN32)
-    set(dxcompilerSrcName "dxcompiler.dll")
-    set(dxcompilerDstName ${dxcompilerSrcName})
-    set(dxcompilerOutputDir "bin")
+    set(dxcompilerName "dxcompiler.dll")
     set(dxcompilerDeployDir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
 else()
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        set(dxcompilerSrcName "libdxcompiler.3.7.dylib")
-        set(dxcompilerDstName "libdxcompiler.dylib")
+        set(dxcompilerName "libdxcompiler.dylib")
     else()
-        set(dxcompilerSrcName "libdxcompiler.so.3.7")
-        set(dxcompilerDstName "libdxcompiler.so")
+        set(dxcompilerName "libdxcompiler.so")
     endif()
-    set(dxcompilerOutputDir "lib")
     set(dxcompilerDeployDir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 endif()
 
 add_custom_target(DeployDxcompiler ALL
     COMMAND ${CMAKE_COMMAND} -E create_hardlink
-        ${SC_BUILD_DIR}/External/DirectXShaderCompiler/${CMAKE_CFG_INTDIR}/${dxcompilerOutputDir}/${dxcompilerSrcName}
-        ${dxcompilerDeployDir}/${dxcompilerDstName}
+        ${dxcompilerBinary}
+        ${dxcompilerDeployDir}/${dxcompilerName}
     COMMENT "Deploying dxcompiler...")
-add_dependencies(DeployDxcompiler dxcompiler)
+if(NOT dxcompileUsePrebuilt)
+    add_dependencies(DeployDxcompiler dxcompiler)
+endif()
 
 set_target_properties(DeployDxcompiler PROPERTIES FOLDER "Core")
 
@@ -45,6 +42,12 @@ add_library(${LIB_NAME} "SHARED"
     ${SOURCE_FILES} ${HEADER_FILES}
 )
 
+if(NOT dxcompileUsePrebuilt)
+    target_include_directories(${LIB_NAME}
+        PRIVATE
+            ${dxcompilerIncludeDir}
+    )
+endif()
 target_include_directories(${LIB_NAME}
     PUBLIC
         ${SC_ROOT_DIR}/Include

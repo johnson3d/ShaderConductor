@@ -55,8 +55,23 @@ namespace ShaderConductor
 
     void CompareWithExpected(const std::vector<uint8_t>& actual, bool isText, const std::string& compareName)
     {
-        std::vector<uint8_t> expected = LoadFile(TEST_DATA_DIR "Expected/" + compareName, isText);
-        if (expected != actual)
+        CompareWithExpected(actual, isText, &compareName, 1);
+    }
+
+    void CompareWithExpected(const std::vector<uint8_t>& actual, bool isText, const std::string compareNames[], uint32_t numCompareNames)
+    {
+        bool match = false;
+        for (uint32_t i = 0; i < numCompareNames; ++i)
+        {
+            std::vector<uint8_t> expected = LoadFile(TEST_DATA_DIR "Expected/" + compareNames[i], isText);
+            if (expected == actual)
+            {
+                match = true;
+                break;
+            }
+        }
+
+        if (!match)
         {
             if (!actual.empty())
             {
@@ -65,12 +80,12 @@ namespace ShaderConductor
                 {
                     mode |= std::ios_base::binary;
                 }
-                std::ofstream actualFile(TEST_DATA_DIR "Result/" + compareName, mode);
+                std::ofstream actualFile(TEST_DATA_DIR "Result/" + compareNames[0], mode);
                 actualFile.write(reinterpret_cast<const char*>(actual.data()), actual.size());
             }
         }
 
-        EXPECT_EQ(std::string(expected.begin(), expected.end()), std::string(actual.begin(), actual.end()));
+        EXPECT_TRUE(match);
     }
 } // namespace ShaderConductor
 

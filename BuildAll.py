@@ -130,6 +130,10 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 	if (tblgenPath != None):
 		tblgenOptions = " -DCLANG_TABLEGEN=\"%s\" -DLLVM_TABLEGEN=\"%s\"" % tblgenPath
 
+	prebuiltDxcDirOptions = ""
+	if "PREBUILTDXCDIR" in os.environ:
+		prebuiltDxcDirOptions = " -DSC_PREBUILT_DXC_DIR=\"%s\"" % os.environ["PREBUILTDXCDIR"]
+
 	parallel = multiprocessing.cpu_count()
 
 	batCmd = BatchCommand(hostPlatform)
@@ -176,7 +180,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		if (configuration == "clangformat"):
 			options = "-DSC_CLANGFORMAT=\"ON\""
 		else:
-			options = "-DCMAKE_BUILD_TYPE=\"%s\" -DSC_ARCH_NAME=\"%s\" %s" % (configuration, arch, tblgenOptions)
+			options = "-DCMAKE_BUILD_TYPE=\"%s\" -DSC_ARCH_NAME=\"%s\" %s %s" % (configuration, arch, tblgenOptions, prebuiltDxcDirOptions)
 		batCmd.AddCommand("cmake -G Ninja %s ../../" % options)
 		if tblgenMode:
 			batCmd.AddCommand("ninja clang-tblgen -j%d" % parallel)
