@@ -37,7 +37,14 @@
 #include <fstream>
 #include <memory>
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations" // Deprecated std::iterator
+#endif
 #include <dxc/DxilContainer/DxilContainer.h>
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 #include <dxc/dxcapi.h>
 #include <llvm/Support/ErrorHandling.h>
 
@@ -901,6 +908,7 @@ namespace
         Reflection::ResourceDesc reflectionDesc{};
 
         std::strncpy(reflectionDesc.name, bindDesc.Name, sizeof(reflectionDesc.name));
+        reflectionDesc.name[sizeof(reflectionDesc.name) - 1] = '\0';
         reflectionDesc.space = bindDesc.Space;
         reflectionDesc.bindPoint = bindDesc.BindPoint;
         reflectionDesc.bindCount = bindDesc.BindCount;
@@ -1091,6 +1099,7 @@ namespace ShaderConductor
 
                         const char* memberName = d3d12Type->GetMemberTypeName(memberIndex);
                         std::strncpy(member.name, memberName, sizeof(member.name));
+                        member.name[sizeof(member.name) - 1] = '\0';
 
                         ID3D12ShaderReflectionType* d3d12MemberType = d3d12Type->GetMemberTypeByIndex(memberIndex);
                         member.type = Make(d3d12MemberType);
@@ -1182,6 +1191,7 @@ namespace ShaderConductor
 
                     const std::string& memberName = compiler.get_member_name(spirvReflectionType.self, memberIndex);
                     std::strncpy(member.name, memberName.c_str(), sizeof(member.name));
+                    member.name[sizeof(member.name) - 1] = '\0';
 
                     member.type =
                         Make(compiler, spirvReflectionType, memberIndex, compiler.get_type(spirvReflectionType.member_types[memberIndex]));
@@ -1439,6 +1449,7 @@ namespace ShaderConductor
                 VariableDesc variableDesc{};
 
                 std::strncpy(variableDesc.name, d3d12VariableDesc.Name, sizeof(variableDesc.name));
+                variableDesc.name[sizeof(variableDesc.name) - 1] = '\0';
 
                 variableDesc.type = VariableType::VariableTypeImpl::Make(variable->GetType());
 
@@ -1464,6 +1475,7 @@ namespace ShaderConductor
 
                 const std::string& varName = compiler.get_member_name(cbufferType.self, variableIndex);
                 std::strncpy(variableDesc.name, varName.c_str(), sizeof(variableDesc.name));
+                variableDesc.name[sizeof(variableDesc.name) - 1] = '\0';
 
                 variableDesc.type = VariableType::VariableTypeImpl::Make(compiler, cbufferType, variableIndex,
                                                                          compiler.get_type(cbufferType.member_types[variableIndex]));
@@ -1814,6 +1826,7 @@ namespace ShaderConductor
                     shaderReflection->GetInputParameterDesc(inputParamIndex, &signatureParamDesc);
 
                     std::strncpy(paramDesc.semantic, signatureParamDesc.SemanticName, sizeof(paramDesc.semantic));
+                    paramDesc.semantic[sizeof(paramDesc.semantic) - 1] = '\0';
                     paramDesc.semanticIndex = signatureParamDesc.SemanticIndex;
                     paramDesc.location = signatureParamDesc.Register;
                     switch (signatureParamDesc.ComponentType)
@@ -1845,6 +1858,7 @@ namespace ShaderConductor
                     shaderReflection->GetOutputParameterDesc(outputParamIndex, &signatureParamDesc);
 
                     std::strncpy(paramDesc.semantic, signatureParamDesc.SemanticName, sizeof(paramDesc.semantic));
+                    paramDesc.semantic[sizeof(paramDesc.semantic) - 1] = '\0';
                     paramDesc.semanticIndex = signatureParamDesc.SemanticIndex;
                     paramDesc.location = signatureParamDesc.Register;
                     switch (signatureParamDesc.ComponentType)
@@ -2202,6 +2216,7 @@ namespace ShaderConductor
                     shaderReflection->GetPatchConstantParameterDesc(patchConstantParamIndex, &signatureParamDesc);
 
                     std::strncpy(paramDesc.semantic, signatureParamDesc.SemanticName, sizeof(paramDesc.semantic));
+                    paramDesc.semantic[sizeof(paramDesc.semantic) - 1] = '\0';
                     paramDesc.semanticIndex = signatureParamDesc.SemanticIndex;
                     paramDesc.location = signatureParamDesc.Register;
                     switch (signatureParamDesc.ComponentType)
@@ -2870,6 +2885,7 @@ namespace ShaderConductor
 
             const std::string& res_name = compiler.get_name(id);
             std::strncpy(reflectionDesc.name, res_name.c_str(), sizeof(reflectionDesc.name));
+            reflectionDesc.name[sizeof(reflectionDesc.name) - 1] = '\0';
             reflectionDesc.space = descSet;
             reflectionDesc.bindPoint = binding;
             reflectionDesc.bindCount = 1;
@@ -2894,6 +2910,7 @@ namespace ShaderConductor
                         paramDesc.semanticIndex = std::atoi(indexPart.c_str());
                     }
                     std::strncpy(paramDesc.semantic, semantic.c_str(), std::min<int>(sep, sizeof(paramDesc.semantic)));
+                    paramDesc.semantic[sizeof(paramDesc.semantic) - 1] = '\0';
                     break;
                 }
             }

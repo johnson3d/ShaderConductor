@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 
 #if defined(__clang__)

@@ -32,7 +32,7 @@ stages:
   jobs:
   - job: ClangFormat
     pool:
-      vmImage: Ubuntu-18.04
+      vmImage: Ubuntu-20.04
 
     variables:
       CC: gcc
@@ -42,7 +42,7 @@ stages:
     - bash: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get install clang-format-9 ninja-build python3
+        sudo apt-get install clang-format-10 ninja-build python3
       displayName: 'Install'
     - task: PythonScript@0
       displayName: 'Build'
@@ -57,57 +57,6 @@ stages:
 - stage: Build
   condition: succeeded('ClangFormat')
   jobs:
-  - job: Windows_vc140_x64
-    pool:
-      vmImage: VS2017-Win2016
-
-    variables:
-      compiler: vc140
-      combination: 'win-$(compiler)-$(platform)-$(configuration)'
-      buildFolder: 'Build/ninja-$(combination)'
-      installCommand: 'choco install ninja python3 wget'
-      prebuiltDxcUrl: $(prebuiltDxcUrl_Windows)
-      prebuiltDxcExtract: $(prebuiltDxcExtract_Windows)
-      testCommand: $(testCommand_Windows)
-      artifactBinaries: $(artifactBinaries_Windows)
-
-    steps:
-    - template: CI/AzurePipelines/ContinuousBuild.yml
-
-  - job: Windows_vc141_x86
-    pool:
-      vmImage: VS2017-Win2016
-
-    variables:
-      compiler: vc141
-      platform: x86
-      combination: 'win-$(compiler)-$(platform)-$(configuration)'
-      buildFolder: 'Build/ninja-$(combination)'
-      installCommand: 'choco install ninja python3 wget'
-      prebuiltDxcUrl: ''
-      testCommand: $(testCommand_Windows)
-      artifactBinaries: $(artifactBinaries_Windows)
-
-    steps:
-    - template: CI/AzurePipelines/ContinuousBuild.yml
-
-  - job: Windows_vc141_x64
-    pool:
-      vmImage: VS2017-Win2016
-
-    variables:
-      compiler: vc141
-      combination: 'win-$(compiler)-$(platform)-$(configuration)'
-      buildFolder: 'Build/ninja-$(combination)'
-      installCommand: 'choco install ninja python3 wget'
-      prebuiltDxcUrl: $(prebuiltDxcUrl_Windows)
-      prebuiltDxcExtract: $(prebuiltDxcExtract_Windows)
-      testCommand: $(testCommand_Windows)
-      artifactBinaries: $(artifactBinaries_Windows)
-
-    steps:
-    - template: CI/AzurePipelines/ContinuousBuild.yml
-
   - job: Windows_vc142_x86
     pool:
       vmImage: windows-2019
@@ -193,94 +142,94 @@ stages:
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
 
-  - job: Linux_gcc7
+  - job: Linux_gcc9
     pool:
-      vmImage: Ubuntu-18.04
+      vmImage: Ubuntu-20.04
 
     variables:
-      compiler: gcc7
+      compiler: gcc9
       combination: 'linux-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get install g++-7 ninja-build python3
+        sudo apt-get install g++-9 ninja-build python3
       prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
       testCommand: $(testCommand_Linux)
       artifactBinaries: $(artifactBinaries_Linux)
-      CC: gcc-7
-      CXX: g++-7
+      CC: gcc-9
+      CXX: g++-9
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
 
-  - job: Linux_gcc8
+  - job: Linux_gcc10
     pool:
-      vmImage: Ubuntu-18.04
+      vmImage: Ubuntu-20.04
 
     variables:
-      compiler: gcc8
+      compiler: gcc10
       combination: 'linux-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get install g++-8 ninja-build python3
+        sudo apt-get install g++-10 ninja-build python3
       prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
       testCommand: $(testCommand_Linux)
       artifactBinaries: $(artifactBinaries_Linux)
-      CC: gcc-8
-      CXX: g++-8
+      CC: gcc-10
+      CXX: g++-10
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
 
-  - job: Linux_clang7
+  - job: Linux_clang11
     pool:
-      vmImage: Ubuntu-18.04
+      vmImage: Ubuntu-20.04
 
     variables:
-      compiler: clang7
+      compiler: clang11
       combination: 'linux-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: |
         wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-        sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
+        sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main"
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get install clang-7 libc++-7-dev libc++abi-7-dev lld-7 ninja-build python3
+        sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev lld-11 ninja-build python3
       prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
       testCommand: $(testCommand_Linux)
       artifactBinaries: $(artifactBinaries_Linux)
-      CC: clang-7
-      CXX: clang++-7
+      CC: clang-11
+      CXX: clang++-11
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
 
-  - job: Linux_clang8
+  - job: Linux_clang13
     pool:
-      vmImage: Ubuntu-18.04
+      vmImage: Ubuntu-20.04
 
     variables:
-      compiler: clang8
+      compiler: clang13
       combination: 'linux-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: |
         wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-        sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main"
+        sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get install clang-8 libc++-8-dev libc++abi-8-dev lld-8 ninja-build python3
+        sudo apt-get install clang-13 libc++-13-dev libc++abi-13-dev lld-13 ninja-build python3
       prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
       testCommand: $(testCommand_Linux)
       artifactBinaries: $(artifactBinaries_Linux)
-      CC: clang-8
-      CXX: clang++-8
+      CC: clang-13
+      CXX: clang++-13
 
     steps:
     - template: CI/AzurePipelines/ContinuousBuild.yml
