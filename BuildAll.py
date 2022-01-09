@@ -177,16 +177,21 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		if hostPlatform == "win":
 			batCmd.AddCommand("set CC=cl.exe")
 			batCmd.AddCommand("set CXX=cl.exe")
-		if (configuration == "clangformat"):
+		if configuration == "clangformat":
 			options = "-DSC_CLANGFORMAT=\"ON\""
 		else:
 			options = "-DCMAKE_BUILD_TYPE=\"%s\" -DSC_ARCH_NAME=\"%s\" %s %s" % (configuration, arch, tblgenOptions, prebuiltDxcDirOptions)
 		batCmd.AddCommand("cmake -G Ninja %s ../../" % options)
+		ninja_options = "-j%d" % parallel
 		if tblgenMode:
-			batCmd.AddCommand("ninja clang-tblgen -j%d" % parallel)
-			batCmd.AddCommand("ninja llvm-tblgen -j%d" % parallel)
+			batCmd.AddCommand("ninja clang-tblgen %s" % ninja_options)
+			batCmd.AddCommand("ninja llvm-tblgen %s" % ninja_options)
 		else:
-			batCmd.AddCommand("ninja -j%d" % parallel)
+			if configuration == "clangformat":
+				target = "clangformat"
+			else:
+				target = ""
+			batCmd.AddCommand("ninja %s %s" % (target, ninja_options))
 	else:
 		if buildSys == "vs2022":
 			generator = "\"Visual Studio 17\""
@@ -196,7 +201,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 			generator = "\"Visual Studio 15\""
 		elif buildSys == "vs2015":
 			generator = "\"Visual Studio 14\""
-		if (configuration == "clangformat"):
+		if configuration == "clangformat":
 			cmake_options = "-DSC_CLANGFORMAT=\"ON\""
 			msbuild_options = ""
 		else:
@@ -207,7 +212,11 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 			batCmd.AddCommand("MSBuild External\\DirectXShaderCompiler\\tools\\clang\\utils\\TableGen\\clang-tblgen.vcxproj /nologo %s" % msbuild_options)
 			batCmd.AddCommand("MSBuild External\\DirectXShaderCompiler\\utils\\TableGen\\llvm-tblgen.vcxproj /nologo %s" % msbuild_options)
 		else:
-			batCmd.AddCommand("MSBuild ALL_BUILD.vcxproj /nologo %s" % msbuild_options)
+			if configuration == "clangformat":
+				target = "clangformat"
+			else:
+				target = "ALL_BUILD"
+			batCmd.AddCommand("MSBuild %s.vcxproj /nologo %s" % (target, msbuild_options))
 	if batCmd.Execute() != 0:
 		LogError("Build failed.\n")
 

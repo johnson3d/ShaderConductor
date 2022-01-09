@@ -66,10 +66,11 @@ if(SC_CLANGFORMAT)
         message(FATAL_ERROR "No clang-format tool found")
     endif()
 
-    message(STATUS "Generating clangformat target using ${CLANG_FORMAT}")
     file(GLOB_RECURSE ALL_SOURCE_FILES *.cpp *.h *.hpp)
     add_custom_target(clangformat
-        COMMAND ${CLANG_FORMAT} -i ${ALL_SOURCE_FILES})
+        COMMAND ${CLANG_FORMAT} -i ${ALL_SOURCE_FILES}
+        COMMENT "Formatting with ${CLANG_FORMAT} ..."
+    )
 
     return()
 endif()
