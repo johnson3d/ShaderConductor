@@ -82,20 +82,20 @@ if(WIN32)
     endforeach()
 endif()
 
+if(WIN32)
+    set(dxcompilerName "dxcompiler.dll")
+    set(dxcompilerLibDir "bin")
+else()
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        set(dxcompilerName "libdxcompiler.3.7.dylib")
+    else()
+        set(dxcompilerName "libdxcompiler.so.3.7")
+    endif()
+    set(dxcompilerLibDir "lib")
+endif()
+
 set(usePrebuilt FALSE)
 if(SC_PREBUILT_DXC_DIR)
-    if(WIN32)
-        set(dxcompilerName "dxcompiler.dll")
-        set(dxcompilerLibDir "bin")
-    else()
-        if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-            set(dxcompilerName "libdxcompiler.3.7.dylib")
-        else()
-            set(dxcompilerName "libdxcompiler.so.3.7")
-        endif()
-        set(dxcompilerLibDir "lib")
-    endif()
-
     find_file(prebuiltDxcBinary
         ${dxcompilerName}
         PATHS ${SC_PREBUILT_DXC_DIR}/${dxcompilerLibDir}

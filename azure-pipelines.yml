@@ -1,7 +1,6 @@
 variables:
   configuration: Release
   platform: x64
-  prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
   prebuiltDxcUrl_Windows: 'https://ci.appveyor.com/api/buildjobs/bjp8sthdpqgac3y4/artifacts/build/Release/dxc-artifacts.zip'
   prebuiltDxcUrl_Linux: 'https://ci.appveyor.com/api/buildjobs/n37870jhkc0bom9n/artifacts/build/dxc-artifacts.tar.gz'
   prebuiltDxcExtract_Windows: '7z x -odxc-artifacts dxc-artifacts.zip'
@@ -67,7 +66,6 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja wget'
-      prebuiltDxcUrl: ''
       testCommand: $(testCommand_Windows)
       artifactBinaries: $(artifactBinaries_Windows)
 
@@ -83,6 +81,7 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja wget'
+      prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
       prebuiltDxcUrl: $(prebuiltDxcUrl_Windows)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Windows)
       testCommand: $(testCommand_Windows)
@@ -101,8 +100,6 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja wget'
-      prebuiltDxcUrl: ''
-      testCommand: ''
       artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
@@ -117,6 +114,7 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja wget'
+      prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
       prebuiltDxcUrl: $(prebuiltDxcUrl_Windows)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Windows)
       testCommand: $(testCommand_Windows)
@@ -135,8 +133,6 @@ stages:
       combination: 'win-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: 'choco install ninja wget'
-      prebuiltDxcUrl: ''
-      testCommand: ''
       artifactBinaries: $(artifactBinaries_Windows)
 
     steps:
@@ -154,6 +150,7 @@ stages:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
         sudo apt-get install g++-9 ninja-build python3
+      prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
       prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
       testCommand: $(testCommand_Linux)
@@ -176,6 +173,7 @@ stages:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
         sudo apt-get install g++-10 ninja-build python3
+      prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
       prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
       testCommand: $(testCommand_Linux)
@@ -200,6 +198,7 @@ stages:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
         sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev lld-11 ninja-build python3
+      prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
       prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
       testCommand: $(testCommand_Linux)
@@ -224,6 +223,7 @@ stages:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
         sudo apt-get install clang-13 libc++-13-dev libc++abi-13-dev lld-13 ninja-build python3
+      prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
       prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
       prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
       testCommand: $(testCommand_Linux)
@@ -243,7 +243,6 @@ stages:
       combination: 'osx-$(compiler)-$(platform)-$(configuration)'
       buildFolder: 'Build/ninja-$(combination)'
       installCommand: brew install ninja
-      prebuiltDxcUrl: ''
       testCommand: $(testCommand_macOS)
       artifactBinaries: $(artifactBinaries_macOS)
       CC: clang
