@@ -19,3 +19,10 @@ float4 HalfOutParamPS() : SV_Target0
 	Func(cross(half3(1, 0, 0), half3(0, 1, 0)), output);
 	return float4(output, 1.0f);
 }
+
+StructuredBuffer<half> buffer;
+
+float4 HalfBufferPS(uint coord : TEXCOORD0) : SV_Target0
+{
+	return float4(buffer[coord], 0.0f, 0.0f, 1.0f);
+}

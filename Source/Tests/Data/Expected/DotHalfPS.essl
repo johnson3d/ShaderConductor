@@ -1,4 +1,4 @@
-#version 300
+#version 310 es
 #if defined(GL_AMD_gpu_shader_half_float)
 #extension GL_AMD_gpu_shader_half_float : require
 #elif defined(GL_NV_gpu_shader5)
@@ -6,9 +6,10 @@
 #else
 #error No extension available for FP16.
 #endif
-#extension GL_ARB_separate_shader_objects : require
+precision mediump float;
+precision highp int;
 
-out vec4 out_var_SV_Target0;
+layout(location = 0) out highp vec4 out_var_SV_Target0;
 
 void main()
 {

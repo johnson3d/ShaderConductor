@@ -8,10 +8,16 @@
 #endif
 #extension GL_ARB_separate_shader_objects : require
 
+layout(std430) readonly buffer type_StructuredBuffer_half
+{
+    float16_t _m0[];
+} _buffer;
+
+layout(location = 0) flat in uint varying_TEXCOORD0;
 out vec4 out_var_SV_Target0;
 
 void main()
 {
-    out_var_SV_Target0 = vec4(vec3(cross(f16vec3(float16_t(1.0), float16_t(0.0), float16_t(0.0)), f16vec3(float16_t(0.0), float16_t(1.0), float16_t(0.0)))), 1.0);
+    out_var_SV_Target0 = vec4(float(_buffer._m0[varying_TEXCOORD0]), 0.0, 0.0, 1.0);
 }
 

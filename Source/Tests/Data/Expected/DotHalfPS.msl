@@ -1,0 +1,17 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+struct DotHalfPS_out
+{
+    float4 out_var_SV_Target0 [[color(0)]];
+};
+
+fragment DotHalfPS_out DotHalfPS()
+{
+    DotHalfPS_out out = {};
+    out.out_var_SV_Target0 = float4(float(dot(half3(half(0.0), half(0.0), half(1.0)), half3(half(0.0), half(0.0), half(1.0)))));
+    return out;
+}
+

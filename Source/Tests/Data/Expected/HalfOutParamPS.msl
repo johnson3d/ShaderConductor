@@ -1,0 +1,17 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+struct HalfOutParamPS_out
+{
+    float4 out_var_SV_Target0 [[color(0)]];
+};
+
+fragment HalfOutParamPS_out HalfOutParamPS()
+{
+    HalfOutParamPS_out out = {};
+    out.out_var_SV_Target0 = float4(float3(cross(half3(half(1.0), half(0.0), half(0.0)), half3(half(0.0), half(1.0), half(0.0)))), 1.0);
+    return out;
+}
+

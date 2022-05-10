@@ -525,14 +525,21 @@ namespace
         option.shaderModel = {6, 2};
         option.enable16bitTypes = true;
 
-        const auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "DotHalfPS", ShaderStage::PixelShader}, option,
-                                              {ShadingLanguage::Glsl, "30"});
+        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {
+            {{ShadingLanguage::Glsl, "300"}, "glsl"}, {{ShadingLanguage::Essl, "310"}, "essl"}, {{ShadingLanguage::Msl_macOS}, "msl"}};
 
-        EXPECT_FALSE(result.hasError);
-        EXPECT_TRUE(result.isText);
+        for (const auto& target : targets)
+        {
+            const auto result =
+                Compiler::Compile({source.c_str(), fileName.c_str(), "DotHalfPS", ShaderStage::PixelShader}, option, std::get<0>(target));
 
-        const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
-        CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText, "DotHalfPS.glsl");
+            EXPECT_FALSE(result.hasError);
+            EXPECT_TRUE(result.isText);
+
+            const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
+            CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText,
+                                "DotHalfPS." + std::get<1>(target));
+        }
     }
 
     TEST(HalfDataTypeTest, HalfOutParam)
@@ -546,14 +553,49 @@ namespace
         option.shaderModel = {6, 2};
         option.enable16bitTypes = true;
 
-        const auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "HalfOutParamPS", ShaderStage::PixelShader}, option,
-                                              {ShadingLanguage::Glsl, "30"});
+        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {
+            {{ShadingLanguage::Glsl, "300"}, "glsl"}, {{ShadingLanguage::Essl, "310"}, "essl"}, {{ShadingLanguage::Msl_macOS}, "msl"}};
 
-        EXPECT_FALSE(result.hasError);
-        EXPECT_TRUE(result.isText);
+        for (const auto& target : targets)
+        {
+            const auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "HalfOutParamPS", ShaderStage::PixelShader}, option,
+                                                  std::get<0>(target));
 
-        const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
-        CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText, "HalfOutParamPS.glsl");
+            EXPECT_FALSE(result.hasError);
+            EXPECT_TRUE(result.isText);
+
+            const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
+            CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText,
+                                "HalfOutParamPS." + std::get<1>(target));
+        }
+    }
+
+    TEST(HalfDataTypeTest, HalfBuffer)
+    {
+        const std::string fileName = TEST_DATA_DIR "Input/HalfDataType.hlsl";
+
+        std::vector<uint8_t> input = LoadFile(fileName, true);
+        const std::string source = std::string(reinterpret_cast<char*>(input.data()), input.size());
+
+        Compiler::Options option;
+        option.shaderModel = {6, 2};
+        option.enable16bitTypes = true;
+
+        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {
+            {{ShadingLanguage::Glsl, "300"}, "glsl"}, {{ShadingLanguage::Essl, "310"}, "essl"}, {{ShadingLanguage::Msl_macOS}, "msl"}};
+
+        for (const auto& target : targets)
+        {
+            const auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "HalfBufferPS", ShaderStage::PixelShader}, option,
+                                                  std::get<0>(target));
+
+            EXPECT_FALSE(result.hasError);
+            EXPECT_TRUE(result.isText);
+
+            const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
+            CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText,
+                                "HalfBufferPS." + std::get<1>(target));
+        }
     }
 
     TEST(LinkTest, LinkDxil)
