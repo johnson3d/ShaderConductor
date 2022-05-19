@@ -19,6 +19,7 @@ steps:
   workingDirectory: $(Agent.TempDirectory)
   displayName: 'Download DXC package'
   condition: ne(variables.prebuiltDxcUrl, '')
+  continueOnError: true
 
 - task: PythonScript@0
   displayName: 'Build'
