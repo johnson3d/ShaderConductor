@@ -156,7 +156,7 @@ namespace
             }
 
 #ifdef _WIN32
-            const char* dllName = "dxcompiler.dll";
+            const wchar_t* dllName = L"dxcompiler.dll";
 #elif __APPLE__
             const char* dllName = "libdxcompiler.dylib";
 #else
@@ -165,7 +165,7 @@ namespace
             const char* functionName = "DxcCreateInstance";
 
 #ifdef _WIN32
-            m_dxcompilerDll = ::LoadLibraryA(dllName);
+            m_dxcompilerDll = ::LoadLibraryW(dllName);
 #else
             m_dxcompilerDll = ::dlopen(dllName, RTLD_LAZY);
 #endif
@@ -213,7 +213,7 @@ namespace
         CComPtr<IDxcCompiler> m_compiler;
         CComPtr<IDxcContainerReflection> m_containerReflection;
 
-        bool m_linkerSupport;
+        bool m_linkerSupport = false;
     };
 
     class ScIncludeHandler : public IDxcIncludeHandler
@@ -2266,219 +2266,6 @@ namespace ShaderConductor
 
         explicit ReflectionImpl(const spirv_cross::Compiler& compiler)
         {
-            spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-
-            for (const auto& resource : resources.uniform_buffers)
-            {
-                ResourceDesc reflectionDesc{};
-                this->ExtractReflection(reflectionDesc, compiler, resource.id);
-                reflectionDesc.type = ShaderResourceType::ConstantBuffer;
-
-                m_resourceDescs.emplace_back(std::move(reflectionDesc));
-
-                m_constantBuffers.emplace_back(Make(compiler, resource));
-            }
-
-            for (const auto& resource : resources.storage_buffers)
-            {
-                ResourceDesc reflectionDesc{};
-                this->ExtractReflection(reflectionDesc, compiler, resource.id);
-
-                const spirv_cross::Bitset& typeFlags = compiler.get_decoration_bitset(compiler.get_type(resource.type_id).self);
-                const auto& type = compiler.get_type(resource.type_id);
-
-                const bool ssboBlock = type.storage == spv::StorageClassStorageBuffer ||
-                                       (type.storage == spv::StorageClassUniform && typeFlags.get(spv::DecorationBufferBlock));
-                if (ssboBlock)
-                {
-                    spirv_cross::Bitset buffer_flags = compiler.get_buffer_block_flags(resource.id);
-                    if (buffer_flags.get(spv::DecorationNonWritable))
-                    {
-                        reflectionDesc.type = ShaderResourceType::ShaderResourceView;
-                    }
-                    else
-                    {
-                        reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
-                    }
-                }
-                else
-                {
-                    reflectionDesc.type = ShaderResourceType::ShaderResourceView;
-                }
-
-                m_resourceDescs.emplace_back(std::move(reflectionDesc));
-            }
-
-            for (const auto& resource : resources.storage_images)
-            {
-                ResourceDesc reflectionDesc{};
-                this->ExtractReflection(reflectionDesc, compiler, resource.id);
-                reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
-
-                m_resourceDescs.emplace_back(std::move(reflectionDesc));
-            }
-
-            for (const auto& resource : resources.separate_images)
-            {
-                ResourceDesc reflectionDesc{};
-                this->ExtractReflection(reflectionDesc, compiler, resource.id);
-                reflectionDesc.type = ShaderResourceType::Texture;
-
-                m_resourceDescs.emplace_back(std::move(reflectionDesc));
-            }
-
-            for (const auto& resource : resources.separate_samplers)
-            {
-                ResourceDesc reflectionDesc{};
-                this->ExtractReflection(reflectionDesc, compiler, resource.id);
-                reflectionDesc.type = ShaderResourceType::Sampler;
-
-                m_resourceDescs.emplace_back(std::move(reflectionDesc));
-            }
-
-            uint32_t combinedBinding = 0;
-            for (const auto& resource : resources.sampled_images)
-            {
-                ResourceDesc reflectionDesc{};
-                this->ExtractReflection(reflectionDesc, compiler, resource.id);
-                reflectionDesc.bindPoint = combinedBinding;
-                reflectionDesc.type = ShaderResourceType::Texture;
-
-                m_resourceDescs.emplace_back(std::move(reflectionDesc));
-                ++combinedBinding;
-            }
-
-            for (const auto& inputParam : resources.builtin_inputs)
-            {
-                const std::string semantic = this->ExtractBuiltInemantic(inputParam.builtin);
-                if (!semantic.empty())
-                {
-                    SignatureParameterDesc paramDesc{};
-                    this->ExtractParameter(paramDesc, compiler, inputParam.resource, semantic);
-
-                    const auto& type = compiler.get_type(inputParam.resource.type_id);
-                    switch (inputParam.builtin)
-                    {
-                    case spv::BuiltInTessLevelInner:
-                    case spv::BuiltInTessLevelOuter:
-                        for (uint32_t patchConstantParamIndex = 0; patchConstantParamIndex < type.array[0]; ++patchConstantParamIndex)
-                        {
-                            if (inputParam.builtin == spv::BuiltInTessLevelOuter)
-                            {
-                                paramDesc.semanticIndex = patchConstantParamIndex;
-                                paramDesc.mask = ComponentMask::W;
-                            }
-                            else
-                            {
-                                paramDesc.semanticIndex = 0;
-                                paramDesc.mask = ComponentMask::X;
-                            }
-
-                            m_hsDSPatchConstantParams.emplace_back(std::move(paramDesc));
-                        }
-                        break;
-
-                    default:
-                        m_inputParams.emplace_back(std::move(paramDesc));
-                        break;
-                    }
-                }
-            }
-
-            for (const auto& inputParam : resources.stage_inputs)
-            {
-                SignatureParameterDesc paramDesc{};
-                this->ExtractParameter(paramDesc, compiler, inputParam);
-
-                if (compiler.get_decoration(inputParam.id, spv::DecorationPatch))
-                {
-                    m_hsDSPatchConstantParams.emplace_back(std::move(paramDesc));
-                }
-                else
-                {
-                    m_inputParams.emplace_back(std::move(paramDesc));
-                }
-            }
-
-            for (const auto& outputParam : resources.builtin_outputs)
-            {
-                const std::string semantic = this->ExtractBuiltInemantic(outputParam.builtin);
-                if (!semantic.empty())
-                {
-                    SignatureParameterDesc paramDesc{};
-                    const auto& type = compiler.get_type(outputParam.resource.type_id);
-                    this->ExtractParameter(paramDesc, compiler, outputParam.resource, semantic);
-
-                    switch (type.basetype)
-                    {
-                    case spirv_cross::SPIRType::UInt:
-                        paramDesc.componentType = VariableType::DataType::Uint;
-                        break;
-                    case spirv_cross::SPIRType::Int:
-                        paramDesc.componentType = VariableType::DataType::Int;
-                        break;
-                    case spirv_cross::SPIRType::Float:
-                        paramDesc.componentType = VariableType::DataType::Float;
-                        break;
-
-                    default:
-                        llvm_unreachable("Unsupported parameter component type.");
-                        break;
-                    }
-
-                    if (type.vecsize > 0)
-                    {
-                        paramDesc.mask = ComponentMask::X;
-                    }
-                    if (type.vecsize > 1)
-                    {
-                        paramDesc.mask |= ComponentMask::Y;
-                    }
-                    if (type.vecsize > 2)
-                    {
-                        paramDesc.mask |= ComponentMask::Z;
-                    }
-                    if (type.vecsize > 3)
-                    {
-                        paramDesc.mask |= ComponentMask::W;
-                    }
-
-                    switch (outputParam.builtin)
-                    {
-                    case spv::BuiltInTessLevelInner:
-                    case spv::BuiltInTessLevelOuter:
-                        for (uint32_t patchConstantParamIndex = 0; patchConstantParamIndex < type.array[0]; ++patchConstantParamIndex)
-                        {
-                            paramDesc.semanticIndex = patchConstantParamIndex;
-
-                            if (outputParam.builtin == spv::BuiltInTessLevelOuter)
-                            {
-                                paramDesc.mask = ComponentMask::W;
-                            }
-                            else
-                            {
-                                paramDesc.mask = ComponentMask::X;
-                            }
-
-                            m_hsDSPatchConstantParams.emplace_back(std::move(paramDesc));
-                        }
-                        break;
-
-                    default:
-                        m_outputParams.emplace_back(std::move(paramDesc));
-                        break;
-                    }
-                }
-            }
-
-            for (const auto& outputParam : resources.stage_outputs)
-            {
-                SignatureParameterDesc paramDesc{};
-                this->ExtractParameter(paramDesc, compiler, outputParam);
-
-                m_outputParams.emplace_back(std::move(paramDesc));
-            }
-
             const auto& modes = compiler.get_execution_mode_bitset();
             switch (compiler.get_execution_model())
             {
@@ -2619,6 +2406,231 @@ namespace ShaderConductor
 
             default:
                 break;
+            }
+
+            const spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+
+            for (const auto& resource : resources.uniform_buffers)
+            {
+                ResourceDesc reflectionDesc{};
+                this->ExtractReflection(reflectionDesc, compiler, resource.id);
+                reflectionDesc.type = ShaderResourceType::ConstantBuffer;
+
+                m_resourceDescs.emplace_back(std::move(reflectionDesc));
+
+                m_constantBuffers.emplace_back(Make(compiler, resource));
+            }
+
+            for (const auto& resource : resources.storage_buffers)
+            {
+                ResourceDesc reflectionDesc{};
+                this->ExtractReflection(reflectionDesc, compiler, resource.id);
+
+                const spirv_cross::Bitset& typeFlags = compiler.get_decoration_bitset(compiler.get_type(resource.type_id).self);
+                const auto& type = compiler.get_type(resource.type_id);
+
+                const bool ssboBlock = type.storage == spv::StorageClassStorageBuffer ||
+                                       (type.storage == spv::StorageClassUniform && typeFlags.get(spv::DecorationBufferBlock));
+                if (ssboBlock)
+                {
+                    spirv_cross::Bitset buffer_flags = compiler.get_buffer_block_flags(resource.id);
+                    if (buffer_flags.get(spv::DecorationNonWritable))
+                    {
+                        reflectionDesc.type = ShaderResourceType::ShaderResourceView;
+                    }
+                    else
+                    {
+                        reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
+                    }
+                }
+                else
+                {
+                    reflectionDesc.type = ShaderResourceType::ShaderResourceView;
+                }
+
+                m_resourceDescs.emplace_back(std::move(reflectionDesc));
+            }
+
+            for (const auto& resource : resources.storage_images)
+            {
+                ResourceDesc reflectionDesc{};
+                this->ExtractReflection(reflectionDesc, compiler, resource.id);
+                reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
+
+                m_resourceDescs.emplace_back(std::move(reflectionDesc));
+            }
+
+            for (const auto& resource : resources.separate_images)
+            {
+                ResourceDesc reflectionDesc{};
+                this->ExtractReflection(reflectionDesc, compiler, resource.id);
+                reflectionDesc.type = ShaderResourceType::Texture;
+
+                m_resourceDescs.emplace_back(std::move(reflectionDesc));
+            }
+
+            for (const auto& resource : resources.separate_samplers)
+            {
+                ResourceDesc reflectionDesc{};
+                this->ExtractReflection(reflectionDesc, compiler, resource.id);
+                reflectionDesc.type = ShaderResourceType::Sampler;
+
+                m_resourceDescs.emplace_back(std::move(reflectionDesc));
+            }
+
+            uint32_t combinedBinding = 0;
+            for (const auto& resource : resources.sampled_images)
+            {
+                ResourceDesc reflectionDesc{};
+                this->ExtractReflection(reflectionDesc, compiler, resource.id);
+                reflectionDesc.bindPoint = combinedBinding;
+                reflectionDesc.type = ShaderResourceType::Texture;
+
+                m_resourceDescs.emplace_back(std::move(reflectionDesc));
+                ++combinedBinding;
+            }
+
+            for (const auto& inputParam : resources.builtin_inputs)
+            {
+                const std::string semantic = this->ExtractBuiltInemantic(inputParam.builtin);
+                if (!semantic.empty())
+                {
+                    SignatureParameterDesc paramDesc{};
+                    this->ExtractParameter(paramDesc, compiler, inputParam.resource, semantic);
+
+                    const auto& type = compiler.get_type(inputParam.resource.type_id);
+                    switch (inputParam.builtin)
+                    {
+                    case spv::BuiltInTessLevelInner:
+                    case spv::BuiltInTessLevelOuter:
+                        uint32_t numParams;
+                        if (inputParam.builtin == spv::BuiltInTessLevelOuter)
+                        {
+                            numParams = std::min(m_hsDSNumCtrlPoints, type.array[0]);
+                            paramDesc.mask = ComponentMask::W;
+                        }
+                        else
+                        {
+                            numParams = std::min(1U, type.array[0]);
+                            paramDesc.mask = ComponentMask::X;
+                            paramDesc.location = m_hsDSNumCtrlPoints;
+                        }
+                        for (uint32_t patchConstantParamIndex = 0; patchConstantParamIndex < numParams; ++patchConstantParamIndex)
+                        {
+                            paramDesc.semanticIndex = patchConstantParamIndex;
+                            if (inputParam.builtin == spv::BuiltInTessLevelOuter)
+                            {
+                                paramDesc.location = patchConstantParamIndex;
+                            }
+                            m_hsDSPatchConstantParams.push_back(paramDesc);
+                        }
+                        break;
+
+                    default:
+                        m_inputParams.emplace_back(std::move(paramDesc));
+                        break;
+                    }
+                }
+            }
+
+            for (const auto& inputParam : resources.stage_inputs)
+            {
+                SignatureParameterDesc paramDesc{};
+                this->ExtractParameter(paramDesc, compiler, inputParam);
+
+                if (compiler.get_decoration(inputParam.id, spv::DecorationPatch))
+                {
+                    m_hsDSPatchConstantParams.emplace_back(std::move(paramDesc));
+                }
+                else
+                {
+                    m_inputParams.emplace_back(std::move(paramDesc));
+                }
+            }
+
+            for (const auto& outputParam : resources.builtin_outputs)
+            {
+                const std::string semantic = this->ExtractBuiltInemantic(outputParam.builtin);
+                if (!semantic.empty())
+                {
+                    SignatureParameterDesc paramDesc{};
+                    const auto& type = compiler.get_type(outputParam.resource.type_id);
+                    this->ExtractParameter(paramDesc, compiler, outputParam.resource, semantic);
+
+                    switch (type.basetype)
+                    {
+                    case spirv_cross::SPIRType::UInt:
+                        paramDesc.componentType = VariableType::DataType::Uint;
+                        break;
+                    case spirv_cross::SPIRType::Int:
+                        paramDesc.componentType = VariableType::DataType::Int;
+                        break;
+                    case spirv_cross::SPIRType::Float:
+                        paramDesc.componentType = VariableType::DataType::Float;
+                        break;
+
+                    default:
+                        llvm_unreachable("Unsupported parameter component type.");
+                        break;
+                    }
+
+                    if (type.vecsize > 0)
+                    {
+                        paramDesc.mask = ComponentMask::X;
+                    }
+                    if (type.vecsize > 1)
+                    {
+                        paramDesc.mask |= ComponentMask::Y;
+                    }
+                    if (type.vecsize > 2)
+                    {
+                        paramDesc.mask |= ComponentMask::Z;
+                    }
+                    if (type.vecsize > 3)
+                    {
+                        paramDesc.mask |= ComponentMask::W;
+                    }
+
+                    switch (outputParam.builtin)
+                    {
+                    case spv::BuiltInTessLevelInner:
+                    case spv::BuiltInTessLevelOuter:
+                        uint32_t numParams;
+                        if (outputParam.builtin == spv::BuiltInTessLevelOuter)
+                        {
+                            numParams = std::min(m_hsDSNumCtrlPoints, type.array[0]);
+                            paramDesc.mask = ComponentMask::W;
+                        }
+                        else
+                        {
+                            numParams = std::min(1U, type.array[0]);
+                            paramDesc.mask = ComponentMask::X;
+                            paramDesc.location = m_hsDSNumCtrlPoints;
+                        }
+                        for (uint32_t patchConstantParamIndex = 0; patchConstantParamIndex < numParams; ++patchConstantParamIndex)
+                        {
+                            paramDesc.semanticIndex = patchConstantParamIndex;
+                            if (outputParam.builtin == spv::BuiltInTessLevelOuter)
+                            {
+                                paramDesc.location = patchConstantParamIndex;
+                            }
+                            m_hsDSPatchConstantParams.push_back(paramDesc);
+                        }
+                        break;
+
+                    default:
+                        m_outputParams.emplace_back(std::move(paramDesc));
+                        break;
+                    }
+                }
+            }
+
+            for (const auto& outputParam : resources.stage_outputs)
+            {
+                SignatureParameterDesc paramDesc{};
+                this->ExtractParameter(paramDesc, compiler, outputParam);
+
+                m_outputParams.emplace_back(std::move(paramDesc));
             }
         }
 

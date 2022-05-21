@@ -276,55 +276,24 @@ namespace
             EXPECT_EQ(result.reflection.HSPartitioning(), Reflection::TessellatorPartitioning::FractionalOdd);
 
             EXPECT_EQ(result.reflection.HSDSTessellatorDomain(), Reflection::TessellatorDomain::Triangle);
-            if (testTarget.target.language == ShadingLanguage::Dxil)
+            EXPECT_EQ(result.reflection.HSDSNumPatchConstantParameters(), 4U);
             {
-                EXPECT_EQ(result.reflection.HSDSNumPatchConstantParameters(), 4U);
-            }
-            else
-            {
-                EXPECT_EQ(result.reflection.HSDSNumPatchConstantParameters(), 6U);
-            }
-            {
-                uint32_t numTessFactors;
-                if (testTarget.target.language == ShadingLanguage::Dxil)
-                {
-                    numTessFactors = 3;
-                }
-                else
-                {
-                    numTessFactors = 4;
-                }
-                for (uint32_t i = 0; i < numTessFactors; ++i)
+                for (uint32_t i = 0; i < 3; ++i)
                 {
                     const Reflection::SignatureParameterDesc* patchConstantParam = result.reflection.HSDSPatchConstantParameter(i);
                     EXPECT_NE(patchConstantParam, nullptr);
                     EXPECT_STRCASEEQ(patchConstantParam->semantic, "SV_TessFactor");
                     EXPECT_EQ(patchConstantParam->semanticIndex, i);
-                    if (testTarget.target.language == ShadingLanguage::Dxil)
-                    {
-                        EXPECT_EQ(patchConstantParam->location, i);
-                    }
-                    else
-                    {
-                        EXPECT_EQ(patchConstantParam->location, 0U);
-                    }
+                    EXPECT_EQ(patchConstantParam->location, i);
                     EXPECT_EQ(patchConstantParam->componentType, Reflection::VariableType::DataType::Float);
                     EXPECT_EQ(patchConstantParam->mask, Reflection::ComponentMask::W);
                 }
                 {
-                    const Reflection::SignatureParameterDesc* patchConstantParam =
-                        result.reflection.HSDSPatchConstantParameter(numTessFactors);
+                    const Reflection::SignatureParameterDesc* patchConstantParam = result.reflection.HSDSPatchConstantParameter(3);
                     EXPECT_NE(patchConstantParam, nullptr);
                     EXPECT_STRCASEEQ(patchConstantParam->semantic, "SV_InsideTessFactor");
                     EXPECT_EQ(patchConstantParam->semanticIndex, 0U);
-                    if (testTarget.target.language == ShadingLanguage::Dxil)
-                    {
-                        EXPECT_EQ(patchConstantParam->location, 3U);
-                    }
-                    else
-                    {
-                        EXPECT_EQ(patchConstantParam->location, 0U);
-                    }
+                    EXPECT_EQ(patchConstantParam->location, 3U);
                     EXPECT_EQ(patchConstantParam->componentType, Reflection::VariableType::DataType::Float);
                     EXPECT_EQ(patchConstantParam->mask, Reflection::ComponentMask::X);
                 }
@@ -475,49 +444,27 @@ namespace
                 EXPECT_EQ(result.reflection.HSDSNumPatchConstantParameters(), 7U);
             }
             {
-                uint32_t numTessFactors;
                 if (testTarget.target.language == ShadingLanguage::Dxil)
                 {
-                    numTessFactors = 3;
-                }
-                else
-                {
-                    numTessFactors = 0;
-                }
-                for (uint32_t i = 0; i < numTessFactors; ++i)
-                {
-                    const Reflection::SignatureParameterDesc* patchConstantParam = result.reflection.HSDSPatchConstantParameter(i);
-                    EXPECT_NE(patchConstantParam, nullptr);
-                    EXPECT_STRCASEEQ(patchConstantParam->semantic, "SV_TessFactor");
-                    EXPECT_EQ(patchConstantParam->semanticIndex, i);
-                    if (testTarget.target.language == ShadingLanguage::Dxil)
+                    for (uint32_t i = 0; i < 3; ++i)
                     {
+                        const Reflection::SignatureParameterDesc* patchConstantParam = result.reflection.HSDSPatchConstantParameter(i);
+                        EXPECT_NE(patchConstantParam, nullptr);
+                        EXPECT_STRCASEEQ(patchConstantParam->semantic, "SV_TessFactor");
+                        EXPECT_EQ(patchConstantParam->semanticIndex, i);
                         EXPECT_EQ(patchConstantParam->location, i);
+                        EXPECT_EQ(patchConstantParam->componentType, Reflection::VariableType::DataType::Float);
+                        EXPECT_EQ(patchConstantParam->mask, Reflection::ComponentMask::W);
                     }
-                    else
                     {
-                        EXPECT_EQ(patchConstantParam->location, 0U);
-                    }
-                    EXPECT_EQ(patchConstantParam->componentType, Reflection::VariableType::DataType::Float);
-                    EXPECT_EQ(patchConstantParam->mask, Reflection::ComponentMask::W);
-                }
-                if (testTarget.target.language == ShadingLanguage::Dxil)
-                {
-                    const Reflection::SignatureParameterDesc* patchConstantParam =
-                        result.reflection.HSDSPatchConstantParameter(numTessFactors);
-                    EXPECT_NE(patchConstantParam, nullptr);
-                    EXPECT_STRCASEEQ(patchConstantParam->semantic, "SV_InsideTessFactor");
-                    EXPECT_EQ(patchConstantParam->semanticIndex, 0U);
-                    if (testTarget.target.language == ShadingLanguage::Dxil)
-                    {
+                        const Reflection::SignatureParameterDesc* patchConstantParam = result.reflection.HSDSPatchConstantParameter(3);
+                        EXPECT_NE(patchConstantParam, nullptr);
+                        EXPECT_STRCASEEQ(patchConstantParam->semantic, "SV_InsideTessFactor");
+                        EXPECT_EQ(patchConstantParam->semanticIndex, 0U);
                         EXPECT_EQ(patchConstantParam->location, 3U);
+                        EXPECT_EQ(patchConstantParam->componentType, Reflection::VariableType::DataType::Float);
+                        EXPECT_EQ(patchConstantParam->mask, Reflection::ComponentMask::X);
                     }
-                    else
-                    {
-                        EXPECT_EQ(patchConstantParam->location, 0U);
-                    }
-                    EXPECT_EQ(patchConstantParam->componentType, Reflection::VariableType::DataType::Float);
-                    EXPECT_EQ(patchConstantParam->mask, Reflection::ComponentMask::X);
                 }
 
                 uint32_t base;
