@@ -73,12 +73,13 @@ namespace
         }
     }
 
-    Compiler::ModuleDesc CompileToModule(const char* moduleName, const std::string& inputFileName, const Compiler::TargetDesc& target)
+    Compiler::ModuleDesc CompileToModule(const char* moduleName, const std::string& inputFileName, const Compiler::Options& options,
+                                         const Compiler::TargetDesc& target)
     {
         std::vector<uint8_t> input = LoadFile(inputFileName, true);
         const std::string source = std::string(reinterpret_cast<char*>(input.data()), input.size());
 
-        const auto result = Compiler::Compile({source.c_str(), inputFileName.c_str(), "", ShaderStage::PixelShader}, {}, target);
+        const auto result = Compiler::Compile({source.c_str(), inputFileName.c_str(), "", ShaderStage::PixelShader}, options, target);
 
         EXPECT_FALSE(result.hasError);
         EXPECT_FALSE(result.isText);
@@ -605,11 +606,14 @@ namespace
             GTEST_SKIP_("Link is not supported on this platform");
         }
 
+        Compiler::Options options;
+        options.shaderModel = {6, 5};
+
         const Compiler::TargetDesc target = {ShadingLanguage::Dxil, "", true};
         const Compiler::ModuleDesc dxilModules[] = {
-            CompileToModule("CalcLight", TEST_DATA_DIR "Input/CalcLight.hlsl", target),
-            CompileToModule("CalcLightDiffuse", TEST_DATA_DIR "Input/CalcLightDiffuse.hlsl", target),
-            CompileToModule("CalcLightDiffuseSpecular", TEST_DATA_DIR "Input/CalcLightDiffuseSpecular.hlsl", target),
+            CompileToModule("CalcLight", TEST_DATA_DIR "Input/CalcLight.hlsl", options, target),
+            CompileToModule("CalcLightDiffuse", TEST_DATA_DIR "Input/CalcLightDiffuse.hlsl", options, target),
+            CompileToModule("CalcLightDiffuseSpecular", TEST_DATA_DIR "Input/CalcLightDiffuseSpecular.hlsl", options, target),
         };
 
         const Compiler::ModuleDesc* testModules[][2] = {
@@ -623,8 +627,8 @@ namespace
         for (size_t i = 0; i < 2; ++i)
         {
             const auto linkedResult =
-                Compiler::Link({"main", ShaderStage::PixelShader, testModules[i], sizeof(testModules[i]) / sizeof(testModules[i][0])}, {},
-                               {ShadingLanguage::Dxil, ""});
+                Compiler::Link({"main", ShaderStage::PixelShader, testModules[i], sizeof(testModules[i]) / sizeof(testModules[i][0])},
+                               options, {ShadingLanguage::Dxil, ""});
 
             EXPECT_FALSE(linkedResult.hasError);
             EXPECT_FALSE(linkedResult.isText);

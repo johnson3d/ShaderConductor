@@ -315,17 +315,17 @@ namespace
 
     void AppendError(Compiler::ResultDesc& result, const std::string& msg)
     {
-        std::string errorMSg;
+        std::string errorMsg;
         if (result.errorWarningMsg.Size() != 0)
         {
-            errorMSg.assign(reinterpret_cast<const char*>(result.errorWarningMsg.Data()), result.errorWarningMsg.Size());
+            errorMsg.assign(reinterpret_cast<const char*>(result.errorWarningMsg.Data()), result.errorWarningMsg.Size());
         }
-        if (!errorMSg.empty())
+        if (!errorMsg.empty())
         {
-            errorMSg += "\n";
+            errorMsg += "\n";
         }
-        errorMSg += msg;
-        result.errorWarningMsg.Reset(errorMSg.data(), static_cast<uint32_t>(errorMSg.size()));
+        errorMsg += msg;
+        result.errorWarningMsg.Reset(errorMsg.data(), static_cast<uint32_t>(errorMsg.size()));
         result.hasError = true;
     }
 
@@ -333,6 +333,9 @@ namespace
     template <typename T>
     void CreateDxcReflectionFromBlob(IDxcBlob* dxilBlob, CComPtr<T>& outReflection)
     {
+        // Reflection is a Windows only feature, for now. Check
+        // https://github.com/microsoft/DirectXShaderCompiler/issues/4358 for details.
+
         IDxcContainerReflection* containReflection = Dxcompiler::Instance().ContainerReflection();
         IFT(containReflection->Load(dxilBlob));
 
@@ -342,37 +345,48 @@ namespace
     }
 #endif
 
-    std::wstring ShaderProfileName(ShaderStage stage, Compiler::ShaderModel shaderModel)
+    std::wstring ShaderProfileName(ShaderStage stage, Compiler::ShaderModel shaderModel, bool asModule)
     {
         std::wstring shaderProfile;
-        switch (stage)
+        if (asModule)
         {
-        case ShaderStage::VertexShader:
-            shaderProfile = L"vs";
-            break;
+            shaderProfile = L"lib";
+            if (shaderModel.major_ver == 6)
+            {
+                shaderModel.minor_ver = std::max<uint8_t>(shaderModel.minor_ver, 3);
+            }
+        }
+        else
+        {
+            switch (stage)
+            {
+            case ShaderStage::VertexShader:
+                shaderProfile = L"vs";
+                break;
 
-        case ShaderStage::PixelShader:
-            shaderProfile = L"ps";
-            break;
+            case ShaderStage::PixelShader:
+                shaderProfile = L"ps";
+                break;
 
-        case ShaderStage::GeometryShader:
-            shaderProfile = L"gs";
-            break;
+            case ShaderStage::GeometryShader:
+                shaderProfile = L"gs";
+                break;
 
-        case ShaderStage::HullShader:
-            shaderProfile = L"hs";
-            break;
+            case ShaderStage::HullShader:
+                shaderProfile = L"hs";
+                break;
 
-        case ShaderStage::DomainShader:
-            shaderProfile = L"ds";
-            break;
+            case ShaderStage::DomainShader:
+                shaderProfile = L"ds";
+                break;
 
-        case ShaderStage::ComputeShader:
-            shaderProfile = L"cs";
-            break;
+            case ShaderStage::ComputeShader:
+                shaderProfile = L"cs";
+                break;
 
-        default:
-            llvm_unreachable("Invalid shader stage.");
+            default:
+                llvm_unreachable("Invalid shader stage.");
+            }
         }
 
         shaderProfile.push_back(L'_');
@@ -437,23 +451,12 @@ namespace
                                          ShadingLanguage targetLanguage, bool asModule)
     {
         assert((targetLanguage == ShadingLanguage::Dxil) || (targetLanguage == ShadingLanguage::SpirV));
+        if (asModule && (targetLanguage != ShadingLanguage::Dxil))
+        {
+            llvm_unreachable("Spir-V module is not supported.");
+        }
 
-        std::wstring shaderProfile;
-        if (asModule)
-        {
-            if (targetLanguage == ShadingLanguage::Dxil)
-            {
-                shaderProfile = L"lib_6_x";
-            }
-            else
-            {
-                llvm_unreachable("Spir-V module is not supported.");
-            }
-        }
-        else
-        {
-            shaderProfile = ShaderProfileName(source.stage, options.shaderModel);
-        }
+        const std::wstring shaderProfile = ShaderProfileName(source.stage, options.shaderModel, asModule);
 
         std::vector<DxcDefine> dxcDefines;
         std::vector<std::wstring> dxcDefineStrings;
@@ -586,6 +589,11 @@ namespace
 
         default:
             llvm_unreachable("Invalid shading language.");
+        }
+
+        if (asModule)
+        {
+            dxcArgStrings.push_back(L"-default-linkage external");
         }
 
         std::vector<const wchar_t*> dxcArgs;
@@ -3343,7 +3351,7 @@ namespace ShaderConductor
         std::wstring entryPointWide;
         Unicode::UTF8ToWideString(modules.entryPoint, &entryPointWide);
 
-        const std::wstring shaderProfile = ShaderProfileName(modules.stage, options.shaderModel);
+        const std::wstring shaderProfile = ShaderProfileName(modules.stage, options.shaderModel, false);
         CComPtr<IDxcOperationResult> linkResult;
         IFT(linker->Link(entryPointWide.c_str(), shaderProfile.c_str(), moduleNamesWide.data(), static_cast<UINT32>(moduleNamesWide.size()),
                          nullptr, 0, &linkResult));

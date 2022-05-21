@@ -15,8 +15,8 @@
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; SV_Target                0   xyzw        0   TARGET   float   xyzw
 ;
-; shader debug name: c247268630a3fe54e4153ff9c6dc82e1.pdb
-; shader hash: c247268630a3fe54e4153ff9c6dc82e1
+; shader debug name: c1ee1e7f6c3fd8196c473393beeff90d.pdb
+; shader hash: c1ee1e7f6c3fd8196c473393beeff90d
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -70,6 +70,7 @@ target triple = "dxil-ms-dx"
 
 %dx.types.CBufRet.f32 = type { float, float, float, float }
 %dx.types.Handle = type { i8* }
+%cbPS = type { <3 x float>, <3 x float>, float }
 
 ; Function Attrs: nounwind readnone
 declare float @dx.op.loadInput.f32(i32, i32, i32, i8, i32) #0
@@ -99,15 +100,15 @@ define void @main() {
   %9 = extractvalue %dx.types.CBufRet.f32 %7, 1
   %10 = extractvalue %dx.types.CBufRet.f32 %7, 2
   %11 = call float @dx.op.dot3.f32(i32 55, float %4, float %5, float %6, float %1, float %2, float %3) #2  ; Dot3(ax,ay,az,bx,by,bz)
-  %.i0.i = fmul fast float %11, %8
-  %.i1.i = fmul fast float %11, %9
-  %.i2.i = fmul fast float %11, %10
-  %FMax.i = call float @dx.op.binary.f32(i32 35, float %.i0.i, float 0.000000e+00) #2  ; FMax(a,b)
-  %FMax1.i = call float @dx.op.binary.f32(i32 35, float %.i1.i, float 0.000000e+00) #2  ; FMax(a,b)
-  %FMax2.i = call float @dx.op.binary.f32(i32 35, float %.i2.i, float 0.000000e+00) #2  ; FMax(a,b)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %FMax.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %FMax1.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %FMax2.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  %12 = fmul fast float %11, %8
+  %13 = fmul fast float %11, %9
+  %14 = fmul fast float %11, %10
+  %15 = call float @dx.op.binary.f32(i32 35, float %12, float 0.000000e+00) #2  ; FMax(a,b)
+  %16 = call float @dx.op.binary.f32(i32 35, float %13, float 0.000000e+00) #2  ; FMax(a,b)
+  %17 = call float @dx.op.binary.f32(i32 35, float %14, float 0.000000e+00) #2  ; FMax(a,b)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %15)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %16)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %17)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 3, float 1.000000e+00)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   ret void
 }
@@ -129,12 +130,12 @@ attributes #2 = { nounwind }
 !dx.entryPoints = !{!12}
 
 !0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
-!1 = !{i32 1, i32 0}
+!1 = !{i32 1, i32 5}
 !2 = !{i32 1, i32 7}
-!3 = !{!"ps", i32 6, i32 0}
+!3 = !{!"ps", i32 6, i32 5}
 !4 = !{null, null, !5, null}
 !5 = !{!6}
-!6 = !{i32 0, %dx.types.Handle* undef, !"cbPS", i32 0, i32 0, i32 1, i32 32, null}
+!6 = !{i32 0, %cbPS* undef, !"cbPS", i32 0, i32 0, i32 1, i32 32, null}
 !7 = !{i32 1, void ()* @main, !8}
 !8 = !{!9}
 !9 = !{i32 0, !10, !10}

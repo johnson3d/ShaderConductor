@@ -15,8 +15,8 @@
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; SV_Target                0   xyzw        0   TARGET   float   xyzw
 ;
-; shader debug name: 6ca8bec21845e4ce06cf43d1e8467190.pdb
-; shader hash: 6ca8bec21845e4ce06cf43d1e8467190
+; shader debug name: a4d832a65580a99f8004e4774d63b738.pdb
+; shader hash: a4d832a65580a99f8004e4774d63b738
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -70,6 +70,7 @@ target triple = "dxil-ms-dx"
 
 %dx.types.CBufRet.f32 = type { float, float, float, float }
 %dx.types.Handle = type { i8* }
+%cbPS = type { <3 x float>, <3 x float>, float }
 
 ; Function Attrs: nounwind readnone
 declare float @dx.op.loadInput.f32(i32, i32, i32, i8, i32) #0
@@ -112,48 +113,48 @@ define void @main() {
   %19 = fadd fast float %11, 2.000000e+00
   %20 = fmul fast float %19, 1.250000e-01
   %21 = call float @dx.op.dot3.f32(i32 55, float %1, float %2, float %3, float %7, float %8, float %9) #2  ; Dot3(ax,ay,az,bx,by,bz)
-  %FMax.i = call float @dx.op.binary.f32(i32 35, float %21, float 0.000000e+00) #2  ; FMax(a,b)
-  %Log1.i = call float @dx.op.unary.f32(i32 23, float %FMax.i) #2  ; Log(value)
-  %22 = fmul fast float %Log1.i, %11
-  %Exp2.i = call float @dx.op.unary.f32(i32 21, float %22) #2  ; Exp(value)
-  %.i0.i = fmul fast float %20, %Exp2.i
-  %23 = call float @dx.op.dot3.f32(i32 55, float %4, float %5, float %6, float %1, float %2, float %3) #2  ; Dot3(ax,ay,az,bx,by,bz)
-  %Saturate.i = call float @dx.op.unary.f32(i32 7, float %23) #2  ; Saturate(value)
-  %.i06.i = fcmp fast ogt float %12, 0.000000e+00
-  %.i1.i = fcmp fast ogt float %13, 0.000000e+00
-  %.i2.i = fcmp fast ogt float %14, 0.000000e+00
-  %.i07.i = fsub fast float 1.000000e+00, %12
-  %.i18.i = fsub fast float 1.000000e+00, %13
-  %.i29.i = fsub fast float 1.000000e+00, %14
-  %24 = fsub fast float 1.000000e+00, %Saturate.i
-  %Log.i = call float @dx.op.unary.f32(i32 23, float %24) #2  ; Log(value)
-  %25 = fmul fast float %Log.i, 5.000000e+00
-  %Exp.i = call float @dx.op.unary.f32(i32 21, float %25) #2  ; Exp(value)
-  %.i010.i = fmul fast float %Exp.i, %.i07.i
-  %.i111.i = fmul fast float %Exp.i, %.i18.i
-  %.i212.i = fmul fast float %Exp.i, %.i29.i
-  %.i013.i = fadd fast float %.i010.i, %12
-  %.i114.i = fadd fast float %.i111.i, %13
-  %.i215.i = fadd fast float %.i212.i, %14
-  %26 = select i1 %.i06.i, float %.i013.i, float 0.000000e+00
-  %27 = select i1 %.i1.i, float %.i114.i, float 0.000000e+00
-  %28 = select i1 %.i2.i, float %.i215.i, float 0.000000e+00
-  %.i016.i = fmul fast float %26, %.i0.i
-  %.i117.i = fmul fast float %27, %.i0.i
-  %.i218.i = fmul fast float %28, %.i0.i
-  %.i019.i = fadd fast float %.i016.i, %16
-  %.i120.i = fadd fast float %.i117.i, %17
-  %.i221.i = fadd fast float %.i218.i, %18
-  %29 = call float @dx.op.dot3.f32(i32 55, float %7, float %8, float %9, float %4, float %5, float %6) #2  ; Dot3(ax,ay,az,bx,by,bz)
-  %.i022.i = fmul fast float %.i019.i, %29
-  %.i123.i = fmul fast float %.i120.i, %29
-  %.i224.i = fmul fast float %.i221.i, %29
-  %FMax3.i = call float @dx.op.binary.f32(i32 35, float %.i022.i, float 0.000000e+00) #2  ; FMax(a,b)
-  %FMax4.i = call float @dx.op.binary.f32(i32 35, float %.i123.i, float 0.000000e+00) #2  ; FMax(a,b)
-  %FMax5.i = call float @dx.op.binary.f32(i32 35, float %.i224.i, float 0.000000e+00) #2  ; FMax(a,b)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %FMax3.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %FMax4.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %FMax5.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  %22 = call float @dx.op.binary.f32(i32 35, float %21, float 0.000000e+00) #2  ; FMax(a,b)
+  %23 = call float @dx.op.unary.f32(i32 23, float %22) #2  ; Log(value)
+  %24 = fmul fast float %23, %11
+  %25 = call float @dx.op.unary.f32(i32 21, float %24) #2  ; Exp(value)
+  %26 = fmul fast float %25, %20
+  %27 = call float @dx.op.dot3.f32(i32 55, float %4, float %5, float %6, float %1, float %2, float %3) #2  ; Dot3(ax,ay,az,bx,by,bz)
+  %28 = call float @dx.op.unary.f32(i32 7, float %27) #2  ; Saturate(value)
+  %29 = fcmp fast ogt float %12, 0.000000e+00
+  %30 = fcmp fast ogt float %13, 0.000000e+00
+  %31 = fcmp fast ogt float %14, 0.000000e+00
+  %32 = fsub fast float 1.000000e+00, %12
+  %33 = fsub fast float 1.000000e+00, %13
+  %34 = fsub fast float 1.000000e+00, %14
+  %35 = fsub fast float 1.000000e+00, %28
+  %36 = call float @dx.op.unary.f32(i32 23, float %35) #2  ; Log(value)
+  %37 = fmul fast float %36, 5.000000e+00
+  %38 = call float @dx.op.unary.f32(i32 21, float %37) #2  ; Exp(value)
+  %39 = fmul fast float %38, %32
+  %40 = fmul fast float %38, %33
+  %41 = fmul fast float %38, %34
+  %42 = fadd fast float %39, %12
+  %43 = fadd fast float %40, %13
+  %44 = fadd fast float %41, %14
+  %45 = select i1 %29, float %42, float 0.000000e+00
+  %46 = select i1 %30, float %43, float 0.000000e+00
+  %47 = select i1 %31, float %44, float 0.000000e+00
+  %48 = fmul fast float %26, %45
+  %49 = fmul fast float %26, %46
+  %50 = fmul fast float %26, %47
+  %51 = fadd fast float %48, %16
+  %52 = fadd fast float %49, %17
+  %53 = fadd fast float %50, %18
+  %54 = call float @dx.op.dot3.f32(i32 55, float %7, float %8, float %9, float %4, float %5, float %6) #2  ; Dot3(ax,ay,az,bx,by,bz)
+  %55 = fmul fast float %51, %54
+  %56 = fmul fast float %52, %54
+  %57 = fmul fast float %53, %54
+  %58 = call float @dx.op.binary.f32(i32 35, float %55, float 0.000000e+00) #2  ; FMax(a,b)
+  %59 = call float @dx.op.binary.f32(i32 35, float %56, float 0.000000e+00) #2  ; FMax(a,b)
+  %60 = call float @dx.op.binary.f32(i32 35, float %57, float 0.000000e+00) #2  ; FMax(a,b)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %58)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %59)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %60)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 3, float 1.000000e+00)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   ret void
 }
@@ -175,12 +176,12 @@ attributes #2 = { nounwind }
 !dx.entryPoints = !{!12}
 
 !0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
-!1 = !{i32 1, i32 0}
+!1 = !{i32 1, i32 5}
 !2 = !{i32 1, i32 7}
-!3 = !{!"ps", i32 6, i32 0}
+!3 = !{!"ps", i32 6, i32 5}
 !4 = !{null, null, !5, null}
 !5 = !{!6}
-!6 = !{i32 0, %dx.types.Handle* undef, !"cbPS", i32 0, i32 0, i32 1, i32 32, null}
+!6 = !{i32 0, %cbPS* undef, !"cbPS", i32 0, i32 0, i32 1, i32 32, null}
 !7 = !{i32 1, void ()* @main, !8}
 !8 = !{!9}
 !9 = !{i32 0, !10, !10}
