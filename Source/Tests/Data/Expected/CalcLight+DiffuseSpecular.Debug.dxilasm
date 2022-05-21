@@ -15,8 +15,8 @@
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; SV_Target                0   xyzw        0   TARGET   float   xyzw
 ;
-; shader debug name: 25518f9e3687a943487e772bc4f7808c.pdb
-; shader hash: 25518f9e3687a943487e772bc4f7808c
+; shader debug name: a9a5b01acda9e4cbfce425988a5f6409.pdb
+; shader hash: a9a5b01acda9e4cbfce425988a5f6409
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -117,7 +117,7 @@ entry:
   %Log3.i = call float @dx.op.unary.f32(i32 23, float %FMax.i) #2  ; Log(value)
   %19 = fmul fast float %Log3.i, %10
   %Exp4.i = call float @dx.op.unary.f32(i32 21, float %19) #2  ; Exp(value)
-  %mul.i.i0.i = fmul fast float %Exp4.i, %div.i.i.i
+  %.i0.i = fmul fast float %div.i.i.i, %Exp4.i
   %20 = call float @dx.op.dot3.f32(i32 55, float %3, float %4, float %5, float %0, float %1, float %2) #2  ; Dot3(ax,ay,az,bx,by,bz)
   %Saturate.i = call float @dx.op.unary.f32(i32 7, float %20) #2  ; Saturate(value)
   %cmp.i.i.i0.i = fcmp fast ogt float %11, 0.000000e+00
@@ -139,9 +139,9 @@ entry:
   %22 = select i1 %cmp.i.i.i0.i, float %add.i.4.i.i0.i, float 0.000000e+00
   %23 = select i1 %cmp.i.i.i1.i, float %add.i.4.i.i1.i, float 0.000000e+00
   %24 = select i1 %cmp.i.i.i2.i, float %add.i.4.i.i2.i, float 0.000000e+00
-  %mul3.i.i0.i = fmul fast float %mul.i.i0.i, %22
-  %mul3.i.i1.i = fmul fast float %mul.i.i0.i, %23
-  %mul3.i.i2.i = fmul fast float %mul.i.i0.i, %24
+  %mul3.i.i0.i = fmul fast float %22, %.i0.i
+  %mul3.i.i1.i = fmul fast float %23, %.i0.i
+  %mul3.i.i2.i = fmul fast float %24, %.i0.i
   %add.i0.i = fadd fast float %mul3.i.i0.i, %15
   %add.i1.i = fadd fast float %mul3.i.i1.i, %16
   %add.i2.i = fadd fast float %mul3.i.i2.i, %17

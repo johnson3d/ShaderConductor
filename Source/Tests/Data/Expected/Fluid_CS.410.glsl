@@ -43,13 +43,13 @@ layout(std430) readonly buffer type_StructuredBuffer_ParticleForces
 
 void main()
 {
-    vec2 _52 = particlesRO._m0[gl_GlobalInvocationID.x].position;
-    vec2 _54 = particlesRO._m0[gl_GlobalInvocationID.x].velocity;
-    vec2 _56 = particlesForcesRO._m0[gl_GlobalInvocationID.x].acceleration;
-    vec3 _59 = vec3(_52, 1.0);
-    float _67 = -cbSimulationConstants.scene.wallStiffness;
-    vec2 _102 = _54 + ((((((_56 + (cbSimulationConstants.scene.planes[0u].xy * (min(dot(_59, cbSimulationConstants.scene.planes[0u]), 0.0) * _67))) + (cbSimulationConstants.scene.planes[1u].xy * (min(dot(_59, cbSimulationConstants.scene.planes[1u]), 0.0) * _67))) + (cbSimulationConstants.scene.planes[2u].xy * (min(dot(_59, cbSimulationConstants.scene.planes[2u]), 0.0) * _67))) + (cbSimulationConstants.scene.planes[3u].xy * (min(dot(_59, cbSimulationConstants.scene.planes[3u]), 0.0) * _67))) + cbSimulationConstants.scene.gravity.xy) * cbSimulationConstants.timeStep);
-    particlesRW._m0[gl_GlobalInvocationID.x].position = _52 + (_102 * cbSimulationConstants.timeStep);
-    particlesRW._m0[gl_GlobalInvocationID.x].velocity = _102;
+    vec2 _50 = particlesRO._m0[gl_GlobalInvocationID.x].position;
+    vec2 _52 = particlesRO._m0[gl_GlobalInvocationID.x].velocity;
+    vec2 _54 = particlesForcesRO._m0[gl_GlobalInvocationID.x].acceleration;
+    vec3 _57 = vec3(_50, 1.0);
+    float _65 = -cbSimulationConstants.scene.wallStiffness;
+    vec2 _100 = _52 + ((((((_54 + (cbSimulationConstants.scene.planes[0u].xy * (min(dot(_57, cbSimulationConstants.scene.planes[0u]), 0.0) * _65))) + (cbSimulationConstants.scene.planes[1u].xy * (min(dot(_57, cbSimulationConstants.scene.planes[1u]), 0.0) * _65))) + (cbSimulationConstants.scene.planes[2u].xy * (min(dot(_57, cbSimulationConstants.scene.planes[2u]), 0.0) * _65))) + (cbSimulationConstants.scene.planes[3u].xy * (min(dot(_57, cbSimulationConstants.scene.planes[3u]), 0.0) * _65))) + cbSimulationConstants.scene.gravity.xy) * cbSimulationConstants.timeStep);
+    particlesRW._m0[gl_GlobalInvocationID.x].position = _50 + (_100 * cbSimulationConstants.timeStep);
+    particlesRW._m0[gl_GlobalInvocationID.x].velocity = _100;
 }
 

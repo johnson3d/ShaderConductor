@@ -15,8 +15,8 @@
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; SV_Target                0   xyzw        0   TARGET   float   xyzw
 ;
-; shader debug name: 98d2b1bcd83bf049601636cc5a9e1e37.pdb
-; shader hash: 98d2b1bcd83bf049601636cc5a9e1e37
+; shader debug name: 6ca8bec21845e4ce06cf43d1e8467190.pdb
+; shader hash: 6ca8bec21845e4ce06cf43d1e8467190
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -116,41 +116,41 @@ define void @main() {
   %Log1.i = call float @dx.op.unary.f32(i32 23, float %FMax.i) #2  ; Log(value)
   %22 = fmul fast float %Log1.i, %11
   %Exp2.i = call float @dx.op.unary.f32(i32 21, float %22) #2  ; Exp(value)
-  %.i0.i = fmul fast float %Exp2.i, %20
+  %.i0.i = fmul fast float %20, %Exp2.i
   %23 = call float @dx.op.dot3.f32(i32 55, float %4, float %5, float %6, float %1, float %2, float %3) #2  ; Dot3(ax,ay,az,bx,by,bz)
   %Saturate.i = call float @dx.op.unary.f32(i32 7, float %23) #2  ; Saturate(value)
   %.i06.i = fcmp fast ogt float %12, 0.000000e+00
-  %.i17.i = fcmp fast ogt float %13, 0.000000e+00
-  %.i28.i = fcmp fast ogt float %14, 0.000000e+00
-  %.i09.i = fsub fast float 1.000000e+00, %12
-  %.i110.i = fsub fast float 1.000000e+00, %13
-  %.i211.i = fsub fast float 1.000000e+00, %14
+  %.i1.i = fcmp fast ogt float %13, 0.000000e+00
+  %.i2.i = fcmp fast ogt float %14, 0.000000e+00
+  %.i07.i = fsub fast float 1.000000e+00, %12
+  %.i18.i = fsub fast float 1.000000e+00, %13
+  %.i29.i = fsub fast float 1.000000e+00, %14
   %24 = fsub fast float 1.000000e+00, %Saturate.i
   %Log.i = call float @dx.op.unary.f32(i32 23, float %24) #2  ; Log(value)
   %25 = fmul fast float %Log.i, 5.000000e+00
   %Exp.i = call float @dx.op.unary.f32(i32 21, float %25) #2  ; Exp(value)
-  %.i012.i = fmul fast float %Exp.i, %.i09.i
-  %.i113.i = fmul fast float %Exp.i, %.i110.i
-  %.i214.i = fmul fast float %Exp.i, %.i211.i
-  %.i015.i = fadd fast float %.i012.i, %12
-  %.i116.i = fadd fast float %.i113.i, %13
-  %.i217.i = fadd fast float %.i214.i, %14
-  %26 = select i1 %.i06.i, float %.i015.i, float 0.000000e+00
-  %27 = select i1 %.i17.i, float %.i116.i, float 0.000000e+00
-  %28 = select i1 %.i28.i, float %.i217.i, float 0.000000e+00
-  %.i018.i = fmul fast float %.i0.i, %26
-  %.i119.i = fmul fast float %.i0.i, %27
-  %.i220.i = fmul fast float %.i0.i, %28
-  %.i021.i = fadd fast float %.i018.i, %16
-  %.i122.i = fadd fast float %.i119.i, %17
-  %.i223.i = fadd fast float %.i220.i, %18
+  %.i010.i = fmul fast float %Exp.i, %.i07.i
+  %.i111.i = fmul fast float %Exp.i, %.i18.i
+  %.i212.i = fmul fast float %Exp.i, %.i29.i
+  %.i013.i = fadd fast float %.i010.i, %12
+  %.i114.i = fadd fast float %.i111.i, %13
+  %.i215.i = fadd fast float %.i212.i, %14
+  %26 = select i1 %.i06.i, float %.i013.i, float 0.000000e+00
+  %27 = select i1 %.i1.i, float %.i114.i, float 0.000000e+00
+  %28 = select i1 %.i2.i, float %.i215.i, float 0.000000e+00
+  %.i016.i = fmul fast float %26, %.i0.i
+  %.i117.i = fmul fast float %27, %.i0.i
+  %.i218.i = fmul fast float %28, %.i0.i
+  %.i019.i = fadd fast float %.i016.i, %16
+  %.i120.i = fadd fast float %.i117.i, %17
+  %.i221.i = fadd fast float %.i218.i, %18
   %29 = call float @dx.op.dot3.f32(i32 55, float %7, float %8, float %9, float %4, float %5, float %6) #2  ; Dot3(ax,ay,az,bx,by,bz)
-  %.i024.i = fmul fast float %.i021.i, %29
-  %.i125.i = fmul fast float %.i122.i, %29
-  %.i226.i = fmul fast float %.i223.i, %29
-  %FMax3.i = call float @dx.op.binary.f32(i32 35, float %.i024.i, float 0.000000e+00) #2  ; FMax(a,b)
-  %FMax4.i = call float @dx.op.binary.f32(i32 35, float %.i125.i, float 0.000000e+00) #2  ; FMax(a,b)
-  %FMax5.i = call float @dx.op.binary.f32(i32 35, float %.i226.i, float 0.000000e+00) #2  ; FMax(a,b)
+  %.i022.i = fmul fast float %.i019.i, %29
+  %.i123.i = fmul fast float %.i120.i, %29
+  %.i224.i = fmul fast float %.i221.i, %29
+  %FMax3.i = call float @dx.op.binary.f32(i32 35, float %.i022.i, float 0.000000e+00) #2  ; FMax(a,b)
+  %FMax4.i = call float @dx.op.binary.f32(i32 35, float %.i123.i, float 0.000000e+00) #2  ; FMax(a,b)
+  %FMax5.i = call float @dx.op.binary.f32(i32 35, float %.i224.i, float 0.000000e+00) #2  ; FMax(a,b)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %FMax3.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %FMax4.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %FMax5.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)

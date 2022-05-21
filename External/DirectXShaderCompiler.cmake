@@ -1,11 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-set(DirectXShaderCompiler_REV "cc50c79df1272a358fbf8b16e85dc6a9e5bc2ead")
+set(DirectXShaderCompiler_REV "24909be7d40b7e3155408016b7bde45fe8c3f509")
 
 UpdateExternalLib("DirectXShaderCompiler" "https://github.com/Microsoft/DirectXShaderCompiler.git" ${DirectXShaderCompiler_REV})
 
 set(ENABLE_SPIRV_CODEGEN ON CACHE BOOL "" FORCE)
+set(ENABLE_DXIL2SPV OFF CACHE BOOL "" FORCE)
 set(CLANG_ENABLE_ARCMT OFF CACHE BOOL "" FORCE)
 set(CLANG_ENABLE_STATIC_ANALYZER OFF CACHE BOOL "" FORCE)
 set(CLANG_INCLUDE_TESTS OFF CACHE BOOL "" FORCE)
@@ -62,7 +63,7 @@ foreach(target
     "LLVMLinker" "LLVMMiniz" "LLVMMSSupport" "LLVMOption" "LLVMPasses" "LLVMPassPrinters" "LLVMProfileData" "LLVMScalarOpts" "LLVMSupport"
     "LLVMTableGen" "LLVMTarget" "LLVMTransformUtils" "LLVMVectorize"
     "ClangDriverOptions" "DxcEtw" "intrinsics_gen" "TablegenHLSLOptions"
-    "clang-tblgen" "llvm-tblgen" "hlsl_dxcversion_autogen" "hlsl_version_autogen")
+    "clang-tblgen" "llvm-tblgen" "hlsl_dxcversion_autogen" "hlsl_version_autogen" "RDAT_LibraryTypes")
     get_target_property(vsFolder ${target} FOLDER)	
     if(NOT vsFolder)
         set(vsFolder "")

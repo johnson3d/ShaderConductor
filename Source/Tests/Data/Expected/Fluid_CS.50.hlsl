@@ -34,14 +34,14 @@ struct SPIRV_Cross_Input
 
 void comp_main()
 {
-    float2 _52 = asfloat(particlesRO.Load2(gl_GlobalInvocationID.x * 16 + 0));
-    float2 _54 = asfloat(particlesRO.Load2(gl_GlobalInvocationID.x * 16 + 8));
-    float2 _56 = asfloat(particlesForcesRO.Load2(gl_GlobalInvocationID.x * 8 + 0));
-    float3 _59 = float3(_52, 1.0f);
-    float _67 = -cbSimulationConstants_scene.wallStiffness;
-    float2 _102 = _54 + ((((((_56 + (cbSimulationConstants_scene.planes[0u].xy * (min(dot(_59, cbSimulationConstants_scene.planes[0u]), 0.0f) * _67))) + (cbSimulationConstants_scene.planes[1u].xy * (min(dot(_59, cbSimulationConstants_scene.planes[1u]), 0.0f) * _67))) + (cbSimulationConstants_scene.planes[2u].xy * (min(dot(_59, cbSimulationConstants_scene.planes[2u]), 0.0f) * _67))) + (cbSimulationConstants_scene.planes[3u].xy * (min(dot(_59, cbSimulationConstants_scene.planes[3u]), 0.0f) * _67))) + cbSimulationConstants_scene.gravity.xy) * cbSimulationConstants_timeStep);
-    particlesRW.Store2(gl_GlobalInvocationID.x * 16 + 0, asuint(_52 + (_102 * cbSimulationConstants_timeStep)));
-    particlesRW.Store2(gl_GlobalInvocationID.x * 16 + 8, asuint(_102));
+    float2 _50 = asfloat(particlesRO.Load2(gl_GlobalInvocationID.x * 16 + 0));
+    float2 _52 = asfloat(particlesRO.Load2(gl_GlobalInvocationID.x * 16 + 8));
+    float2 _54 = asfloat(particlesForcesRO.Load2(gl_GlobalInvocationID.x * 8 + 0));
+    float3 _57 = float3(_50, 1.0f);
+    float _65 = -cbSimulationConstants_scene.wallStiffness;
+    float2 _100 = _52 + ((((((_54 + (cbSimulationConstants_scene.planes[0u].xy * (min(dot(_57, cbSimulationConstants_scene.planes[0u]), 0.0f) * _65))) + (cbSimulationConstants_scene.planes[1u].xy * (min(dot(_57, cbSimulationConstants_scene.planes[1u]), 0.0f) * _65))) + (cbSimulationConstants_scene.planes[2u].xy * (min(dot(_57, cbSimulationConstants_scene.planes[2u]), 0.0f) * _65))) + (cbSimulationConstants_scene.planes[3u].xy * (min(dot(_57, cbSimulationConstants_scene.planes[3u]), 0.0f) * _65))) + cbSimulationConstants_scene.gravity.xy) * cbSimulationConstants_timeStep);
+    particlesRW.Store2(gl_GlobalInvocationID.x * 16 + 0, asuint(_50 + (_100 * cbSimulationConstants_timeStep)));
+    particlesRW.Store2(gl_GlobalInvocationID.x * 16 + 8, asuint(_100));
 }
 
 [numthreads(256, 1, 1)]

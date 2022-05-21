@@ -472,7 +472,7 @@ namespace
             }
             else
             {
-                EXPECT_EQ(result.reflection.HSDSNumPatchConstantParameters(), 13U);
+                EXPECT_EQ(result.reflection.HSDSNumPatchConstantParameters(), 7U);
             }
             {
                 uint32_t numTessFactors;
@@ -482,7 +482,7 @@ namespace
                 }
                 else
                 {
-                    numTessFactors = 4;
+                    numTessFactors = 0;
                 }
                 for (uint32_t i = 0; i < numTessFactors; ++i)
                 {
@@ -501,6 +501,7 @@ namespace
                     EXPECT_EQ(patchConstantParam->componentType, Reflection::VariableType::DataType::Float);
                     EXPECT_EQ(patchConstantParam->mask, Reflection::ComponentMask::W);
                 }
+                if (testTarget.target.language == ShadingLanguage::Dxil)
                 {
                     const Reflection::SignatureParameterDesc* patchConstantParam =
                         result.reflection.HSDSPatchConstantParameter(numTessFactors);
@@ -526,7 +527,7 @@ namespace
                 }
                 else
                 {
-                    base = 6;
+                    base = 0;
                 }
 
                 const uint32_t dxilLocations[] = {0, 1, 2, 4, 5, 6};
@@ -771,8 +772,18 @@ namespace
                 GTEST_SKIP_("Dxil Reflection is not supported on this platform");
             }
 
-            EXPECT_EQ(result.reflection.NumInputParameters(), 2U);
+            uint32_t num_input_params;
+            if (testTarget.target.language == ShadingLanguage::Dxil)
             {
+                num_input_params = 2;
+            }
+            else
+            {
+                num_input_params = 1;
+            }
+            EXPECT_EQ(result.reflection.NumInputParameters(), num_input_params);
+            {
+                if (testTarget.target.language == ShadingLanguage::Dxil)
                 {
                     const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(0);
                     EXPECT_NE(inputParam, nullptr);
@@ -784,7 +795,7 @@ namespace
                                                     Reflection::ComponentMask::W);
                 }
                 {
-                    const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(1);
+                    const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(num_input_params - 1);
                     EXPECT_NE(inputParam, nullptr);
                     EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "TEXCOORD").c_str());
                     EXPECT_EQ(inputParam->semanticIndex, 0U);

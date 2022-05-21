@@ -1,11 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-set(SPIRV_Tools_REV "1589720e1065bd163fb8e812f268413b13755f7c")
+set(SPIRV_Tools_REV "f74b85853c35b0dc973b92037f09db591f3e3fec")
 
 UpdateExternalLib("SPIRV-Tools" "https://github.com/KhronosGroup/SPIRV-Tools.git" ${SPIRV_Tools_REV})
 
 set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
+set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
+set(SKIP_SPIRV_TOOLS_INSTALL ON CACHE BOOL "" FORCE)
 add_subdirectory(SPIRV-Tools EXCLUDE_FROM_ALL)
 
 if(MSVC)

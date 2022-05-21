@@ -100,7 +100,11 @@ namespace
         CComPtr<IDxcLinker> CreateLinker() const
         {
             CComPtr<IDxcLinker> linker;
-            IFT(m_createInstanceFunc(CLSID_DxcLinker, __uuidof(IDxcLinker), reinterpret_cast<void**>(&linker)));
+            const HRESULT hr = m_createInstanceFunc(CLSID_DxcLinker, __uuidof(IDxcLinker), reinterpret_cast<void**>(&linker));
+            if (FAILED(hr))
+            {
+                linker = nullptr;
+            }
             return linker;
         }
 
@@ -178,8 +182,13 @@ namespace
                 {
                     IFT(m_createInstanceFunc(CLSID_DxcLibrary, __uuidof(IDxcLibrary), reinterpret_cast<void**>(&m_library)));
                     IFT(m_createInstanceFunc(CLSID_DxcCompiler, __uuidof(IDxcCompiler), reinterpret_cast<void**>(&m_compiler)));
-                    IFT(m_createInstanceFunc(CLSID_DxcContainerReflection, __uuidof(IDxcContainerReflection),
-                                             reinterpret_cast<void**>(&m_containerReflection)));
+
+                    const HRESULT hr = m_createInstanceFunc(CLSID_DxcContainerReflection, __uuidof(IDxcContainerReflection),
+                                                            reinterpret_cast<void**>(&m_containerReflection));
+                    if (FAILED(hr))
+                    {
+                        m_containerReflection = nullptr;
+                    }
                 }
                 else
                 {
@@ -222,7 +231,7 @@ namespace
             }
 
             std::string utf8FileName;
-            if (!Unicode::UTF16ToUTF8String(fileName, &utf8FileName))
+            if (!Unicode::WideToUTF8String(fileName, &utf8FileName))
             {
                 return E_FAIL;
             }
@@ -455,25 +464,25 @@ namespace
         {
             const auto& define = source.defines[i];
 
-            std::wstring nameUtf16Str;
-            Unicode::UTF8ToUTF16String(define.name, &nameUtf16Str);
-            dxcDefineStrings.emplace_back(std::move(nameUtf16Str));
-            const wchar_t* nameUtf16 = dxcDefineStrings.back().c_str();
+            std::wstring nameWideStr;
+            Unicode::UTF8ToWideString(define.name, &nameWideStr);
+            dxcDefineStrings.emplace_back(std::move(nameWideStr));
+            const wchar_t* nameWide = dxcDefineStrings.back().c_str();
 
-            const wchar_t* valueUtf16;
+            const wchar_t* valueWide;
             if (define.value != nullptr)
             {
-                std::wstring valueUtf16Str;
-                Unicode::UTF8ToUTF16String(define.value, &valueUtf16Str);
-                dxcDefineStrings.emplace_back(std::move(valueUtf16Str));
-                valueUtf16 = dxcDefineStrings.back().c_str();
+                std::wstring valueWideStr;
+                Unicode::UTF8ToWideString(define.value, &valueWideStr);
+                dxcDefineStrings.emplace_back(std::move(valueWideStr));
+                valueWide = dxcDefineStrings.back().c_str();
             }
             else
             {
-                valueUtf16 = nullptr;
+                valueWide = nullptr;
             }
 
-            dxcDefines.push_back({nameUtf16, valueUtf16});
+            dxcDefines.push_back({nameWide, valueWide});
         }
 
         CComPtr<IDxcBlobEncoding> sourceBlob;
@@ -481,11 +490,11 @@ namespace
             source.source, static_cast<UINT32>(std::strlen(source.source)), CP_UTF8, &sourceBlob));
         IFTARG(sourceBlob->GetBufferSize() >= 4);
 
-        std::wstring shaderNameUtf16;
-        Unicode::UTF8ToUTF16String(source.fileName, &shaderNameUtf16);
+        std::wstring shaderNameWide;
+        Unicode::UTF8ToWideString(source.fileName, &shaderNameWide);
 
-        std::wstring entryPointUtf16;
-        Unicode::UTF8ToUTF16String(source.entryPoint, &entryPointUtf16);
+        std::wstring entryPointWide;
+        Unicode::UTF8ToWideString(source.entryPoint, &entryPointWide);
 
         std::vector<std::wstring> dxcArgStrings;
 
@@ -588,7 +597,7 @@ namespace
 
         CComPtr<IDxcIncludeHandler> includeHandler = new ScIncludeHandler(source.loadIncludeCallback);
         CComPtr<IDxcOperationResult> compileResult;
-        IFT(Dxcompiler::Instance().Compiler()->Compile(sourceBlob, shaderNameUtf16.c_str(), entryPointUtf16.c_str(), shaderProfile.c_str(),
+        IFT(Dxcompiler::Instance().Compiler()->Compile(sourceBlob, shaderNameWide.c_str(), entryPointWide.c_str(), shaderProfile.c_str(),
                                                        dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()), dxcDefines.data(),
                                                        static_cast<UINT32>(dxcDefines.size()), includeHandler, &compileResult));
 
@@ -3316,7 +3325,7 @@ namespace ShaderConductor
         auto* library = Dxcompiler::Instance().Library();
 
         std::vector<std::wstring> moduleNames(modules.numModules);
-        std::vector<const wchar_t*> moduleNamesUtf16(modules.numModules);
+        std::vector<const wchar_t*> moduleNamesWide(modules.numModules);
         std::vector<CComPtr<IDxcBlobEncoding>> moduleBlobs(modules.numModules);
         for (uint32_t i = 0; i < modules.numModules; ++i)
         {
@@ -3326,18 +3335,18 @@ namespace ShaderConductor
                                                           &moduleBlobs[i]));
             IFTARG(moduleBlobs[i]->GetBufferSize() >= 4);
 
-            Unicode::UTF8ToUTF16String(modules.modules[i]->name, &moduleNames[i]);
-            moduleNamesUtf16[i] = moduleNames[i].c_str();
-            IFT(linker->RegisterLibrary(moduleNamesUtf16[i], moduleBlobs[i]));
+            Unicode::UTF8ToWideString(modules.modules[i]->name, &moduleNames[i]);
+            moduleNamesWide[i] = moduleNames[i].c_str();
+            IFT(linker->RegisterLibrary(moduleNamesWide[i], moduleBlobs[i]));
         }
 
-        std::wstring entryPointUtf16;
-        Unicode::UTF8ToUTF16String(modules.entryPoint, &entryPointUtf16);
+        std::wstring entryPointWide;
+        Unicode::UTF8ToWideString(modules.entryPoint, &entryPointWide);
 
         const std::wstring shaderProfile = ShaderProfileName(modules.stage, options.shaderModel);
         CComPtr<IDxcOperationResult> linkResult;
-        IFT(linker->Link(entryPointUtf16.c_str(), shaderProfile.c_str(), moduleNamesUtf16.data(),
-                         static_cast<UINT32>(moduleNamesUtf16.size()), nullptr, 0, &linkResult));
+        IFT(linker->Link(entryPointWide.c_str(), shaderProfile.c_str(), moduleNamesWide.data(), static_cast<UINT32>(moduleNamesWide.size()),
+                         nullptr, 0, &linkResult));
 
         Compiler::ResultDesc binaryResult{};
         ConvertDxcResult(binaryResult, linkResult, ShadingLanguage::Dxil, false, options.needReflection);
