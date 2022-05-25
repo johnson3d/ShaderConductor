@@ -40,12 +40,9 @@ namespace
     {
         Compiler::TargetDesc target;
         bool isText;
-        std::string inputParamPrefix;
-        std::string outputParamPrefix;
     };
 
-    const ReflectionTestTarget testTargets[] = {{{ShadingLanguage::Dxil, ""}, false, "", ""},
-                                                {{ShadingLanguage::Glsl, "410"}, true, "in_var_", "out_var_"}};
+    const ReflectionTestTarget testTargets[] = {{{ShadingLanguage::Dxil, ""}, false}, {{ShadingLanguage::Glsl, "410"}, true}};
 
     TEST(ReflectionTest, VertexShader)
     {
@@ -74,7 +71,7 @@ namespace
             {
                 const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(0);
                 EXPECT_NE(inputParam, nullptr);
-                EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "POSITION").c_str());
+                EXPECT_STRCASEEQ(inputParam->semantic, "POSITION");
                 EXPECT_EQ(inputParam->semanticIndex, 0U);
                 EXPECT_EQ(inputParam->location, 0U);
                 EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
@@ -175,7 +172,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(0);
                     EXPECT_NE(inputParam, nullptr);
-                    EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "WORLDPOS").c_str());
+                    EXPECT_STRCASEEQ(inputParam->semantic, "WORLDPOS");
                     EXPECT_EQ(inputParam->semanticIndex, 0U);
                     EXPECT_EQ(inputParam->location, 0U);
                     EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
@@ -184,7 +181,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(1);
                     EXPECT_NE(inputParam, nullptr);
-                    EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "NORMAL").c_str());
+                    EXPECT_STRCASEEQ(inputParam->semantic, "NORMAL");
                     EXPECT_EQ(inputParam->semanticIndex, 0U);
                     EXPECT_EQ(inputParam->location, 1U);
                     EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
@@ -193,7 +190,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(2);
                     EXPECT_NE(inputParam, nullptr);
-                    EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "TEXCOORD").c_str());
+                    EXPECT_STRCASEEQ(inputParam->semantic, "TEXCOORD");
                     EXPECT_EQ(inputParam->semanticIndex, 0U);
                     EXPECT_EQ(inputParam->location, 2U);
                     EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
@@ -202,7 +199,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(3);
                     EXPECT_NE(inputParam, nullptr);
-                    EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "LIGHTVECTORTS").c_str());
+                    EXPECT_STRCASEEQ(inputParam->semantic, "LIGHTVECTORTS");
                     EXPECT_EQ(inputParam->semanticIndex, 0U);
                     EXPECT_EQ(inputParam->location, 3U);
                     EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
@@ -215,7 +212,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* outputParam = result.reflection.OutputParameter(0);
                     EXPECT_NE(outputParam, nullptr);
-                    EXPECT_STRCASEEQ(outputParam->semantic, (testTarget.outputParamPrefix + "WORLDPOS").c_str());
+                    EXPECT_STRCASEEQ(outputParam->semantic, "WORLDPOS");
                     EXPECT_EQ(outputParam->semanticIndex, 0U);
                     if (testTarget.target.language == ShadingLanguage::Dxil)
                     {
@@ -232,7 +229,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* outputParam = result.reflection.OutputParameter(1);
                     EXPECT_NE(outputParam, nullptr);
-                    EXPECT_STRCASEEQ(outputParam->semantic, (testTarget.outputParamPrefix + "NORMAL").c_str());
+                    EXPECT_STRCASEEQ(outputParam->semantic, "NORMAL");
                     EXPECT_EQ(outputParam->semanticIndex, 0U);
                     EXPECT_EQ(outputParam->location, 1U);
                     EXPECT_EQ(outputParam->componentType, Reflection::VariableType::DataType::Float);
@@ -242,7 +239,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* outputParam = result.reflection.OutputParameter(2);
                     EXPECT_NE(outputParam, nullptr);
-                    EXPECT_STRCASEEQ(outputParam->semantic, (testTarget.outputParamPrefix + "TEXCOORD").c_str());
+                    EXPECT_STRCASEEQ(outputParam->semantic, "TEXCOORD");
                     EXPECT_EQ(outputParam->semanticIndex, 0U);
                     EXPECT_EQ(outputParam->location, 2U);
                     EXPECT_EQ(outputParam->componentType, Reflection::VariableType::DataType::Float);
@@ -251,7 +248,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* outputParam = result.reflection.OutputParameter(3);
                     EXPECT_NE(outputParam, nullptr);
-                    EXPECT_STRCASEEQ(outputParam->semantic, (testTarget.outputParamPrefix + "LIGHTVECTORTS").c_str());
+                    EXPECT_STRCASEEQ(outputParam->semantic, "LIGHTVECTORTS");
                     EXPECT_EQ(outputParam->semanticIndex, 0U);
                     if (testTarget.target.language == ShadingLanguage::Dxil)
                     {
@@ -365,7 +362,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(0);
                     EXPECT_NE(inputParam, nullptr);
-                    EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "POSITION").c_str());
+                    EXPECT_STRCASEEQ(inputParam->semantic, "POSITION");
                     EXPECT_EQ(inputParam->semanticIndex, 0U);
                     if (testTarget.target.language == ShadingLanguage::Dxil)
                     {
@@ -381,7 +378,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(1);
                     EXPECT_NE(inputParam, nullptr);
-                    EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "TEXCOORD").c_str());
+                    EXPECT_STRCASEEQ(inputParam->semantic, "TEXCOORD");
                     EXPECT_EQ(inputParam->semanticIndex, 0U);
                     if (testTarget.target.language == ShadingLanguage::Dxil)
                     {
@@ -411,7 +408,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* outputParam = result.reflection.OutputParameter(1);
                     EXPECT_NE(outputParam, nullptr);
-                    EXPECT_STRCASEEQ(outputParam->semantic, (testTarget.outputParamPrefix + "TEXCOORD").c_str());
+                    EXPECT_STRCASEEQ(outputParam->semantic, "TEXCOORD");
                     EXPECT_EQ(outputParam->semanticIndex, 0U);
                     if (testTarget.target.language == ShadingLanguage::Dxil)
                     {
@@ -483,7 +480,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* patchConstantParam = result.reflection.HSDSPatchConstantParameter(base + i);
                     EXPECT_NE(patchConstantParam, nullptr);
-                    EXPECT_STRCASEEQ(patchConstantParam->semantic, (testTarget.inputParamPrefix + "POSITION").c_str());
+                    EXPECT_STRCASEEQ(patchConstantParam->semantic, "POSITION");
                     EXPECT_EQ(patchConstantParam->semanticIndex, i + 3);
                     if (testTarget.target.language == ShadingLanguage::Dxil)
                     {
@@ -500,7 +497,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* patchConstantParam = result.reflection.HSDSPatchConstantParameter(base + 6);
                     EXPECT_NE(patchConstantParam, nullptr);
-                    EXPECT_STRCASEEQ(patchConstantParam->semantic, (testTarget.inputParamPrefix + "CENTER").c_str());
+                    EXPECT_STRCASEEQ(patchConstantParam->semantic, "CENTER");
                     EXPECT_EQ(patchConstantParam->semanticIndex, 0U);
                     if (testTarget.target.language == ShadingLanguage::Dxil)
                     {
@@ -596,7 +593,7 @@ namespace
             {
                 const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(0);
                 EXPECT_NE(inputParam, nullptr);
-                EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "POSITION").c_str());
+                EXPECT_STRCASEEQ(inputParam->semantic, "POSITION");
                 EXPECT_EQ(inputParam->semanticIndex, 0U);
                 EXPECT_EQ(inputParam->location, 0U);
                 EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
@@ -619,7 +616,7 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* outputParam = result.reflection.OutputParameter(1);
                     EXPECT_NE(outputParam, nullptr);
-                    EXPECT_STRCASEEQ(outputParam->semantic, (testTarget.outputParamPrefix + "TEXCOORD").c_str());
+                    EXPECT_STRCASEEQ(outputParam->semantic, "TEXCOORD");
                     EXPECT_EQ(outputParam->semanticIndex, 0U);
                     if (testTarget.target.language == ShadingLanguage::Dxil)
                     {
@@ -744,16 +741,9 @@ namespace
                 {
                     const Reflection::SignatureParameterDesc* inputParam = result.reflection.InputParameter(num_input_params - 1);
                     EXPECT_NE(inputParam, nullptr);
-                    EXPECT_STRCASEEQ(inputParam->semantic, (testTarget.inputParamPrefix + "TEXCOORD").c_str());
+                    EXPECT_STRCASEEQ(inputParam->semantic, "TEXCOORD");
                     EXPECT_EQ(inputParam->semanticIndex, 0U);
-                    if (testTarget.target.language == ShadingLanguage::Dxil)
-                    {
-                        EXPECT_EQ(inputParam->location, 1U);
-                    }
-                    else
-                    {
-                        EXPECT_EQ(inputParam->location, 0U);
-                    }
+                    EXPECT_EQ(inputParam->location, num_input_params - 1);
                     EXPECT_EQ(inputParam->componentType, Reflection::VariableType::DataType::Float);
                     EXPECT_EQ(inputParam->mask, Reflection::ComponentMask::X | Reflection::ComponentMask::Y);
                 }
@@ -763,7 +753,7 @@ namespace
             {
                 const Reflection::SignatureParameterDesc* outputParam = result.reflection.OutputParameter(0);
                 EXPECT_NE(outputParam, nullptr);
-                EXPECT_STRCASEEQ(outputParam->semantic, (testTarget.outputParamPrefix + "SV_Target").c_str());
+                EXPECT_STRCASEEQ(outputParam->semantic, "SV_Target");
                 EXPECT_EQ(outputParam->semanticIndex, 0U);
                 EXPECT_EQ(outputParam->location, 0U);
                 EXPECT_EQ(outputParam->componentType, Reflection::VariableType::DataType::Float);

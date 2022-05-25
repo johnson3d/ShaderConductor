@@ -585,6 +585,7 @@ namespace
         case ShadingLanguage::Msl_macOS:
         case ShadingLanguage::Msl_iOS:
             dxcArgStrings.push_back(L"-spirv");
+            dxcArgStrings.push_back(L"-fspv-reflect");
             break;
 
         default:
@@ -2492,11 +2493,9 @@ namespace ShaderConductor
 
             for (const auto& inputParam : resources.builtin_inputs)
             {
-                const std::string semantic = this->ExtractBuiltInemantic(inputParam.builtin);
-                if (!semantic.empty())
+                if (IsNonTrivialBuiltIn(inputParam.builtin))
                 {
-                    SignatureParameterDesc paramDesc{};
-                    this->ExtractParameter(paramDesc, compiler, inputParam.resource, semantic);
+                    SignatureParameterDesc paramDesc = this->ExtractParameter(compiler, inputParam.resource);
 
                     const auto& type = compiler.get_type(inputParam.resource.type_id);
                     switch (inputParam.builtin)
@@ -2535,8 +2534,7 @@ namespace ShaderConductor
 
             for (const auto& inputParam : resources.stage_inputs)
             {
-                SignatureParameterDesc paramDesc{};
-                this->ExtractParameter(paramDesc, compiler, inputParam);
+                const SignatureParameterDesc paramDesc = this->ExtractParameter(compiler, inputParam);
 
                 if (compiler.get_decoration(inputParam.id, spv::DecorationPatch))
                 {
@@ -2550,47 +2548,11 @@ namespace ShaderConductor
 
             for (const auto& outputParam : resources.builtin_outputs)
             {
-                const std::string semantic = this->ExtractBuiltInemantic(outputParam.builtin);
-                if (!semantic.empty())
+                if (IsNonTrivialBuiltIn(outputParam.builtin))
                 {
-                    SignatureParameterDesc paramDesc{};
+                    SignatureParameterDesc paramDesc = this->ExtractParameter(compiler, outputParam.resource);
+
                     const auto& type = compiler.get_type(outputParam.resource.type_id);
-                    this->ExtractParameter(paramDesc, compiler, outputParam.resource, semantic);
-
-                    switch (type.basetype)
-                    {
-                    case spirv_cross::SPIRType::UInt:
-                        paramDesc.componentType = VariableType::DataType::Uint;
-                        break;
-                    case spirv_cross::SPIRType::Int:
-                        paramDesc.componentType = VariableType::DataType::Int;
-                        break;
-                    case spirv_cross::SPIRType::Float:
-                        paramDesc.componentType = VariableType::DataType::Float;
-                        break;
-
-                    default:
-                        llvm_unreachable("Unsupported parameter component type.");
-                        break;
-                    }
-
-                    if (type.vecsize > 0)
-                    {
-                        paramDesc.mask = ComponentMask::X;
-                    }
-                    if (type.vecsize > 1)
-                    {
-                        paramDesc.mask |= ComponentMask::Y;
-                    }
-                    if (type.vecsize > 2)
-                    {
-                        paramDesc.mask |= ComponentMask::Z;
-                    }
-                    if (type.vecsize > 3)
-                    {
-                        paramDesc.mask |= ComponentMask::W;
-                    }
-
                     switch (outputParam.builtin)
                     {
                     case spv::BuiltInTessLevelInner:
@@ -2627,9 +2589,7 @@ namespace ShaderConductor
 
             for (const auto& outputParam : resources.stage_outputs)
             {
-                SignatureParameterDesc paramDesc{};
-                this->ExtractParameter(paramDesc, compiler, outputParam);
-
+                SignatureParameterDesc paramDesc = this->ExtractParameter(compiler, outputParam);
                 m_outputParams.emplace_back(std::move(paramDesc));
             }
         }
@@ -2851,60 +2811,26 @@ namespace ShaderConductor
         }
 
     private:
-        static std::string ExtractBuiltInemantic(spv::BuiltIn builtin)
+        static bool IsNonTrivialBuiltIn(spv::BuiltIn builtin)
         {
-            std::string semantic;
             switch (builtin)
             {
             case spv::BuiltInPosition:
             case spv::BuiltInFragCoord:
-                semantic = "SV_Position";
-                break;
-
             case spv::BuiltInFragDepth:
-                semantic = "SV_Depth";
-                break;
-
             case spv::BuiltInVertexId:
             case spv::BuiltInVertexIndex:
-                semantic = "SV_VertexID";
-                break;
-
             case spv::BuiltInInstanceId:
             case spv::BuiltInInstanceIndex:
-                semantic = "SV_InstanceID";
-                break;
-
             case spv::BuiltInSampleId:
-                semantic = "SV_SampleIndex";
-                break;
-
             case spv::BuiltInSampleMask:
-                semantic = "SV_Coverage";
-                break;
-
             case spv::BuiltInTessLevelInner:
-                semantic = "SV_InsideTessFactor";
-                break;
-
             case spv::BuiltInTessLevelOuter:
-                semantic = "SV_TessFactor";
-                break;
-
-            case spv::BuiltInGlobalInvocationId:
-            case spv::BuiltInLocalInvocationId:
-            case spv::BuiltInLocalInvocationIndex:
-            case spv::BuiltInWorkgroupId:
-            case spv::BuiltInFrontFacing:
-            case spv::BuiltInInvocationId:
-            case spv::BuiltInPrimitiveId:
-            case spv::BuiltInTessCoord:
-                break;
+                return true;
 
             default:
-                llvm_unreachable("Unsupported builtin.");
+                return false;
             }
-            return semantic;
         }
 
         static void ExtractReflection(ResourceDesc& reflectionDesc, const spirv_cross::Compiler& compiler, spirv_cross::ID id)
@@ -2920,9 +2846,11 @@ namespace ShaderConductor
             reflectionDesc.bindCount = 1;
         }
 
-        static void ExtractParameter(SignatureParameterDesc& paramDesc, const spirv_cross::Compiler& compiler,
-                                     const spirv_cross::Resource& resource, const std::string& semantic)
+        static SignatureParameterDesc ExtractParameter(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
         {
+            SignatureParameterDesc paramDesc{};
+
+            const std::string& semantic = compiler.get_decoration_string(resource.id, spv::DecorationHlslSemanticGOOGLE);
             paramDesc.semanticIndex = 0;
             for (auto iter = semantic.rbegin(); iter != semantic.rend(); ++iter)
             {
@@ -2980,12 +2908,8 @@ namespace ShaderConductor
             }
 
             paramDesc.location = compiler.get_decoration(resource.id, spv::DecorationLocation);
-        }
 
-        static void ExtractParameter(SignatureParameterDesc& paramDesc, const spirv_cross::Compiler& compiler,
-                                     const spirv_cross::Resource& resource)
-        {
-            ExtractParameter(paramDesc, compiler, resource, compiler.get_name(resource.id));
+            return paramDesc;
         }
 
     private:
