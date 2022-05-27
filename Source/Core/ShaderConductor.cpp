@@ -448,15 +448,15 @@ namespace
     }
 
     Compiler::ResultDesc CompileToBinary(const Compiler::SourceDesc& source, const Compiler::Options& options,
-                                         ShadingLanguage targetLanguage, bool asModule)
+                                         const Compiler::TargetDesc& target)
     {
-        assert((targetLanguage == ShadingLanguage::Dxil) || (targetLanguage == ShadingLanguage::SpirV));
-        if (asModule && (targetLanguage != ShadingLanguage::Dxil))
+        assert((target.language == ShadingLanguage::Dxil) || (target.language == ShadingLanguage::SpirV));
+        if (target.asModule && (target.language != ShadingLanguage::Dxil))
         {
             llvm_unreachable("Spir-V module is not supported.");
         }
 
-        const std::wstring shaderProfile = ShaderProfileName(source.stage, options.shaderModel, asModule);
+        const std::wstring shaderProfile = ShaderProfileName(source.stage, options.shaderModel, target.asModule);
 
         std::vector<DxcDefine> dxcDefines;
         std::vector<std::wstring> dxcDefineStrings;
@@ -573,26 +573,25 @@ namespace
             dxcArgStrings.push_back(L"all");
         }
 
-        switch (targetLanguage)
+        if (target.language == ShadingLanguage::SpirV)
         {
-        case ShadingLanguage::Dxil:
-            break;
-
-        case ShadingLanguage::SpirV:
-        case ShadingLanguage::Hlsl:
-        case ShadingLanguage::Glsl:
-        case ShadingLanguage::Essl:
-        case ShadingLanguage::Msl_macOS:
-        case ShadingLanguage::Msl_iOS:
             dxcArgStrings.push_back(L"-spirv");
             dxcArgStrings.push_back(L"-fspv-reflect");
-            break;
 
-        default:
-            llvm_unreachable("Invalid shading language.");
+            if ((target.version != nullptr) && (std::strlen(target.version) >= 2))
+            {
+                std::wstring version_wide;
+                Unicode::UTF8ToWideString(target.version, &version_wide);
+
+                std::wstring arg = L"-fspv-target-env=universal";
+                arg += version_wide[0];
+                arg += L'.';
+                arg += &version_wide[1];
+                dxcArgStrings.emplace_back(std::move(arg));
+            }
         }
 
-        if (asModule)
+        if (target.asModule)
         {
             dxcArgStrings.push_back(L"-default-linkage external");
         }
@@ -611,7 +610,7 @@ namespace
                                                        static_cast<UINT32>(dxcDefines.size()), includeHandler, &compileResult));
 
         Compiler::ResultDesc ret{};
-        ConvertDxcResult(ret, compileResult, targetLanguage, asModule, options.needReflection);
+        ConvertDxcResult(ret, compileResult, target.language, target.asModule, options.needReflection);
 
         return ret;
     }
@@ -3135,44 +3134,59 @@ namespace ShaderConductor
             sourceOverride.loadIncludeCallback = DefaultLoadCallback;
         }
 
-        bool hasDxil = false;
-        bool hasDxilModule = false;
-        bool hasSpirV = false;
+        std::vector<TargetDesc> binaryTargets;
         for (uint32_t i = 0; i < numTargets; ++i)
         {
-            if (targets[i].language == ShadingLanguage::Dxil)
+            TargetDesc binaryTarget = targets[i];
+            if (targets[i].language != ShadingLanguage::Dxil)
             {
-                if (targets[i].asModule)
+                if (targets[i].language != ShadingLanguage::SpirV)
                 {
-                    hasDxilModule = true;
+                    binaryTarget.version = "15"; // Use SPIR-V 1.5 as the intermediate version
                 }
-                else
+                binaryTarget.language = ShadingLanguage::SpirV;
+            }
+
+            bool found = false;
+            for (const TargetDesc& existingBinaryTarget : binaryTargets)
+            {
+                if ((existingBinaryTarget.language == binaryTarget.language) &&
+                    (std::strcmp(existingBinaryTarget.version, binaryTarget.version) == 0) &&
+                    (existingBinaryTarget.asModule == binaryTarget.asModule))
                 {
-                    hasDxil = true;
+                    found = true;
+                    break;
                 }
             }
-            else
+
+            if (!found)
             {
-                hasSpirV = true;
+                binaryTargets.push_back(binaryTarget);
             }
         }
 
         ResultDesc dxilBinaryResult{};
-        if (hasDxil)
-        {
-            dxilBinaryResult = CompileToBinary(sourceOverride, options, ShadingLanguage::Dxil, false);
-        }
-
         ResultDesc dxilModuleBinaryResult{};
-        if (hasDxilModule)
-        {
-            dxilModuleBinaryResult = CompileToBinary(sourceOverride, options, ShadingLanguage::Dxil, true);
-        }
-
         ResultDesc spirvBinaryResult{};
-        if (hasSpirV)
+        for (const TargetDesc& binaryTarget : binaryTargets)
         {
-            spirvBinaryResult = CompileToBinary(sourceOverride, options, ShadingLanguage::SpirV, false);
+            ResultDesc binaryResult = CompileToBinary(sourceOverride, options, binaryTarget);
+            if (binaryTarget.language == ShadingLanguage::Dxil)
+            {
+                if (binaryTarget.asModule)
+                {
+                    dxilModuleBinaryResult = std::move(binaryResult);
+                }
+                else
+                {
+                    dxilBinaryResult = std::move(binaryResult);
+                }
+            }
+            else
+            {
+                assert(binaryTarget.language == ShadingLanguage::SpirV);
+                spirvBinaryResult = std::move(binaryResult);
+            }
         }
 
         for (uint32_t i = 0; i < numTargets; ++i)
@@ -3211,7 +3225,7 @@ namespace ShaderConductor
             const uint32_t* spirvIr = reinterpret_cast<const uint32_t*>(source.binary);
             const size_t spirvSize = source.binarySize / sizeof(uint32_t);
 
-            spv_context context = spvContextCreate(SPV_ENV_UNIVERSAL_1_3);
+            spv_context context = spvContextCreate(SPV_ENV_UNIVERSAL_1_5);
             uint32_t options = SPV_BINARY_TO_TEXT_OPTION_NONE | SPV_BINARY_TO_TEXT_OPTION_INDENT | SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES;
             spv_text text = nullptr;
             spv_diagnostic diagnostic = nullptr;

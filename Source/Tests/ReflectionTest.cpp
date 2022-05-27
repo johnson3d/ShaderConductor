@@ -777,14 +777,7 @@ namespace
             EXPECT_EQ(result.reflection.CSBlockSizeY(), 0U);
             EXPECT_EQ(result.reflection.CSBlockSizeZ(), 0U);
 
-            if (testTarget.target.language == ShadingLanguage::Dxil)
-            {
-                EXPECT_EQ(result.reflection.NumResources(), 6U);
-            }
-            else
-            {
-                EXPECT_EQ(result.reflection.NumResources(), 9U);
-            }
+            EXPECT_EQ(result.reflection.NumResources(), 6U);
             {
                 {
                     const Reflection::ResourceDesc* resource = result.reflection.ResourceByName("cbPS");
