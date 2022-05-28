@@ -1,0 +1,44 @@
+; SPIR-V
+; Version: 1.5
+; Generator: Google spiregg; 0
+; Bound: 24
+; Schema: 0
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability StorageBuffer16BitAccess
+               OpExtension "SPV_GOOGLE_hlsl_functionality1"
+               OpExtension "SPV_GOOGLE_user_type"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %HalfOutParamPS "HalfOutParamPS" %out_var_SV_Target0
+               OpExecutionMode %HalfOutParamPS OriginUpperLeft
+               OpSource HLSL 620
+               OpName %out_var_SV_Target0 "out.var.SV_Target0"
+               OpName %HalfOutParamPS "HalfOutParamPS"
+               OpDecorateString %out_var_SV_Target0 UserSemantic "SV_Target0"
+               OpDecorate %out_var_SV_Target0 Location 0
+       %half = OpTypeFloat 16
+%half_0x1p_0 = OpConstant %half 0x1p+0
+%half_0x0p_0 = OpConstant %half 0x0p+0
+     %v3half = OpTypeVector %half 3
+          %8 = OpConstantComposite %v3half %half_0x1p_0 %half_0x0p_0 %half_0x0p_0
+          %9 = OpConstantComposite %v3half %half_0x0p_0 %half_0x1p_0 %half_0x0p_0
+      %float = OpTypeFloat 32
+    %float_1 = OpConstant %float 1
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+       %void = OpTypeVoid
+         %15 = OpTypeFunction %void
+    %v3float = OpTypeVector %float 3
+%out_var_SV_Target0 = OpVariable %_ptr_Output_v4float Output
+%HalfOutParamPS = OpFunction %void None %15
+         %17 = OpLabel
+         %18 = OpExtInst %v3half %1 Cross %8 %9
+         %19 = OpFConvert %v3float %18
+         %20 = OpCompositeExtract %float %19 0
+         %21 = OpCompositeExtract %float %19 1
+         %22 = OpCompositeExtract %float %19 2
+         %23 = OpCompositeConstruct %v4float %20 %21 %22 %float_1
+               OpStore %out_var_SV_Target0 %23
+               OpReturn
+               OpFunctionEnd

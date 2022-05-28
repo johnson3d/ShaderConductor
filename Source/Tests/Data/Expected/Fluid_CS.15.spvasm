@@ -1,0 +1,174 @@
+; SPIR-V
+; Version: 1.5
+; Generator: Google spiregg; 0
+; Bound: 105
+; Schema: 0
+               OpCapability Shader
+               OpExtension "SPV_GOOGLE_hlsl_functionality1"
+               OpExtension "SPV_GOOGLE_user_type"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_GlobalInvocationID %cbSimulationConstants %particlesRW %particlesRO %particlesForcesRO
+               OpExecutionMode %main LocalSize 256 1 1
+               OpSource HLSL 600
+               OpName %type_cbSimulationConstants "type.cbSimulationConstants"
+               OpMemberName %type_cbSimulationConstants 0 "timeStep"
+               OpMemberName %type_cbSimulationConstants 1 "scene"
+               OpName %Scene "Scene"
+               OpMemberName %Scene 0 "wallStiffness"
+               OpMemberName %Scene 1 "gravity"
+               OpMemberName %Scene 2 "planes"
+               OpName %cbSimulationConstants "cbSimulationConstants"
+               OpName %type_RWStructuredBuffer_Particle "type.RWStructuredBuffer.Particle"
+               OpName %Particle "Particle"
+               OpMemberName %Particle 0 "position"
+               OpMemberName %Particle 1 "velocity"
+               OpName %particlesRW "particlesRW"
+               OpName %type_StructuredBuffer_Particle "type.StructuredBuffer.Particle"
+               OpName %particlesRO "particlesRO"
+               OpName %type_StructuredBuffer_ParticleForces "type.StructuredBuffer.ParticleForces"
+               OpName %ParticleForces "ParticleForces"
+               OpMemberName %ParticleForces 0 "acceleration"
+               OpName %particlesForcesRO "particlesForcesRO"
+               OpName %main "main"
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorateString %gl_GlobalInvocationID UserSemantic "SV_DispatchThreadID"
+               OpDecorate %cbSimulationConstants DescriptorSet 0
+               OpDecorate %cbSimulationConstants Binding 0
+               OpDecorate %particlesRW DescriptorSet 0
+               OpDecorate %particlesRW Binding 0
+               OpDecorate %particlesRO DescriptorSet 0
+               OpDecorate %particlesRO Binding 0
+               OpDecorate %particlesForcesRO DescriptorSet 0
+               OpDecorate %particlesForcesRO Binding 2
+               OpDecorate %_arr_v3float_uint_4 ArrayStride 16
+               OpMemberDecorate %Scene 0 Offset 0
+               OpMemberDecorate %Scene 1 Offset 16
+               OpMemberDecorate %Scene 2 Offset 32
+               OpMemberDecorate %type_cbSimulationConstants 0 Offset 0
+               OpMemberDecorate %type_cbSimulationConstants 1 Offset 16
+               OpDecorate %type_cbSimulationConstants Block
+               OpDecorateString %cbSimulationConstants UserTypeGOOGLE "cbuffer"
+               OpMemberDecorate %Particle 0 Offset 0
+               OpMemberDecorate %Particle 1 Offset 8
+               OpDecorate %_runtimearr_Particle ArrayStride 16
+               OpMemberDecorate %type_RWStructuredBuffer_Particle 0 Offset 0
+               OpDecorate %type_RWStructuredBuffer_Particle Block
+               OpDecorateString %particlesRW UserTypeGOOGLE "rwstructuredbuffer:<Particle>"
+               OpMemberDecorate %type_StructuredBuffer_Particle 0 Offset 0
+               OpMemberDecorate %type_StructuredBuffer_Particle 0 NonWritable
+               OpDecorate %type_StructuredBuffer_Particle Block
+               OpDecorateString %particlesRO UserTypeGOOGLE "structuredbuffer:<Particle>"
+               OpMemberDecorate %ParticleForces 0 Offset 0
+               OpDecorate %_runtimearr_ParticleForces ArrayStride 8
+               OpMemberDecorate %type_StructuredBuffer_ParticleForces 0 Offset 0
+               OpMemberDecorate %type_StructuredBuffer_ParticleForces 0 NonWritable
+               OpDecorate %type_StructuredBuffer_ParticleForces Block
+               OpDecorateString %particlesForcesRO UserTypeGOOGLE "structuredbuffer:<ParticleForces>"
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_4 = OpConstant %uint 4
+      %float = OpTypeFloat 32
+    %float_1 = OpConstant %float 1
+      %int_2 = OpConstant %int 2
+    %float_0 = OpConstant %float 0
+     %uint_1 = OpConstant %uint 1
+    %v4float = OpTypeVector %float 4
+    %v3float = OpTypeVector %float 3
+%_arr_v3float_uint_4 = OpTypeArray %v3float %uint_4
+      %Scene = OpTypeStruct %float %v4float %_arr_v3float_uint_4
+%type_cbSimulationConstants = OpTypeStruct %float %Scene
+%_ptr_Uniform_type_cbSimulationConstants = OpTypePointer Uniform %type_cbSimulationConstants
+    %v2float = OpTypeVector %float 2
+   %Particle = OpTypeStruct %v2float %v2float
+%_runtimearr_Particle = OpTypeRuntimeArray %Particle
+%type_RWStructuredBuffer_Particle = OpTypeStruct %_runtimearr_Particle
+%_ptr_StorageBuffer_type_RWStructuredBuffer_Particle = OpTypePointer StorageBuffer %type_RWStructuredBuffer_Particle
+%type_StructuredBuffer_Particle = OpTypeStruct %_runtimearr_Particle
+%_ptr_StorageBuffer_type_StructuredBuffer_Particle = OpTypePointer StorageBuffer %type_StructuredBuffer_Particle
+%ParticleForces = OpTypeStruct %v2float
+%_runtimearr_ParticleForces = OpTypeRuntimeArray %ParticleForces
+%type_StructuredBuffer_ParticleForces = OpTypeStruct %_runtimearr_ParticleForces
+%_ptr_StorageBuffer_type_StructuredBuffer_ParticleForces = OpTypePointer StorageBuffer %type_StructuredBuffer_ParticleForces
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+       %void = OpTypeVoid
+         %39 = OpTypeFunction %void
+%_ptr_StorageBuffer_v2float = OpTypePointer StorageBuffer %v2float
+%_ptr_Uniform_v3float = OpTypePointer Uniform %v3float
+%_ptr_Uniform_float = OpTypePointer Uniform %float
+%_ptr_Uniform_v4float = OpTypePointer Uniform %v4float
+%cbSimulationConstants = OpVariable %_ptr_Uniform_type_cbSimulationConstants Uniform
+%particlesRW = OpVariable %_ptr_StorageBuffer_type_RWStructuredBuffer_Particle StorageBuffer
+%particlesRO = OpVariable %_ptr_StorageBuffer_type_StructuredBuffer_Particle StorageBuffer
+%particlesForcesRO = OpVariable %_ptr_StorageBuffer_type_StructuredBuffer_ParticleForces StorageBuffer
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+     %uint_2 = OpConstant %uint 2
+     %uint_3 = OpConstant %uint 3
+       %main = OpFunction %void None %39
+         %46 = OpLabel
+         %47 = OpLoad %v3uint %gl_GlobalInvocationID
+         %48 = OpCompositeExtract %uint %47 0
+         %49 = OpAccessChain %_ptr_StorageBuffer_v2float %particlesRO %int_0 %48 %int_0
+         %50 = OpLoad %v2float %49
+         %51 = OpAccessChain %_ptr_StorageBuffer_v2float %particlesRO %int_0 %48 %int_1
+         %52 = OpLoad %v2float %51
+         %53 = OpAccessChain %_ptr_StorageBuffer_v2float %particlesForcesRO %int_0 %48 %int_0
+         %54 = OpLoad %v2float %53
+         %55 = OpCompositeExtract %float %50 0
+         %56 = OpCompositeExtract %float %50 1
+         %57 = OpCompositeConstruct %v3float %55 %56 %float_1
+         %58 = OpAccessChain %_ptr_Uniform_v3float %cbSimulationConstants %int_1 %int_2 %uint_0
+         %59 = OpLoad %v3float %58
+         %60 = OpDot %float %57 %59
+         %61 = OpVectorShuffle %v2float %59 %59 0 1
+         %62 = OpExtInst %float %1 FMin %60 %float_0
+         %63 = OpAccessChain %_ptr_Uniform_float %cbSimulationConstants %int_1 %int_0
+         %64 = OpLoad %float %63
+         %65 = OpFNegate %float %64
+         %66 = OpFMul %float %62 %65
+         %67 = OpVectorTimesScalar %v2float %61 %66
+         %68 = OpFAdd %v2float %54 %67
+         %69 = OpAccessChain %_ptr_Uniform_v3float %cbSimulationConstants %int_1 %int_2 %uint_1
+         %70 = OpLoad %v3float %69
+         %71 = OpDot %float %57 %70
+         %72 = OpVectorShuffle %v2float %70 %70 0 1
+         %73 = OpExtInst %float %1 FMin %71 %float_0
+         %74 = OpFMul %float %73 %65
+         %75 = OpVectorTimesScalar %v2float %72 %74
+         %76 = OpFAdd %v2float %68 %75
+         %77 = OpAccessChain %_ptr_Uniform_v3float %cbSimulationConstants %int_1 %int_2 %uint_2
+         %78 = OpLoad %v3float %77
+         %79 = OpDot %float %57 %78
+         %80 = OpVectorShuffle %v2float %78 %78 0 1
+         %81 = OpExtInst %float %1 FMin %79 %float_0
+         %82 = OpFMul %float %81 %65
+         %83 = OpVectorTimesScalar %v2float %80 %82
+         %84 = OpFAdd %v2float %76 %83
+         %85 = OpAccessChain %_ptr_Uniform_v3float %cbSimulationConstants %int_1 %int_2 %uint_3
+         %86 = OpLoad %v3float %85
+         %87 = OpDot %float %57 %86
+         %88 = OpVectorShuffle %v2float %86 %86 0 1
+         %89 = OpExtInst %float %1 FMin %87 %float_0
+         %90 = OpFMul %float %89 %65
+         %91 = OpVectorTimesScalar %v2float %88 %90
+         %92 = OpFAdd %v2float %84 %91
+         %93 = OpAccessChain %_ptr_Uniform_v4float %cbSimulationConstants %int_1 %int_1
+         %94 = OpLoad %v4float %93
+         %95 = OpVectorShuffle %v2float %94 %94 0 1
+         %96 = OpFAdd %v2float %92 %95
+         %97 = OpAccessChain %_ptr_Uniform_float %cbSimulationConstants %int_0
+         %98 = OpLoad %float %97
+         %99 = OpVectorTimesScalar %v2float %96 %98
+        %100 = OpFAdd %v2float %52 %99
+        %101 = OpVectorTimesScalar %v2float %100 %98
+        %102 = OpFAdd %v2float %50 %101
+        %103 = OpAccessChain %_ptr_StorageBuffer_v2float %particlesRW %int_0 %48 %int_0
+               OpStore %103 %102
+        %104 = OpAccessChain %_ptr_StorageBuffer_v2float %particlesRW %int_0 %48 %int_1
+               OpStore %104 %100
+               OpReturn
+               OpFunctionEnd

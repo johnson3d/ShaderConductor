@@ -1,0 +1,178 @@
+; SPIR-V
+; Version: 1.5
+; Generator: Google spiregg; 0
+; Bound: 108
+; Schema: 0
+               OpCapability Tessellation
+               OpExtension "SPV_GOOGLE_hlsl_functionality1"
+               OpExtension "SPV_GOOGLE_user_type"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationEvaluation %main "main" %in_var_POSITION3 %in_var_POSITION4 %in_var_POSITION5 %in_var_POSITION6 %in_var_POSITION7 %in_var_POSITION8 %in_var_CENTER %in_var_POSITION %in_var_TEXCOORD %gl_TessCoord %gl_Position %out_var_TEXCOORD0 %cbPNTriangles
+               OpExecutionMode %main Triangles
+               OpSource HLSL 600
+               OpName %type_cbPNTriangles "type.cbPNTriangles"
+               OpMemberName %type_cbPNTriangles 0 "viewProj"
+               OpMemberName %type_cbPNTriangles 1 "lightDir"
+               OpName %cbPNTriangles "cbPNTriangles"
+               OpName %in_var_POSITION3 "in.var.POSITION3"
+               OpName %in_var_POSITION4 "in.var.POSITION4"
+               OpName %in_var_POSITION5 "in.var.POSITION5"
+               OpName %in_var_POSITION6 "in.var.POSITION6"
+               OpName %in_var_POSITION7 "in.var.POSITION7"
+               OpName %in_var_POSITION8 "in.var.POSITION8"
+               OpName %in_var_CENTER "in.var.CENTER"
+               OpName %in_var_POSITION "in.var.POSITION"
+               OpName %in_var_TEXCOORD "in.var.TEXCOORD"
+               OpName %out_var_TEXCOORD0 "out.var.TEXCOORD0"
+               OpName %main "main"
+               OpDecorateString %in_var_POSITION3 UserSemantic "POSITION3"
+               OpDecorate %in_var_POSITION3 Patch
+               OpDecorateString %in_var_POSITION4 UserSemantic "POSITION4"
+               OpDecorate %in_var_POSITION4 Patch
+               OpDecorateString %in_var_POSITION5 UserSemantic "POSITION5"
+               OpDecorate %in_var_POSITION5 Patch
+               OpDecorateString %in_var_POSITION6 UserSemantic "POSITION6"
+               OpDecorate %in_var_POSITION6 Patch
+               OpDecorateString %in_var_POSITION7 UserSemantic "POSITION7"
+               OpDecorate %in_var_POSITION7 Patch
+               OpDecorateString %in_var_POSITION8 UserSemantic "POSITION8"
+               OpDecorate %in_var_POSITION8 Patch
+               OpDecorateString %in_var_CENTER UserSemantic "CENTER"
+               OpDecorate %in_var_CENTER Patch
+               OpDecorateString %in_var_POSITION UserSemantic "POSITION"
+               OpDecorateString %in_var_TEXCOORD UserSemantic "TEXCOORD"
+               OpDecorate %gl_TessCoord BuiltIn TessCoord
+               OpDecorateString %gl_TessCoord UserSemantic "SV_DomainLocation"
+               OpDecorate %gl_TessCoord Patch
+               OpDecorate %gl_Position BuiltIn Position
+               OpDecorateString %gl_Position UserSemantic "SV_Position"
+               OpDecorateString %out_var_TEXCOORD0 UserSemantic "TEXCOORD0"
+               OpDecorate %in_var_CENTER Location 0
+               OpDecorate %in_var_POSITION Location 1
+               OpDecorate %in_var_POSITION3 Location 2
+               OpDecorate %in_var_POSITION4 Location 3
+               OpDecorate %in_var_POSITION5 Location 4
+               OpDecorate %in_var_POSITION6 Location 5
+               OpDecorate %in_var_POSITION7 Location 6
+               OpDecorate %in_var_POSITION8 Location 7
+               OpDecorate %in_var_TEXCOORD Location 8
+               OpDecorate %out_var_TEXCOORD0 Location 0
+               OpDecorate %cbPNTriangles DescriptorSet 0
+               OpDecorate %cbPNTriangles Binding 0
+               OpMemberDecorate %type_cbPNTriangles 0 Offset 0
+               OpMemberDecorate %type_cbPNTriangles 0 MatrixStride 16
+               OpMemberDecorate %type_cbPNTriangles 0 ColMajor
+               OpMemberDecorate %type_cbPNTriangles 1 Offset 64
+               OpDecorate %type_cbPNTriangles Block
+               OpDecorateString %cbPNTriangles UserTypeGOOGLE "cbuffer"
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %float = OpTypeFloat 32
+    %float_3 = OpConstant %float 3
+       %uint = OpTypeInt 32 0
+    %float_6 = OpConstant %float 6
+    %float_1 = OpConstant %float 1
+    %v4float = OpTypeVector %float 4
+%mat4v4float = OpTypeMatrix %v4float 4
+%type_cbPNTriangles = OpTypeStruct %mat4v4float %v4float
+%_ptr_Uniform_type_cbPNTriangles = OpTypePointer Uniform %type_cbPNTriangles
+    %v3float = OpTypeVector %float 3
+%_ptr_Input_v3float = OpTypePointer Input %v3float
+     %uint_3 = OpConstant %uint 3
+%_arr_v3float_uint_3 = OpTypeArray %v3float %uint_3
+%_ptr_Input__arr_v3float_uint_3 = OpTypePointer Input %_arr_v3float_uint_3
+    %v2float = OpTypeVector %float 2
+%_arr_v2float_uint_3 = OpTypeArray %v2float %uint_3
+%_ptr_Input__arr_v2float_uint_3 = OpTypePointer Input %_arr_v2float_uint_3
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%_ptr_Output_v2float = OpTypePointer Output %v2float
+       %void = OpTypeVoid
+         %37 = OpTypeFunction %void
+%_ptr_Uniform_mat4v4float = OpTypePointer Uniform %mat4v4float
+%cbPNTriangles = OpVariable %_ptr_Uniform_type_cbPNTriangles Uniform
+%in_var_POSITION3 = OpVariable %_ptr_Input_v3float Input
+%in_var_POSITION4 = OpVariable %_ptr_Input_v3float Input
+%in_var_POSITION5 = OpVariable %_ptr_Input_v3float Input
+%in_var_POSITION6 = OpVariable %_ptr_Input_v3float Input
+%in_var_POSITION7 = OpVariable %_ptr_Input_v3float Input
+%in_var_POSITION8 = OpVariable %_ptr_Input_v3float Input
+%in_var_CENTER = OpVariable %_ptr_Input_v3float Input
+%in_var_POSITION = OpVariable %_ptr_Input__arr_v3float_uint_3 Input
+%in_var_TEXCOORD = OpVariable %_ptr_Input__arr_v2float_uint_3 Input
+%gl_TessCoord = OpVariable %_ptr_Input_v3float Input
+%gl_Position = OpVariable %_ptr_Output_v4float Output
+%out_var_TEXCOORD0 = OpVariable %_ptr_Output_v2float Output
+       %main = OpFunction %void None %37
+         %39 = OpLabel
+         %40 = OpLoad %v3float %in_var_POSITION3
+         %41 = OpLoad %v3float %in_var_POSITION4
+         %42 = OpLoad %v3float %in_var_POSITION5
+         %43 = OpLoad %v3float %in_var_POSITION6
+         %44 = OpLoad %v3float %in_var_POSITION7
+         %45 = OpLoad %v3float %in_var_POSITION8
+         %46 = OpLoad %v3float %in_var_CENTER
+         %47 = OpLoad %_arr_v3float_uint_3 %in_var_POSITION
+         %48 = OpLoad %_arr_v2float_uint_3 %in_var_TEXCOORD
+         %49 = OpCompositeExtract %v3float %47 0
+         %50 = OpCompositeExtract %v2float %48 0
+         %51 = OpCompositeExtract %v3float %47 1
+         %52 = OpCompositeExtract %v2float %48 1
+         %53 = OpCompositeExtract %v3float %47 2
+         %54 = OpCompositeExtract %v2float %48 2
+         %55 = OpLoad %v3float %gl_TessCoord
+         %56 = OpCompositeExtract %float %55 0
+         %57 = OpCompositeExtract %float %55 1
+         %58 = OpCompositeExtract %float %55 2
+         %59 = OpFMul %float %56 %56
+         %60 = OpFMul %float %57 %57
+         %61 = OpFMul %float %58 %58
+         %62 = OpFMul %float %59 %float_3
+         %63 = OpFMul %float %60 %float_3
+         %64 = OpFMul %float %61 %float_3
+         %65 = OpVectorTimesScalar %v3float %49 %61
+         %66 = OpVectorTimesScalar %v3float %65 %58
+         %67 = OpVectorTimesScalar %v3float %51 %59
+         %68 = OpVectorTimesScalar %v3float %67 %56
+         %69 = OpFAdd %v3float %66 %68
+         %70 = OpVectorTimesScalar %v3float %53 %60
+         %71 = OpVectorTimesScalar %v3float %70 %57
+         %72 = OpFAdd %v3float %69 %71
+         %73 = OpVectorTimesScalar %v3float %40 %64
+         %74 = OpVectorTimesScalar %v3float %73 %56
+         %75 = OpFAdd %v3float %72 %74
+         %76 = OpVectorTimesScalar %v3float %41 %58
+         %77 = OpVectorTimesScalar %v3float %76 %62
+         %78 = OpFAdd %v3float %75 %77
+         %79 = OpVectorTimesScalar %v3float %45 %64
+         %80 = OpVectorTimesScalar %v3float %79 %57
+         %81 = OpFAdd %v3float %78 %80
+         %82 = OpVectorTimesScalar %v3float %42 %62
+         %83 = OpVectorTimesScalar %v3float %82 %57
+         %84 = OpFAdd %v3float %81 %83
+         %85 = OpVectorTimesScalar %v3float %44 %58
+         %86 = OpVectorTimesScalar %v3float %85 %63
+         %87 = OpFAdd %v3float %84 %86
+         %88 = OpVectorTimesScalar %v3float %43 %56
+         %89 = OpVectorTimesScalar %v3float %88 %63
+         %90 = OpFAdd %v3float %87 %89
+         %91 = OpVectorTimesScalar %v3float %46 %float_6
+         %92 = OpVectorTimesScalar %v3float %91 %58
+         %93 = OpVectorTimesScalar %v3float %92 %56
+         %94 = OpVectorTimesScalar %v3float %93 %57
+         %95 = OpFAdd %v3float %90 %94
+         %96 = OpCompositeExtract %float %95 0
+         %97 = OpCompositeExtract %float %95 1
+         %98 = OpCompositeExtract %float %95 2
+         %99 = OpCompositeConstruct %v4float %96 %97 %98 %float_1
+        %100 = OpAccessChain %_ptr_Uniform_mat4v4float %cbPNTriangles %int_0
+        %101 = OpLoad %mat4v4float %100
+        %102 = OpMatrixTimesVector %v4float %101 %99
+        %103 = OpVectorTimesScalar %v2float %50 %58
+        %104 = OpVectorTimesScalar %v2float %52 %56
+        %105 = OpFAdd %v2float %103 %104
+        %106 = OpVectorTimesScalar %v2float %54 %57
+        %107 = OpFAdd %v2float %105 %106
+               OpStore %gl_Position %102
+               OpStore %out_var_TEXCOORD0 %107
+               OpReturn
+               OpFunctionEnd

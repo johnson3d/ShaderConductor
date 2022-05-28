@@ -1,0 +1,182 @@
+; SPIR-V
+; Version: 1.5
+; Generator: Google spiregg; 0
+; Bound: 104
+; Schema: 0
+               OpCapability Tessellation
+               OpExtension "SPV_GOOGLE_hlsl_functionality1"
+               OpExtension "SPV_GOOGLE_user_type"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint TessellationControl %main "main" %in_var_WORLDPOS %in_var_NORMAL %in_var_TEXCOORD0 %in_var_LIGHTVECTORTS %gl_InvocationID %out_var_WORLDPOS %out_var_NORMAL %out_var_TEXCOORD0 %out_var_LIGHTVECTORTS %gl_TessLevelOuter %gl_TessLevelInner %cbMain
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main SpacingFractionalOdd
+               OpExecutionMode %main VertexOrderCw
+               OpExecutionMode %main OutputVertices 3
+               OpSource HLSL 600
+               OpName %type_cbMain "type.cbMain"
+               OpMemberName %type_cbMain 0 "tessellationFactor"
+               OpName %cbMain "cbMain"
+               OpName %in_var_WORLDPOS "in.var.WORLDPOS"
+               OpName %in_var_NORMAL "in.var.NORMAL"
+               OpName %in_var_TEXCOORD0 "in.var.TEXCOORD0"
+               OpName %in_var_LIGHTVECTORTS "in.var.LIGHTVECTORTS"
+               OpName %out_var_WORLDPOS "out.var.WORLDPOS"
+               OpName %out_var_NORMAL "out.var.NORMAL"
+               OpName %out_var_TEXCOORD0 "out.var.TEXCOORD0"
+               OpName %out_var_LIGHTVECTORTS "out.var.LIGHTVECTORTS"
+               OpName %main "main"
+               OpName %VS_OUTPUT_HS_INPUT "VS_OUTPUT_HS_INPUT"
+               OpMemberName %VS_OUTPUT_HS_INPUT 0 "worldPos"
+               OpMemberName %VS_OUTPUT_HS_INPUT 1 "normal"
+               OpMemberName %VS_OUTPUT_HS_INPUT 2 "texCoord"
+               OpMemberName %VS_OUTPUT_HS_INPUT 3 "lightTS"
+               OpName %param_var_inputPatch "param.var.inputPatch"
+               OpName %if_true "if.true"
+               OpName %if_merge "if.merge"
+               OpDecorateString %in_var_WORLDPOS UserSemantic "WORLDPOS"
+               OpDecorateString %in_var_NORMAL UserSemantic "NORMAL"
+               OpDecorateString %in_var_TEXCOORD0 UserSemantic "TEXCOORD0"
+               OpDecorateString %in_var_LIGHTVECTORTS UserSemantic "LIGHTVECTORTS"
+               OpDecorate %gl_InvocationID BuiltIn InvocationId
+               OpDecorateString %gl_InvocationID UserSemantic "SV_OutputControlPointID"
+               OpDecorateString %out_var_WORLDPOS UserSemantic "WORLDPOS"
+               OpDecorateString %out_var_NORMAL UserSemantic "NORMAL"
+               OpDecorateString %out_var_TEXCOORD0 UserSemantic "TEXCOORD0"
+               OpDecorateString %out_var_LIGHTVECTORTS UserSemantic "LIGHTVECTORTS"
+               OpDecorate %gl_TessLevelOuter BuiltIn TessLevelOuter
+               OpDecorateString %gl_TessLevelOuter UserSemantic "SV_TessFactor"
+               OpDecorate %gl_TessLevelOuter Patch
+               OpDecorate %gl_TessLevelInner BuiltIn TessLevelInner
+               OpDecorateString %gl_TessLevelInner UserSemantic "SV_InsideTessFactor"
+               OpDecorate %gl_TessLevelInner Patch
+               OpDecorate %in_var_WORLDPOS Location 0
+               OpDecorate %in_var_NORMAL Location 1
+               OpDecorate %in_var_TEXCOORD0 Location 2
+               OpDecorate %in_var_LIGHTVECTORTS Location 3
+               OpDecorate %out_var_LIGHTVECTORTS Location 0
+               OpDecorate %out_var_NORMAL Location 1
+               OpDecorate %out_var_TEXCOORD0 Location 2
+               OpDecorate %out_var_WORLDPOS Location 3
+               OpDecorate %cbMain DescriptorSet 0
+               OpDecorate %cbMain Binding 0
+               OpMemberDecorate %type_cbMain 0 Offset 0
+               OpDecorate %type_cbMain Block
+               OpDecorateString %cbMain UserTypeGOOGLE "cbuffer"
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+      %int_3 = OpConstant %int 3
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%type_cbMain = OpTypeStruct %v4float
+%_ptr_Uniform_type_cbMain = OpTypePointer Uniform %type_cbMain
+     %uint_3 = OpConstant %uint 3
+    %v3float = OpTypeVector %float 3
+%_arr_v3float_uint_3 = OpTypeArray %v3float %uint_3
+%_ptr_Input__arr_v3float_uint_3 = OpTypePointer Input %_arr_v3float_uint_3
+    %v2float = OpTypeVector %float 2
+%_arr_v2float_uint_3 = OpTypeArray %v2float %uint_3
+%_ptr_Input__arr_v2float_uint_3 = OpTypePointer Input %_arr_v2float_uint_3
+%_ptr_Input_uint = OpTypePointer Input %uint
+%_ptr_Output__arr_v3float_uint_3 = OpTypePointer Output %_arr_v3float_uint_3
+%_ptr_Output__arr_v2float_uint_3 = OpTypePointer Output %_arr_v2float_uint_3
+     %uint_4 = OpConstant %uint 4
+%_arr_float_uint_4 = OpTypeArray %float %uint_4
+%_ptr_Output__arr_float_uint_4 = OpTypePointer Output %_arr_float_uint_4
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+       %void = OpTypeVoid
+         %47 = OpTypeFunction %void
+%VS_OUTPUT_HS_INPUT = OpTypeStruct %v3float %v3float %v2float %v3float
+%_arr_VS_OUTPUT_HS_INPUT_uint_3 = OpTypeArray %VS_OUTPUT_HS_INPUT %uint_3
+%_ptr_Function__arr_VS_OUTPUT_HS_INPUT_uint_3 = OpTypePointer Function %_arr_VS_OUTPUT_HS_INPUT_uint_3
+%_ptr_Output_v3float = OpTypePointer Output %v3float
+%_ptr_Output_v2float = OpTypePointer Output %v2float
+       %bool = OpTypeBool
+%_ptr_Output_float = OpTypePointer Output %float
+%_ptr_Uniform_float = OpTypePointer Uniform %float
+%_ptr_Function_v3float = OpTypePointer Function %v3float
+%_ptr_Function_v2float = OpTypePointer Function %v2float
+     %cbMain = OpVariable %_ptr_Uniform_type_cbMain Uniform
+%in_var_WORLDPOS = OpVariable %_ptr_Input__arr_v3float_uint_3 Input
+%in_var_NORMAL = OpVariable %_ptr_Input__arr_v3float_uint_3 Input
+%in_var_TEXCOORD0 = OpVariable %_ptr_Input__arr_v2float_uint_3 Input
+%in_var_LIGHTVECTORTS = OpVariable %_ptr_Input__arr_v3float_uint_3 Input
+%gl_InvocationID = OpVariable %_ptr_Input_uint Input
+%out_var_WORLDPOS = OpVariable %_ptr_Output__arr_v3float_uint_3 Output
+%out_var_NORMAL = OpVariable %_ptr_Output__arr_v3float_uint_3 Output
+%out_var_TEXCOORD0 = OpVariable %_ptr_Output__arr_v2float_uint_3 Output
+%out_var_LIGHTVECTORTS = OpVariable %_ptr_Output__arr_v3float_uint_3 Output
+%gl_TessLevelOuter = OpVariable %_ptr_Output__arr_float_uint_4 Output
+%gl_TessLevelInner = OpVariable %_ptr_Output__arr_float_uint_2 Output
+       %main = OpFunction %void None %47
+         %57 = OpLabel
+%param_var_inputPatch = OpVariable %_ptr_Function__arr_VS_OUTPUT_HS_INPUT_uint_3 Function
+         %58 = OpLoad %_arr_v3float_uint_3 %in_var_WORLDPOS
+         %59 = OpLoad %_arr_v3float_uint_3 %in_var_NORMAL
+         %60 = OpLoad %_arr_v2float_uint_3 %in_var_TEXCOORD0
+         %61 = OpLoad %_arr_v3float_uint_3 %in_var_LIGHTVECTORTS
+         %62 = OpCompositeExtract %v3float %58 0
+         %63 = OpCompositeExtract %v3float %59 0
+         %64 = OpCompositeExtract %v2float %60 0
+         %65 = OpCompositeExtract %v3float %61 0
+         %66 = OpCompositeConstruct %VS_OUTPUT_HS_INPUT %62 %63 %64 %65
+         %67 = OpCompositeExtract %v3float %58 1
+         %68 = OpCompositeExtract %v3float %59 1
+         %69 = OpCompositeExtract %v2float %60 1
+         %70 = OpCompositeExtract %v3float %61 1
+         %71 = OpCompositeConstruct %VS_OUTPUT_HS_INPUT %67 %68 %69 %70
+         %72 = OpCompositeExtract %v3float %58 2
+         %73 = OpCompositeExtract %v3float %59 2
+         %74 = OpCompositeExtract %v2float %60 2
+         %75 = OpCompositeExtract %v3float %61 2
+         %76 = OpCompositeConstruct %VS_OUTPUT_HS_INPUT %72 %73 %74 %75
+         %77 = OpCompositeConstruct %_arr_VS_OUTPUT_HS_INPUT_uint_3 %66 %71 %76
+               OpStore %param_var_inputPatch %77
+         %78 = OpLoad %uint %gl_InvocationID
+         %79 = OpAccessChain %_ptr_Function_v3float %param_var_inputPatch %78 %int_0
+         %80 = OpLoad %v3float %79
+         %81 = OpAccessChain %_ptr_Function_v3float %param_var_inputPatch %78 %int_1
+         %82 = OpLoad %v3float %81
+         %83 = OpAccessChain %_ptr_Function_v2float %param_var_inputPatch %78 %int_2
+         %84 = OpLoad %v2float %83
+         %85 = OpAccessChain %_ptr_Function_v3float %param_var_inputPatch %78 %int_3
+         %86 = OpLoad %v3float %85
+         %87 = OpAccessChain %_ptr_Output_v3float %out_var_WORLDPOS %78
+               OpStore %87 %80
+         %88 = OpAccessChain %_ptr_Output_v3float %out_var_NORMAL %78
+               OpStore %88 %82
+         %89 = OpAccessChain %_ptr_Output_v2float %out_var_TEXCOORD0 %78
+               OpStore %89 %84
+         %90 = OpAccessChain %_ptr_Output_v3float %out_var_LIGHTVECTORTS %78
+               OpStore %90 %86
+               OpControlBarrier %uint_2 %uint_4 %uint_0
+         %91 = OpIEqual %bool %78 %uint_0
+               OpSelectionMerge %if_merge None
+               OpBranchConditional %91 %if_true %if_merge
+    %if_true = OpLabel
+         %92 = OpAccessChain %_ptr_Uniform_float %cbMain %int_0 %int_0
+         %93 = OpLoad %float %92
+         %94 = OpAccessChain %_ptr_Uniform_float %cbMain %int_0 %int_1
+         %95 = OpLoad %float %94
+         %96 = OpAccessChain %_ptr_Uniform_float %cbMain %int_0 %int_2
+         %97 = OpLoad %float %96
+         %98 = OpAccessChain %_ptr_Uniform_float %cbMain %int_0 %int_3
+         %99 = OpLoad %float %98
+        %100 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %uint_0
+               OpStore %100 %93
+        %101 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %uint_1
+               OpStore %101 %95
+        %102 = OpAccessChain %_ptr_Output_float %gl_TessLevelOuter %uint_2
+               OpStore %102 %97
+        %103 = OpAccessChain %_ptr_Output_float %gl_TessLevelInner %uint_0
+               OpStore %103 %99
+               OpBranch %if_merge
+   %if_merge = OpLabel
+               OpReturn
+               OpFunctionEnd

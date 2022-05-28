@@ -37,10 +37,19 @@ using namespace ShaderConductor;
 
 namespace
 {
+    Compiler::ResultDesc Disassemble(ShadingLanguage language, const Compiler::ResultDesc& result)
+    {
+        Compiler::DisassembleDesc disasmDesc;
+        disasmDesc.binary = reinterpret_cast<const uint8_t*>(result.target.Data());
+        disasmDesc.binarySize = result.target.Size();
+        disasmDesc.language = language;
+        return Compiler::Disassemble(disasmDesc);
+    }
+
     void HlslToAnyTest(const std::string& name, const Compiler::SourceDesc& source, const Compiler::Options& options,
                        const std::vector<Compiler::TargetDesc>& targets, const std::vector<bool>& expectSuccessFlags)
     {
-        static const std::string extMap[] = {"dxil", "spv", "hlsl", "glsl", "essl", "msl", "msl"};
+        static const std::string extMap[] = {"dxilasm", "spvasm", "hlsl", "glsl", "essl", "msl", "msl"};
         static_assert(sizeof(extMap) / sizeof(extMap[0]) == static_cast<uint32_t>(ShadingLanguage::NumShadingLanguages),
                       "extMap doesn't match with the number of shading languages.");
 
@@ -48,9 +57,18 @@ namespace
         Compiler::Compile(source, options, targets.data(), static_cast<uint32_t>(targets.size()), results.data());
         for (size_t i = 0; i < targets.size(); ++i)
         {
-            const auto& result = results[i];
             if (expectSuccessFlags[i])
             {
+                auto& result = results[i];
+
+                EXPECT_FALSE(result.hasError);
+
+                if ((targets[i].language == ShadingLanguage::Dxil) || (targets[i].language == ShadingLanguage::SpirV))
+                {
+                    EXPECT_FALSE(result.isText);
+                    result = Disassemble(targets[i].language, result);
+                }
+
                 EXPECT_FALSE(result.hasError);
                 EXPECT_EQ(result.errorWarningMsg.Size(), 0U);
                 EXPECT_TRUE(result.isText);
@@ -67,6 +85,7 @@ namespace
             }
             else
             {
+                const auto& result = results[i];
                 EXPECT_TRUE(result.hasError);
                 EXPECT_EQ(result.target.Size(), 0U);
             }
@@ -79,7 +98,7 @@ namespace
         std::vector<uint8_t> input = LoadFile(inputFileName, true);
         const std::string source = std::string(reinterpret_cast<char*>(input.data()), input.size());
 
-        const auto result = Compiler::Compile({source.c_str(), inputFileName.c_str(), "", ShaderStage::PixelShader}, options, target);
+        auto result = Compiler::Compile({source.c_str(), inputFileName.c_str(), "", ShaderStage::PixelShader}, options, target);
 
         EXPECT_FALSE(result.hasError);
         EXPECT_FALSE(result.isText);
@@ -137,6 +156,10 @@ namespace
         // clang-format off
         const std::vector<Compiler::TargetDesc> m_testTargets =
         {
+            { ShadingLanguage::Dxil },
+
+            { ShadingLanguage::SpirV, "15" },
+
             { ShadingLanguage::Hlsl, "30" },
             { ShadingLanguage::Hlsl, "40" },
             { ShadingLanguage::Hlsl, "50" },
@@ -237,10 +260,10 @@ namespace
             };
             // clang-format on
 
-            m_expectSuccessFlags[0] = false; // No GS in HLSL SM3
-            m_expectSuccessFlags[1] = false; // GS not supported yet
-            m_expectSuccessFlags[2] = false; // GS not supported yet
-            m_expectSuccessFlags[7] = false; // No GS in MSL
+            m_expectSuccessFlags[2] = false; // No GS in HLSL SM3
+            m_expectSuccessFlags[3] = false; // GS not supported yet
+            m_expectSuccessFlags[4] = false; // GS not supported yet
+            m_expectSuccessFlags[9] = false; // No GS in MSL
 
             TestBase::SetUp();
         }
@@ -266,9 +289,9 @@ namespace
             };
             // clang-format on
 
-            m_expectSuccessFlags[0] = false; // No HS in HLSL SM3
-            m_expectSuccessFlags[1] = false; // No HS in HLSL SM4
-            m_expectSuccessFlags[2] = false; // HS not supported yet
+            m_expectSuccessFlags[2] = false; // No HS in HLSL SM3
+            m_expectSuccessFlags[3] = false; // No HS in HLSL SM4
+            m_expectSuccessFlags[4] = false; // HS not supported yet
 
             TestBase::SetUp();
         }
@@ -291,9 +314,9 @@ namespace
             };
             // clang-format on
 
-            m_expectSuccessFlags[0] = false; // No HS in HLSL SM3
-            m_expectSuccessFlags[1] = false; // No HS in HLSL SM4
-            m_expectSuccessFlags[2] = false; // DS not supported yet
+            m_expectSuccessFlags[2] = false; // No HS in HLSL SM3
+            m_expectSuccessFlags[3] = false; // No HS in HLSL SM4
+            m_expectSuccessFlags[4] = false; // DS not supported yet
 
             TestBase::SetUp();
         }
@@ -316,14 +339,24 @@ namespace
             };
             // clang-format on
 
-            m_expectSuccessFlags[0] = false; // No CS in HLSL SM3
-            m_expectSuccessFlags[1] = false; // CS in HLSL SM4 is not supported
-            m_expectSuccessFlags[5] = false; // No CS in OpenGL ES 3.0
+            m_expectSuccessFlags[2] = false; // No CS in HLSL SM3
+            m_expectSuccessFlags[3] = false; // CS in HLSL SM4 is not supported
+            m_expectSuccessFlags[7] = false; // No CS in OpenGL ES 3.0
 
             TestBase::SetUp();
         }
     };
 
+
+    TEST_F(VertexShaderTest, ToDxil)
+    {
+        RunTests(ShadingLanguage::Dxil);
+    }
+
+    TEST_F(VertexShaderTest, ToSpirV)
+    {
+        RunTests(ShadingLanguage::SpirV);
+    }
 
     TEST_F(VertexShaderTest, ToHlsl)
     {
@@ -360,6 +393,16 @@ namespace
     }
 
 
+    TEST_F(PixelShaderTest, ToDxil)
+    {
+        RunTests(ShadingLanguage::Dxil);
+    }
+
+    TEST_F(PixelShaderTest, ToSpirV)
+    {
+        RunTests(ShadingLanguage::SpirV);
+    }
+
     TEST_F(PixelShaderTest, ToHlsl)
     {
         RunTests(ShadingLanguage::Hlsl);
@@ -380,6 +423,16 @@ namespace
         RunTests(ShadingLanguage::Msl_macOS);
     }
 
+
+    TEST_F(GeometryShaderTest, ToDxil)
+    {
+        RunTests(ShadingLanguage::Dxil);
+    }
+
+    TEST_F(GeometryShaderTest, ToSpirV)
+    {
+        RunTests(ShadingLanguage::SpirV);
+    }
 
     TEST_F(GeometryShaderTest, ToHlsl)
     {
@@ -402,6 +455,16 @@ namespace
     }
 
 
+    TEST_F(HullShaderTest, ToDxil)
+    {
+        RunTests(ShadingLanguage::Dxil);
+    }
+
+    TEST_F(HullShaderTest, ToSpirV)
+    {
+        RunTests(ShadingLanguage::SpirV);
+    }
+
     TEST_F(HullShaderTest, ToHlsl)
     {
         RunTests(ShadingLanguage::Hlsl);
@@ -423,6 +486,16 @@ namespace
     }
 
 
+    TEST_F(DomainShaderTest, ToDxil)
+    {
+        RunTests(ShadingLanguage::Dxil);
+    }
+
+    TEST_F(DomainShaderTest, ToSpirV)
+    {
+        RunTests(ShadingLanguage::SpirV);
+    }
+
     TEST_F(DomainShaderTest, ToHlsl)
     {
         RunTests(ShadingLanguage::Hlsl);
@@ -443,6 +516,16 @@ namespace
         RunTests(ShadingLanguage::Msl_macOS);
     }
 
+
+    TEST_F(ComputeShaderTest, ToDxil)
+    {
+        RunTests(ShadingLanguage::Dxil);
+    }
+
+    TEST_F(ComputeShaderTest, ToSpirV)
+    {
+        RunTests(ShadingLanguage::SpirV);
+    }
 
     TEST_F(ComputeShaderTest, ToHlsl)
     {
@@ -526,13 +609,24 @@ namespace
         option.shaderModel = {6, 2};
         option.enable16bitTypes = true;
 
-        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {
-            {{ShadingLanguage::Glsl, "300"}, "glsl"}, {{ShadingLanguage::Essl, "310"}, "essl"}, {{ShadingLanguage::Msl_macOS}, "msl"}};
+        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {{{ShadingLanguage::Dxil}, "dxilasm"},
+                                                                         {{ShadingLanguage::SpirV, "15"}, "spvasm"},
+                                                                         {{ShadingLanguage::Glsl, "300"}, "glsl"},
+                                                                         {{ShadingLanguage::Essl, "310"}, "essl"},
+                                                                         {{ShadingLanguage::Msl_macOS}, "msl"}};
 
         for (const auto& target : targets)
         {
-            const auto result =
+            auto result =
                 Compiler::Compile({source.c_str(), fileName.c_str(), "DotHalfPS", ShaderStage::PixelShader}, option, std::get<0>(target));
+
+            EXPECT_FALSE(result.hasError);
+
+            if ((std::get<0>(target).language == ShadingLanguage::Dxil) || (std::get<0>(target).language == ShadingLanguage::SpirV))
+            {
+                EXPECT_FALSE(result.isText);
+                result = Disassemble(std::get<0>(target).language, result);
+            }
 
             EXPECT_FALSE(result.hasError);
             EXPECT_TRUE(result.isText);
@@ -554,13 +648,24 @@ namespace
         option.shaderModel = {6, 2};
         option.enable16bitTypes = true;
 
-        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {
-            {{ShadingLanguage::Glsl, "300"}, "glsl"}, {{ShadingLanguage::Essl, "310"}, "essl"}, {{ShadingLanguage::Msl_macOS}, "msl"}};
+        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {{{ShadingLanguage::Dxil}, "dxilasm"},
+                                                                         {{ShadingLanguage::SpirV, "15"}, "spvasm"},
+                                                                         {{ShadingLanguage::Glsl, "300"}, "glsl"},
+                                                                         {{ShadingLanguage::Essl, "310"}, "essl"},
+                                                                         {{ShadingLanguage::Msl_macOS}, "msl"}};
 
         for (const auto& target : targets)
         {
-            const auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "HalfOutParamPS", ShaderStage::PixelShader}, option,
-                                                  std::get<0>(target));
+            auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "HalfOutParamPS", ShaderStage::PixelShader}, option,
+                                            std::get<0>(target));
+
+            EXPECT_FALSE(result.hasError);
+
+            if ((std::get<0>(target).language == ShadingLanguage::Dxil) || (std::get<0>(target).language == ShadingLanguage::SpirV))
+            {
+                EXPECT_FALSE(result.isText);
+                result = Disassemble(std::get<0>(target).language, result);
+            }
 
             EXPECT_FALSE(result.hasError);
             EXPECT_TRUE(result.isText);
@@ -582,13 +687,24 @@ namespace
         option.shaderModel = {6, 2};
         option.enable16bitTypes = true;
 
-        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {
-            {{ShadingLanguage::Glsl, "300"}, "glsl"}, {{ShadingLanguage::Essl, "310"}, "essl"}, {{ShadingLanguage::Msl_macOS}, "msl"}};
+        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {{{ShadingLanguage::Dxil}, "dxilasm"},
+                                                                         {{ShadingLanguage::SpirV, "15"}, "spvasm"},
+                                                                         {{ShadingLanguage::Glsl, "300"}, "glsl"},
+                                                                         {{ShadingLanguage::Essl, "310"}, "essl"},
+                                                                         {{ShadingLanguage::Msl_macOS}, "msl"}};
 
         for (const auto& target : targets)
         {
-            const auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "HalfBufferPS", ShaderStage::PixelShader}, option,
-                                                  std::get<0>(target));
+            auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "HalfBufferPS", ShaderStage::PixelShader}, option,
+                                            std::get<0>(target));
+
+            EXPECT_FALSE(result.hasError);
+
+            if ((std::get<0>(target).language == ShadingLanguage::Dxil) || (std::get<0>(target).language == ShadingLanguage::SpirV))
+            {
+                EXPECT_FALSE(result.isText);
+                result = Disassemble(std::get<0>(target).language, result);
+            }
 
             EXPECT_FALSE(result.hasError);
             EXPECT_TRUE(result.isText);
@@ -633,11 +749,10 @@ namespace
             EXPECT_FALSE(linkedResult.hasError);
             EXPECT_FALSE(linkedResult.isText);
 
-            Compiler::DisassembleDesc disasmDesc;
-            disasmDesc.binary = reinterpret_cast<const uint8_t*>(linkedResult.target.Data());
-            disasmDesc.binarySize = linkedResult.target.Size();
-            disasmDesc.language = ShadingLanguage::Dxil;
-            const auto disasmResult = Compiler::Disassemble(disasmDesc);
+            const auto disasmResult = Disassemble(ShadingLanguage::Dxil, linkedResult);
+
+            EXPECT_FALSE(disasmResult.hasError);
+            EXPECT_TRUE(disasmResult.isText);
 
             const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(disasmResult.target.Data());
             CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + disasmResult.target.Size()), disasmResult.isText,

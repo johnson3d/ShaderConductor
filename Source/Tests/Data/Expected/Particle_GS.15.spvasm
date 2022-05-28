@@ -1,0 +1,133 @@
+; SPIR-V
+; Version: 1.5
+; Generator: Google spiregg; 0
+; Bound: 81
+; Schema: 0
+               OpCapability Geometry
+               OpExtension "SPV_GOOGLE_hlsl_functionality1"
+               OpExtension "SPV_GOOGLE_user_type"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %in_var_POSITION %gl_Position %out_var_TEXCOORD0 %cbMain
+               OpExecutionMode %main OutputVertices 4
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main InputPoints
+               OpExecutionMode %main OutputTriangleStrip
+               OpSource HLSL 600
+               OpName %type_cbMain "type.cbMain"
+               OpMemberName %type_cbMain 0 "invView"
+               OpMemberName %type_cbMain 1 "viewProj"
+               OpName %cbMain "cbMain"
+               OpName %in_var_POSITION "in.var.POSITION"
+               OpName %out_var_TEXCOORD0 "out.var.TEXCOORD0"
+               OpName %main "main"
+               OpDecorateString %in_var_POSITION UserSemantic "POSITION"
+               OpDecorate %gl_Position BuiltIn Position
+               OpDecorateString %gl_Position UserSemantic "SV_POSITION"
+               OpDecorateString %out_var_TEXCOORD0 UserSemantic "TEXCOORD0"
+               OpDecorate %in_var_POSITION Location 0
+               OpDecorate %out_var_TEXCOORD0 Location 0
+               OpDecorate %cbMain DescriptorSet 0
+               OpDecorate %cbMain Binding 0
+               OpMemberDecorate %type_cbMain 0 Offset 0
+               OpMemberDecorate %type_cbMain 0 MatrixStride 16
+               OpMemberDecorate %type_cbMain 0 ColMajor
+               OpMemberDecorate %type_cbMain 1 Offset 64
+               OpMemberDecorate %type_cbMain 1 MatrixStride 16
+               OpMemberDecorate %type_cbMain 1 ColMajor
+               OpDecorate %type_cbMain Block
+               OpDecorateString %cbMain UserTypeGOOGLE "cbuffer"
+      %float = OpTypeFloat 32
+    %float_1 = OpConstant %float 1
+    %float_0 = OpConstant %float 0
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_5 = OpConstant %float 5
+      %int_1 = OpConstant %int 1
+    %v4float = OpTypeVector %float 4
+%mat4v4float = OpTypeMatrix %v4float 4
+%type_cbMain = OpTypeStruct %mat4v4float %mat4v4float
+%_ptr_Uniform_type_cbMain = OpTypePointer Uniform %type_cbMain
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_v4float_uint_1 = OpTypeArray %v4float %uint_1
+%_ptr_Input__arr_v4float_uint_1 = OpTypePointer Input %_arr_v4float_uint_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+    %v2float = OpTypeVector %float 2
+%_ptr_Output_v2float = OpTypePointer Output %v2float
+       %void = OpTypeVoid
+         %25 = OpTypeFunction %void
+    %v3float = OpTypeVector %float 3
+%_ptr_Uniform_mat4v4float = OpTypePointer Uniform %mat4v4float
+%mat3v3float = OpTypeMatrix %v3float 3
+     %cbMain = OpVariable %_ptr_Uniform_type_cbMain Uniform
+%in_var_POSITION = OpVariable %_ptr_Input__arr_v4float_uint_1 Input
+%gl_Position = OpVariable %_ptr_Output_v4float Output
+%out_var_TEXCOORD0 = OpVariable %_ptr_Output_v2float Output
+         %29 = OpConstantComposite %v2float %float_0 %float_1
+         %30 = OpConstantComposite %v2float %float_1 %float_1
+         %31 = OpConstantComposite %v2float %float_0 %float_0
+         %32 = OpConstantComposite %v2float %float_1 %float_0
+   %float_n5 = OpConstant %float -5
+         %34 = OpConstantComposite %v3float %float_n5 %float_5 %float_0
+         %35 = OpConstantComposite %v3float %float_5 %float_5 %float_0
+         %36 = OpConstantComposite %v3float %float_n5 %float_n5 %float_0
+         %37 = OpConstantComposite %v3float %float_5 %float_n5 %float_0
+       %main = OpFunction %void None %25
+         %38 = OpLabel
+         %39 = OpLoad %_arr_v4float_uint_1 %in_var_POSITION
+         %40 = OpCompositeExtract %v4float %39 0
+         %41 = OpAccessChain %_ptr_Uniform_mat4v4float %cbMain %int_0
+         %42 = OpLoad %mat4v4float %41
+         %43 = OpCompositeExtract %v4float %42 0
+         %44 = OpVectorShuffle %v3float %43 %43 0 1 2
+         %45 = OpCompositeExtract %v4float %42 1
+         %46 = OpVectorShuffle %v3float %45 %45 0 1 2
+         %47 = OpCompositeExtract %v4float %42 2
+         %48 = OpVectorShuffle %v3float %47 %47 0 1 2
+         %49 = OpCompositeConstruct %mat3v3float %44 %46 %48
+         %50 = OpMatrixTimesVector %v3float %49 %34
+         %51 = OpVectorShuffle %v3float %40 %40 0 1 2
+         %52 = OpFAdd %v3float %50 %51
+         %53 = OpCompositeExtract %float %52 0
+         %54 = OpCompositeExtract %float %52 1
+         %55 = OpCompositeExtract %float %52 2
+         %56 = OpCompositeConstruct %v4float %53 %54 %55 %float_1
+         %57 = OpAccessChain %_ptr_Uniform_mat4v4float %cbMain %int_1
+         %58 = OpLoad %mat4v4float %57
+         %59 = OpMatrixTimesVector %v4float %58 %56
+               OpStore %gl_Position %59
+               OpStore %out_var_TEXCOORD0 %29
+               OpEmitVertex
+         %60 = OpMatrixTimesVector %v3float %49 %35
+         %61 = OpFAdd %v3float %60 %51
+         %62 = OpCompositeExtract %float %61 0
+         %63 = OpCompositeExtract %float %61 1
+         %64 = OpCompositeExtract %float %61 2
+         %65 = OpCompositeConstruct %v4float %62 %63 %64 %float_1
+         %66 = OpMatrixTimesVector %v4float %58 %65
+               OpStore %gl_Position %66
+               OpStore %out_var_TEXCOORD0 %30
+               OpEmitVertex
+         %67 = OpMatrixTimesVector %v3float %49 %36
+         %68 = OpFAdd %v3float %67 %51
+         %69 = OpCompositeExtract %float %68 0
+         %70 = OpCompositeExtract %float %68 1
+         %71 = OpCompositeExtract %float %68 2
+         %72 = OpCompositeConstruct %v4float %69 %70 %71 %float_1
+         %73 = OpMatrixTimesVector %v4float %58 %72
+               OpStore %gl_Position %73
+               OpStore %out_var_TEXCOORD0 %31
+               OpEmitVertex
+         %74 = OpMatrixTimesVector %v3float %49 %37
+         %75 = OpFAdd %v3float %74 %51
+         %76 = OpCompositeExtract %float %75 0
+         %77 = OpCompositeExtract %float %75 1
+         %78 = OpCompositeExtract %float %75 2
+         %79 = OpCompositeConstruct %v4float %76 %77 %78 %float_1
+         %80 = OpMatrixTimesVector %v4float %58 %79
+               OpStore %gl_Position %80
+               OpStore %out_var_TEXCOORD0 %32
+               OpEmitVertex
+               OpEndPrimitive
+               OpReturn
+               OpFunctionEnd
