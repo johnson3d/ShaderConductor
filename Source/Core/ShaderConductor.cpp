@@ -82,9 +82,9 @@ namespace
             return instance;
         }
 
-        IDxcLibrary* Library() const
+        IDxcUtils* Utils() const
         {
-            return m_library;
+            return m_utils;
         }
 
         IDxcCompiler3* Compiler() const
@@ -118,7 +118,7 @@ namespace
             if (m_dxcompilerDll)
             {
                 m_compiler = nullptr;
-                m_library = nullptr;
+                m_utils = nullptr;
                 m_containerReflection = nullptr;
 
                 m_createInstanceFunc = nullptr;
@@ -138,7 +138,7 @@ namespace
             if (m_dxcompilerDll)
             {
                 m_compiler.Detach();
-                m_library.Detach();
+                m_utils.Detach();
                 m_containerReflection.Detach();
 
                 m_createInstanceFunc = nullptr;
@@ -180,7 +180,7 @@ namespace
 
                 if (m_createInstanceFunc != nullptr)
                 {
-                    IFT(m_createInstanceFunc(CLSID_DxcLibrary, __uuidof(IDxcLibrary), reinterpret_cast<void**>(&m_library)));
+                    IFT(m_createInstanceFunc(CLSID_DxcUtils, __uuidof(IDxcUtils), reinterpret_cast<void**>(&m_utils)));
                     IFT(m_createInstanceFunc(CLSID_DxcCompiler, __uuidof(IDxcCompiler3), reinterpret_cast<void**>(&m_compiler)));
 
                     const HRESULT hr = m_createInstanceFunc(CLSID_DxcContainerReflection, __uuidof(IDxcContainerReflection),
@@ -209,7 +209,7 @@ namespace
         HMODULE m_dxcompilerDll = nullptr;
         DxcCreateInstanceProc m_createInstanceFunc = nullptr;
 
-        CComPtr<IDxcLibrary> m_library;
+        CComPtr<IDxcUtils> m_utils;
         CComPtr<IDxcCompiler3> m_compiler;
         CComPtr<IDxcContainerReflection> m_containerReflection;
 
@@ -247,8 +247,8 @@ namespace
             }
 
             *includeSource = nullptr;
-            return Dxcompiler::Instance().Library()->CreateBlobWithEncodingOnHeapCopy(source.Data(), source.Size(), CP_UTF8,
-                                                                                      reinterpret_cast<IDxcBlobEncoding**>(includeSource));
+            return Dxcompiler::Instance().Utils()->CreateBlob(source.Data(), source.Size(), CP_UTF8,
+                                                              reinterpret_cast<IDxcBlobEncoding**>(includeSource));
         }
 
         ULONG STDMETHODCALLTYPE AddRef() override
@@ -3271,7 +3271,7 @@ namespace ShaderConductor
         auto linker = Dxcompiler::Instance().CreateLinker();
         IFTPTR(linker);
 
-        auto* library = Dxcompiler::Instance().Library();
+        auto* utils = Dxcompiler::Instance().Utils();
 
         std::vector<std::wstring> moduleNames(modules.numModules);
         std::vector<const wchar_t*> moduleNamesWide(modules.numModules);
@@ -3280,8 +3280,7 @@ namespace ShaderConductor
         {
             IFTARG(modules.modules[i] != nullptr);
 
-            IFT(library->CreateBlobWithEncodingOnHeapCopy(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8,
-                                                          &moduleBlobs[i]));
+            IFT(utils->CreateBlob(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8, &moduleBlobs[i]));
             IFTARG(moduleBlobs[i]->GetBufferSize() >= 4);
 
             Unicode::UTF8ToWideString(modules.modules[i]->name, &moduleNames[i]);
