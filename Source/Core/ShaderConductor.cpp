@@ -402,8 +402,8 @@ namespace
 #endif
     Reflection MakeSpirVReflection(const spirv_cross::Compiler& compiler);
 
-    void ConvertDxcResult(Compiler::ResultDesc& result, IDxcOperationResult* dxcResult, ShadingLanguage targetLanguage, bool asModule,
-                          bool needReflection, bool removeTrailingZero)
+    void ConvertDxcResult(Compiler::ResultDesc& result, IDxcResult* dxcResult, ShadingLanguage targetLanguage, bool asModule,
+                          bool needReflection)
     {
         HRESULT status;
         IFT(dxcResult->GetStatus(&status));
@@ -411,30 +411,41 @@ namespace
         result.target.Reset();
         result.errorWarningMsg.Reset();
 
-        CComPtr<IDxcBlobEncoding> errors;
-        IFT(dxcResult->GetErrorBuffer(&errors));
-        if (errors != nullptr)
+        if (dxcResult->HasOutput(DXC_OUT_ERRORS))
         {
-            result.errorWarningMsg.Reset(errors->GetBufferPointer(), static_cast<uint32_t>(errors->GetBufferSize()));
-            errors = nullptr;
+            CComPtr<IDxcBlobUtf8> errors;
+            IFT(dxcResult->GetOutput(DXC_OUT_ERRORS, __uuidof(IDxcBlobUtf8), reinterpret_cast<void**>(&errors), nullptr));
+            if (errors != nullptr)
+            {
+                result.errorWarningMsg.Reset(errors->GetBufferPointer(), static_cast<uint32_t>(errors->GetBufferSize()));
+                errors = nullptr;
+            }
         }
 
         result.hasError = true;
         if (SUCCEEDED(status))
         {
-            CComPtr<IDxcBlob> resultBlob;
-            IFT(dxcResult->GetResult(&resultBlob));
-            dxcResult = nullptr;
-            if (resultBlob != nullptr)
+            DXC_OUT_KIND outKind = DXC_OUT_NONE;
+            uint32_t sizeAdjust = 0;
+            if (dxcResult->HasOutput(DXC_OUT_OBJECT))
             {
-                uint32_t size = static_cast<uint32_t>(resultBlob->GetBufferSize());
-                if (removeTrailingZero)
-                {
-                    --size;
-                }
+                outKind = DXC_OUT_OBJECT;
+            }
+            else if (dxcResult->HasOutput(DXC_OUT_DISASSEMBLY))
+            {
+                outKind = DXC_OUT_DISASSEMBLY;
+                sizeAdjust = 1; // Remove end trailing \0
+            }
 
-                result.target.Reset(resultBlob->GetBufferPointer(), size);
-                result.hasError = false;
+            if (outKind != DXC_OUT_NONE)
+            {
+                CComPtr<IDxcBlob> resultBlob;
+                IFT(dxcResult->GetOutput(outKind, __uuidof(IDxcBlob), reinterpret_cast<void**>(&resultBlob), nullptr));
+                if (resultBlob != nullptr)
+                {
+                    result.target.Reset(resultBlob->GetBufferPointer(), static_cast<uint32_t>(resultBlob->GetBufferSize() - sizeAdjust));
+                    result.hasError = false;
+                }
             }
 
             if (needReflection)
@@ -443,7 +454,19 @@ namespace
                 if (targetLanguage == ShadingLanguage::Dxil)
                 {
                     // Gather reflection information only for ShadingLanguage::Dxil. SPIR-V reflection is gathered when cross-compiling.
-                    result.reflection = MakeDxilReflection(resultBlob, asModule);
+
+                    CComPtr<IDxcBlob> reflectionBlob;
+                    if (dxcResult->HasOutput(DXC_OUT_REFLECTION))
+                    {
+                        IFT(dxcResult->GetOutput(DXC_OUT_REFLECTION, __uuidof(IDxcBlob), reinterpret_cast<void**>(&reflectionBlob),
+                                                 nullptr));
+                    }
+                    else
+                    {
+                        IFT(dxcResult->GetResult(&reflectionBlob));
+                    }
+
+                    result.reflection = MakeDxilReflection(reflectionBlob, asModule);
                 }
 #else
                 SC_UNUSED(targetLanguage);
@@ -590,6 +613,9 @@ namespace
             dxcArgStrings.push_back(L"-default-linkage external");
         }
 
+        // Reflection info has its own blob. No need to keep it in the DXIL blob.
+        dxcArgStrings.push_back(L"-Qstrip_reflect");
+
         std::wstring shaderNameWide;
         Unicode::UTF8ToWideString(source.fileName, &shaderNameWide);
         dxcArgStrings.emplace_back(std::move(shaderNameWide));
@@ -602,12 +628,12 @@ namespace
         }
 
         CComPtr<IDxcIncludeHandler> includeHandler = new ScIncludeHandler(source.loadIncludeCallback);
-        CComPtr<IDxcOperationResult> compileResult;
+        CComPtr<IDxcResult> compileResult;
         IFT(Dxcompiler::Instance().Compiler()->Compile(&sourceBuf, dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()), includeHandler,
-                                                       __uuidof(IDxcOperationResult), reinterpret_cast<void**>(&compileResult)));
+                                                       __uuidof(IDxcResult), reinterpret_cast<void**>(&compileResult)));
 
         Compiler::ResultDesc ret{};
-        ConvertDxcResult(ret, compileResult, target.language, target.asModule, options.needReflection, false);
+        ConvertDxcResult(ret, compileResult, target.language, target.asModule, options.needReflection);
 
         return ret;
     }
@@ -1807,22 +1833,34 @@ namespace ShaderConductor
         {
             if (asModule)
             {
-                CComPtr<ID3D12LibraryReflection> d3d12LibReflection;
-                CreateDxcReflectionFromBlob(dxilBlob, d3d12LibReflection);
+                CComPtr<ID3D12LibraryReflection> libReflection;
+
+                DxcBuffer reflectionBuffer;
+                reflectionBuffer.Ptr = dxilBlob->GetBufferPointer();
+                reflectionBuffer.Size = dxilBlob->GetBufferSize();
+                reflectionBuffer.Encoding = DXC_CP_ACP;
+                IFT(Dxcompiler::Instance().Utils()->CreateReflection(&reflectionBuffer, __uuidof(ID3D12LibraryReflection),
+                                                                     reinterpret_cast<void**>(&libReflection)));
 
                 D3D12_LIBRARY_DESC d3d12LibDesc;
-                IFT(d3d12LibReflection->GetDesc(&d3d12LibDesc));
+                IFT(libReflection->GetDesc(&d3d12LibDesc));
 
                 for (uint32_t funcIndex = 0; funcIndex < d3d12LibDesc.FunctionCount; ++funcIndex)
                 {
-                    ID3D12FunctionReflection* d3d12FuncReflection = d3d12LibReflection->GetFunctionByIndex(funcIndex);
+                    ID3D12FunctionReflection* d3d12FuncReflection = libReflection->GetFunctionByIndex(funcIndex);
                     m_funcs.emplace_back(Function::FunctionImpl::Make(d3d12FuncReflection));
                 }
             }
             else
             {
                 CComPtr<ID3D12ShaderReflection> shaderReflection;
-                CreateDxcReflectionFromBlob(dxilBlob, shaderReflection);
+
+                DxcBuffer reflectionBuffer;
+                reflectionBuffer.Ptr = dxilBlob->GetBufferPointer();
+                reflectionBuffer.Size = dxilBlob->GetBufferSize();
+                reflectionBuffer.Encoding = DXC_CP_ACP;
+                IFT(Dxcompiler::Instance().Utils()->CreateReflection(&reflectionBuffer, __uuidof(ID3D12ShaderReflection),
+                                                                     reinterpret_cast<void**>(&shaderReflection)));
 
                 D3D12_SHADER_DESC shaderDesc;
                 IFT(shaderReflection->GetDesc(&shaderDesc));
@@ -3251,11 +3289,11 @@ namespace ShaderConductor
             sourceBuf.Size = source.binary.Size();
             sourceBuf.Encoding = CP_UTF8;
 
-            CComPtr<IDxcOperationResult> disassemblyResult;
-            IFT(Dxcompiler::Instance().Compiler()->Disassemble(&sourceBuf, __uuidof(IDxcOperationResult),
+            CComPtr<IDxcResult> disassemblyResult;
+            IFT(Dxcompiler::Instance().Compiler()->Disassemble(&sourceBuf, __uuidof(IDxcResult),
                                                                reinterpret_cast<void**>(&disassemblyResult)));
 
-            ConvertDxcResult(ret, disassemblyResult, source.language, false, false, true);
+            ConvertDxcResult(ret, disassemblyResult, source.language, false, false);
         }
 
         return ret;
@@ -3292,12 +3330,15 @@ namespace ShaderConductor
         Unicode::UTF8ToWideString(modules.entryPoint, &entryPointWide);
 
         const std::wstring shaderProfile = ShaderProfileName(modules.stage, options.shaderModel, false);
-        CComPtr<IDxcOperationResult> linkResult;
+        CComPtr<IDxcOperationResult> linkOpResult;
         IFT(linker->Link(entryPointWide.c_str(), shaderProfile.c_str(), moduleNamesWide.data(), static_cast<UINT32>(moduleNamesWide.size()),
-                         nullptr, 0, &linkResult));
+                         nullptr, 0, &linkOpResult));
+
+        CComPtr<IDxcResult> linkResult;
+        IFT(linkOpResult.QueryInterface(&linkResult));
 
         Compiler::ResultDesc binaryResult{};
-        ConvertDxcResult(binaryResult, linkResult, ShadingLanguage::Dxil, false, options.needReflection, false);
+        ConvertDxcResult(binaryResult, linkResult, ShadingLanguage::Dxil, false, options.needReflection);
 
         Compiler::SourceDesc source{};
         source.entryPoint = modules.entryPoint;

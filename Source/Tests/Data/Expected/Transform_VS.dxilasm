@@ -34,15 +34,10 @@
 ;
 ; Buffer Definitions:
 ;
-; cbuffer cbVS
+; cbuffer 
 ; {
 ;
-;   struct hostlayout.cbVS
-;   {
-;
-;       row_major float4x4 wvp;                       ; Offset:    0
-;   
-;   } cbVS;                                           ; Offset:    0 Size:    64
+;   [64 x i8] (type annotation not present)
 ;
 ; }
 ;
@@ -51,7 +46,7 @@
 ;
 ; Name                                 Type  Format         Dim      ID      HLSL Bind  Count
 ; ------------------------------ ---------- ------- ----------- ------- -------------- ------
-; cbVS                              cbuffer      NA          NA     CB0            cb0     1
+;                                   cbuffer      NA          NA     CB0            cb0     1
 ;
 ;
 ; ViewId state:

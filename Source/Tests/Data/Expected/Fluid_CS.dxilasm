@@ -18,63 +18,29 @@
 ;
 ; Buffer Definitions:
 ;
-; cbuffer cbSimulationConstants
+; cbuffer 
 ; {
 ;
-;   struct cbSimulationConstants
-;   {
-;
-;       float timeStep;                               ; Offset:    0
-;       struct struct.Scene
-;       {
-;
-;           float wallStiffness;                      ; Offset:   16
-;           float4 gravity;                           ; Offset:   32
-;           float3 planes[4];                         ; Offset:   48
-;       
-;       } scene;                                      ; Offset:   16
-;
-;   
-;   } cbSimulationConstants;                          ; Offset:    0 Size:   108
+;   [108 x i8] (type annotation not present)
 ;
 ; }
 ;
-; Resource bind info for particlesRO
+; Resource bind info for 
 ; {
 ;
-;   struct struct.Particle
-;   {
-;
-;       float2 position;                              ; Offset:    0
-;       float2 velocity;                              ; Offset:    8
-;   
-;   } $Element;                                       ; Offset:    0 Size:    16
-;
+;   [16 x i8] (type annotation not present)
 ; }
 ;
-; Resource bind info for particlesForcesRO
+; Resource bind info for 
 ; {
 ;
-;   struct struct.ParticleForces
-;   {
-;
-;       float2 acceleration;                          ; Offset:    0
-;   
-;   } $Element;                                       ; Offset:    0 Size:     8
-;
+;   [8 x i8] (type annotation not present)
 ; }
 ;
-; Resource bind info for particlesRW
+; Resource bind info for 
 ; {
 ;
-;   struct struct.Particle
-;   {
-;
-;       float2 position;                              ; Offset:    0
-;       float2 velocity;                              ; Offset:    8
-;   
-;   } $Element;                                       ; Offset:    0 Size:    16
-;
+;   [16 x i8] (type annotation not present)
 ; }
 ;
 ;
@@ -82,10 +48,10 @@
 ;
 ; Name                                 Type  Format         Dim      ID      HLSL Bind  Count
 ; ------------------------------ ---------- ------- ----------- ------- -------------- ------
-; cbSimulationConstants             cbuffer      NA          NA     CB0            cb0     1
-; particlesRO                       texture  struct         r/o      T0             t0     1
-; particlesForcesRO                 texture  struct         r/o      T1             t2     1
-; particlesRW                           UAV  struct         r/w      U0             u0     1
+;                                   cbuffer      NA          NA     CB0            cb0     1
+;                                   texture  struct         r/o      T0             t0     1
+;                                   texture  struct         r/o      T1             t2     1
+;                                       UAV  struct         r/w      U0             u0     1
 ;
 target datalayout = "e-m:e-p:32:32-i1:32-i8:32-i16:32-i32:32-i64:64-f16:32-f32:32-f64:64-n8:16:32:64"
 target triple = "dxil-ms-dx"

@@ -37,15 +37,10 @@
 ;
 ; Buffer Definitions:
 ;
-; cbuffer cbPS
+; cbuffer 
 ; {
 ;
-;   struct cbPS
-;   {
-;
-;       float lumStrength;                            ; Offset:    0
-;   
-;   } cbPS;                                           ; Offset:    0 Size:     4
+;   [4 x i8] (type annotation not present)
 ;
 ; }
 ;
@@ -54,12 +49,12 @@
 ;
 ; Name                                 Type  Format         Dim      ID      HLSL Bind  Count
 ; ------------------------------ ---------- ------- ----------- ------- -------------- ------
-; cbPS                              cbuffer      NA          NA     CB0            cb0     1
-; pointSampler                      sampler      NA          NA      S0             s0     1
-; linearSampler                     sampler      NA          NA      S1             s1     1
-; colorTex                          texture     f32          2d      T0             t0     1
-; lumTex                            texture     f32          2d      T1             t1     1
-; bloomTex                          texture     f32          2d      T2             t2     1
+;                                   cbuffer      NA          NA     CB0            cb0     1
+;                                   sampler      NA          NA      S0             s0     1
+;                                   sampler      NA          NA      S1             s1     1
+;                                   texture     f32          2d      T0             t0     1
+;                                   texture     f32          2d      T1             t1     1
+;                                   texture     f32          2d      T2             t2     1
 ;
 ;
 ; ViewId state:

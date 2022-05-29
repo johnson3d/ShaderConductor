@@ -66,15 +66,10 @@
 ;
 ; Buffer Definitions:
 ;
-; cbuffer cbMain
+; cbuffer 
 ; {
 ;
-;   struct cbMain
-;   {
-;
-;       float4 tessellationFactor;                    ; Offset:    0
-;   
-;   } cbMain;                                         ; Offset:    0 Size:    16
+;   [16 x i8] (type annotation not present)
 ;
 ; }
 ;
@@ -83,7 +78,7 @@
 ;
 ; Name                                 Type  Format         Dim      ID      HLSL Bind  Count
 ; ------------------------------ ---------- ------- ----------- ------- -------------- ------
-; cbMain                            cbuffer      NA          NA     CB0            cb0     1
+;                                   cbuffer      NA          NA     CB0            cb0     1
 ;
 ;
 ; ViewId state:

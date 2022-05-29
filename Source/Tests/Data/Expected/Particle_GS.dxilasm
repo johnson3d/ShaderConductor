@@ -39,16 +39,10 @@
 ;
 ; Buffer Definitions:
 ;
-; cbuffer cbMain
+; cbuffer 
 ; {
 ;
-;   struct hostlayout.cbMain
-;   {
-;
-;       row_major float4x4 invView;                   ; Offset:    0
-;       row_major float4x4 viewProj;                  ; Offset:   64
-;   
-;   } cbMain;                                         ; Offset:    0 Size:   128
+;   [128 x i8] (type annotation not present)
 ;
 ; }
 ;
@@ -57,7 +51,7 @@
 ;
 ; Name                                 Type  Format         Dim      ID      HLSL Bind  Count
 ; ------------------------------ ---------- ------- ----------- ------- -------------- ------
-; cbMain                            cbuffer      NA          NA     CB0            cb0     1
+;                                   cbuffer      NA          NA     CB0            cb0     1
 ;
 ;
 ; ViewId state:

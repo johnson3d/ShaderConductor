@@ -39,10 +39,10 @@
 ;
 ; Buffer Definitions:
 ;
-; Resource bind info for buffer
+; Resource bind info for 
 ; {
 ;
-;   half $Element;                                    ; Offset:    0 Size:     2
+;   [2 x i8] (type annotation not present)
 ;
 ; }
 ;
@@ -51,7 +51,7 @@
 ;
 ; Name                                 Type  Format         Dim      ID      HLSL Bind  Count
 ; ------------------------------ ---------- ------- ----------- ------- -------------- ------
-; buffer                            texture  struct         r/o      T0             t0     1
+;                                   texture  struct         r/o      T0             t0     1
 ;
 ;
 ; ViewId state:

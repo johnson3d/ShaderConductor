@@ -70,16 +70,10 @@
 ;
 ; Buffer Definitions:
 ;
-; cbuffer cbPNTriangles
+; cbuffer 
 ; {
 ;
-;   struct hostlayout.cbPNTriangles
-;   {
-;
-;       row_major float4x4 viewProj;                  ; Offset:    0
-;       float4 lightDir;                              ; Offset:   64
-;   
-;   } cbPNTriangles;                                  ; Offset:    0 Size:    80
+;   [80 x i8] (type annotation not present)
 ;
 ; }
 ;
@@ -88,7 +82,7 @@
 ;
 ; Name                                 Type  Format         Dim      ID      HLSL Bind  Count
 ; ------------------------------ ---------- ------- ----------- ------- -------------- ------
-; cbPNTriangles                     cbuffer      NA          NA     CB0            cb0     1
+;                                   cbuffer      NA          NA     CB0            cb0     1
 ;
 ;
 ; ViewId state:
