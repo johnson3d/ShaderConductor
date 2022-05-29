@@ -40,9 +40,8 @@ namespace
     Compiler::ResultDesc Disassemble(ShadingLanguage language, const Compiler::ResultDesc& result)
     {
         Compiler::DisassembleDesc disasmDesc;
-        disasmDesc.binary = reinterpret_cast<const uint8_t*>(result.target.Data());
-        disasmDesc.binarySize = result.target.Size();
         disasmDesc.language = language;
+        disasmDesc.binary = result.target;
         return Compiler::Disassemble(disasmDesc);
     }
 

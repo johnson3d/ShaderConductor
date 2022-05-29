@@ -476,8 +476,7 @@ namespace ShaderConductor
         struct DisassembleDesc
         {
             ShadingLanguage language;
-            const uint8_t* binary;
-            uint32_t binarySize;
+            Blob binary;
         };
 
         struct ModuleDesc

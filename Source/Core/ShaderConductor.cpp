@@ -3222,8 +3222,8 @@ namespace ShaderConductor
 
         if (source.language == ShadingLanguage::SpirV)
         {
-            const uint32_t* spirvIr = reinterpret_cast<const uint32_t*>(source.binary);
-            const size_t spirvSize = source.binarySize / sizeof(uint32_t);
+            const uint32_t* spirvIr = reinterpret_cast<const uint32_t*>(source.binary.Data());
+            const size_t spirvSize = source.binary.Size() / sizeof(uint32_t);
 
             spv_context context = spvContextCreate(SPV_ENV_UNIVERSAL_1_5);
             uint32_t options = SPV_BINARY_TO_TEXT_OPTION_NONE | SPV_BINARY_TO_TEXT_OPTION_INDENT | SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES;
@@ -3241,8 +3241,7 @@ namespace ShaderConductor
             }
             else
             {
-                const std::string disassemble = text->str;
-                ret.target.Reset(disassemble.data(), static_cast<uint32_t>(disassemble.size()));
+                ret.target.Reset(text->str, static_cast<uint32_t>(std::strlen(text->str)));
                 ret.hasError = false;
             }
 
@@ -3252,7 +3251,8 @@ namespace ShaderConductor
         {
             CComPtr<IDxcBlobEncoding> blob;
             CComPtr<IDxcBlobEncoding> disassembly;
-            IFT(Dxcompiler::Instance().Library()->CreateBlobWithEncodingOnHeapCopy(source.binary, source.binarySize, CP_UTF8, &blob));
+            IFT(Dxcompiler::Instance().Library()->CreateBlobWithEncodingOnHeapCopy(source.binary.Data(), source.binary.Size(), CP_UTF8,
+                                                                                   &blob));
             IFT(Dxcompiler::Instance().Compiler()->Disassemble(blob, &disassembly));
 
             if (disassembly != nullptr)
