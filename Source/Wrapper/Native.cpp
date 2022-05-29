@@ -83,8 +83,7 @@ void Disassemble(DisassembleDescription* source, ResultDescription* result)
 {
     Compiler::DisassembleDesc disassembleSource;
     disassembleSource.language = source->language;
-    disassembleSource.binary = reinterpret_cast<uint8_t*>(source->binary);
-    disassembleSource.binarySize = source->binarySize;
+    disassembleSource.binary = *reinterpret_cast<ShaderConductor::Blob*>(source->binary);
 
     const auto disassembleResult = Compiler::Disassemble(disassembleSource);
 

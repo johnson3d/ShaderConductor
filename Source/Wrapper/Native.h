@@ -78,8 +78,7 @@ struct ResultDescription
 struct DisassembleDescription
 {
     ShadingLanguage language;
-    char* binary;
-    int binarySize;
+    ShaderConductorBlob* binary;
 };
 
 #define DLLEXPORT extern "C" __declspec(dllexport)
