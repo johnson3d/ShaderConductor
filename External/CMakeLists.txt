@@ -54,7 +54,12 @@ endif()
 if(SC_BUILD_TESTS)
     include(googletest.cmake)
 endif()
-include(SPIRV-Header.cmake)
+include(SPIRV-Headers.cmake)
 include(SPIRV-Tools.cmake)
 include(DirectXShaderCompiler.cmake)
 include(SPIRV-Cross.cmake)
+
+foreach(target
+    "SPIRV-Tools-static" "SPIRV-Tools-opt")
+    set_target_properties(${target} PROPERTIES FOLDER "External/SPIRV-Tools/SPIRV-Tools libraries")
+endforeach()

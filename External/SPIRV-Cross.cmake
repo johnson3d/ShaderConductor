@@ -22,8 +22,3 @@ foreach(target
     "spirv-cross-util")
     set_target_properties(${target} PROPERTIES FOLDER "External/SPIRV-Cross")
 endforeach()
-
-foreach(target
-    "SPIRV-Tools-static" "SPIRV-Tools-opt")
-    set_target_properties(${target} PROPERTIES FOLDER "External/SPIRV-Tools/SPIRV-Tools libraries")
-endforeach()

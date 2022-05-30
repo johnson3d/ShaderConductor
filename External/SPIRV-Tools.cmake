@@ -10,13 +10,6 @@ set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
 set(SKIP_SPIRV_TOOLS_INSTALL ON CACHE BOOL "" FORCE)
 add_subdirectory(SPIRV-Tools EXCLUDE_FROM_ALL)
 
-if(MSVC)
-    target_compile_options(SPIRV-Tools-static
-        PRIVATE
-            /wd4819
-    )
-endif()
-
 foreach(target
     "core_tables" "enum_string_mapping" "extinst_tables"
     "spirv-tools-pkg-config" "spirv-tools-shared-pkg-config"
