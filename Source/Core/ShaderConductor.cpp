@@ -36,6 +36,7 @@
 #include <cctype>
 #include <fstream>
 #include <memory>
+#include <tuple>
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -328,22 +329,6 @@ namespace
         result.errorWarningMsg.Reset(errorMsg.data(), static_cast<uint32_t>(errorMsg.size()));
         result.hasError = true;
     }
-
-#ifdef LLVM_ON_WIN32
-    template <typename T>
-    void CreateDxcReflectionFromBlob(IDxcBlob* dxilBlob, CComPtr<T>& outReflection)
-    {
-        // Reflection is a Windows only feature, for now. Check
-        // https://github.com/microsoft/DirectXShaderCompiler/issues/4358 for details.
-
-        IDxcContainerReflection* containReflection = Dxcompiler::Instance().ContainerReflection();
-        IFT(containReflection->Load(dxilBlob));
-
-        uint32_t dxilPartIndex = ~0u;
-        IFT(containReflection->FindFirstPartKind(hlsl::DFCC_DXIL, &dxilPartIndex));
-        IFT(containReflection->GetPartReflection(dxilPartIndex, __uuidof(T), reinterpret_cast<void**>(&outReflection)));
-    }
-#endif
 
     std::wstring ShaderProfileName(ShaderStage stage, Compiler::ShaderModel shaderModel, bool asModule)
     {
@@ -3169,7 +3154,7 @@ namespace ShaderConductor
             sourceOverride.loadIncludeCallback = DefaultLoadCallback;
         }
 
-        std::vector<TargetDesc> binaryTargets;
+        std::vector<std::tuple<TargetDesc, bool>> binaryTargets(numTargets);
         for (uint32_t i = 0; i < numTargets; ++i)
         {
             TargetDesc binaryTarget = targets[i];
@@ -3182,68 +3167,29 @@ namespace ShaderConductor
                 binaryTarget.language = ShadingLanguage::SpirV;
             }
 
-            bool found = false;
-            for (const TargetDesc& existingBinaryTarget : binaryTargets)
-            {
-                if ((existingBinaryTarget.language == binaryTarget.language) &&
-                    (std::strcmp(existingBinaryTarget.version, binaryTarget.version) == 0) &&
-                    (existingBinaryTarget.asModule == binaryTarget.asModule))
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                binaryTargets.push_back(binaryTarget);
-            }
-        }
-
-        ResultDesc dxilBinaryResult{};
-        ResultDesc dxilModuleBinaryResult{};
-        ResultDesc spirvBinaryResult{};
-        for (const TargetDesc& binaryTarget : binaryTargets)
-        {
-            ResultDesc binaryResult = CompileToBinary(sourceOverride, options, binaryTarget);
-            if (binaryTarget.language == ShadingLanguage::Dxil)
-            {
-                if (binaryTarget.asModule)
-                {
-                    dxilModuleBinaryResult = std::move(binaryResult);
-                }
-                else
-                {
-                    dxilBinaryResult = std::move(binaryResult);
-                }
-            }
-            else
-            {
-                assert(binaryTarget.language == ShadingLanguage::SpirV);
-                spirvBinaryResult = std::move(binaryResult);
-            }
+            binaryTargets[i] = {std::move(binaryTarget), false};
         }
 
         for (uint32_t i = 0; i < numTargets; ++i)
         {
-            ResultDesc binaryResult;
-            if (targets[i].language == ShadingLanguage::Dxil)
+            if (!std::get<1>(binaryTargets[i]))
             {
-                if (targets[i].asModule)
-                {
-                    binaryResult = dxilModuleBinaryResult;
-                }
-                else
-                {
-                    binaryResult = dxilBinaryResult;
-                }
-            }
-            else
-            {
-                binaryResult = spirvBinaryResult;
-            }
+                const auto& currBinaryTarget = std::get<0>(binaryTargets[i]);
+                const auto binaryResult = CompileToBinary(sourceOverride, options, currBinaryTarget);
 
-            results[i] = ConvertBinary(binaryResult, sourceOverride, options, targets[i]);
+                for (uint32_t j = i; j < numTargets; ++j)
+                {
+                    const auto& binaryTarget = std::get<0>(binaryTargets[j]);
+                    if ((j == i) ||
+                        ((binaryTarget.language == currBinaryTarget.language) && (binaryTarget.asModule == currBinaryTarget.asModule) &&
+                         ((binaryTarget.version == currBinaryTarget.version) ||
+                          (std::strcmp(binaryTarget.version, currBinaryTarget.version) == 0))))
+                    {
+                        results[j] = ConvertBinary(binaryResult, sourceOverride, options, targets[j]);
+                        std::get<1>(binaryTargets[j]) = true;
+                    }
+                }
+            }
         }
     }
 

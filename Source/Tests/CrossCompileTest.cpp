@@ -560,8 +560,8 @@ namespace
         EXPECT_EQ(result.errorWarningMsg.Size(), 0U);
         EXPECT_TRUE(result.isText);
 
-        const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
-        CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText, "IncludeExist.glsl");
+        const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
+        CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText, "IncludeExist.glsl");
     }
 
     TEST(IncludeTest, IncludeNotExist)
@@ -593,8 +593,8 @@ namespace
         EXPECT_EQ(result.errorWarningMsg.Size(), 0U);
         EXPECT_TRUE(result.isText);
 
-        const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
-        CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText, "IncludeEmptyHeader.glsl");
+        const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
+        CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText, "IncludeEmptyHeader.glsl");
     }
 
     TEST(HalfDataTypeTest, DotHalf)
@@ -630,8 +630,8 @@ namespace
             EXPECT_FALSE(result.hasError);
             EXPECT_TRUE(result.isText);
 
-            const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText,
+            const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
+            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText,
                                 "DotHalfPS." + std::get<1>(target));
         }
     }
@@ -669,8 +669,8 @@ namespace
             EXPECT_FALSE(result.hasError);
             EXPECT_TRUE(result.isText);
 
-            const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText,
+            const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
+            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText,
                                 "HalfOutParamPS." + std::get<1>(target));
         }
     }
@@ -708,8 +708,8 @@ namespace
             EXPECT_FALSE(result.hasError);
             EXPECT_TRUE(result.isText);
 
-            const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText,
+            const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
+            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText,
                                 "HalfBufferPS." + std::get<1>(target));
         }
     }
@@ -737,7 +737,7 @@ namespace
         };
 
         const std::string expectedNames[][2] = {{"CalcLight+Diffuse.Debug.dxilasm", "CalcLight+Diffuse.Release.dxilasm"},
-                                                {"CalcLight+DiffuseSpecular.Release.dxilasm", "CalcLight+DiffuseSpecular.Debug.dxilasm"}};
+                                                {"CalcLight+DiffuseSpecular.Debug.dxilasm", "CalcLight+DiffuseSpecular.Release.dxilasm"}};
 
         for (size_t i = 0; i < 2; ++i)
         {
@@ -753,8 +753,8 @@ namespace
             EXPECT_FALSE(disasmResult.hasError);
             EXPECT_TRUE(disasmResult.isText);
 
-            const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(disasmResult.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + disasmResult.target.Size()), disasmResult.isText,
+            const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(disasmResult.target.Data());
+            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + disasmResult.target.Size()), disasmResult.isText,
                                 expectedNames[i], 2);
         }
     }
