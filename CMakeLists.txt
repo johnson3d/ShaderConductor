@@ -21,6 +21,9 @@ set(SC_MINOR_VERSION 3)
 set(SC_PATCH_VERSION 0)
 set(SC_VERSION ${SC_MAJOR_VERSION}.${SC_MINOR_VERSION}.${SC_PATCH_VERSION})
 
+option(SC_BUILD_TESTS "Build tests of ShaderConductor" ON)
+option(SC_BUILD_TOOLS "Build tools of ShaderConductor" ON)
+
 set(SC_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(SC_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 mark_as_advanced(SC_ROOT_DIR)
