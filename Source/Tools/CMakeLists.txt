@@ -17,6 +17,4 @@ target_link_libraries(${EXE_NAME}
         cxxopts
 )
 
-add_dependencies(${EXE_NAME} ShaderConductor)
-
 set_target_properties(${EXE_NAME} PROPERTIES FOLDER "Tools")

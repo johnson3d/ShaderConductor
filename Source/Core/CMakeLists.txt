@@ -72,8 +72,6 @@ if(MSVC)
 endif()
 target_link_libraries(${LIB_NAME}
     PRIVATE
-        LLVMDxcSupport
-        LLVMSupport
         spirv-cross-core
         spirv-cross-glsl
         spirv-cross-hlsl
@@ -81,9 +79,14 @@ target_link_libraries(${LIB_NAME}
         spirv-cross-util
         SPIRV-Tools
 )
+if(NOT MSVC)
+    target_link_libraries(${LIB_NAME}
+        PRIVATE
+            LLVMDxcSupport
+            dl
+    )
+endif()
 
-add_dependencies(${LIB_NAME} spirv-cross-core spirv-cross-glsl spirv-cross-hlsl spirv-cross-msl)
 add_dependencies(${LIB_NAME} DeployDxcompiler)
-add_dependencies(${LIB_NAME} SPIRV-Tools)
 
 set_target_properties(${LIB_NAME} PROPERTIES FOLDER "Core")

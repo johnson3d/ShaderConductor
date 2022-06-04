@@ -17,8 +17,6 @@ target_link_libraries(${DLL_NAME}
         ShaderConductor
 )
 
-add_dependencies(${DLL_NAME} ShaderConductor)
-
 set_target_properties(${DLL_NAME} PROPERTIES FOLDER "Wrapper")
 
 set(CSHARP_TEST CSharpPinvoke)

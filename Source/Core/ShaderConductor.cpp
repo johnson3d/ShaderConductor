@@ -26,7 +26,6 @@
 #include <ShaderConductor/ShaderConductor.hpp>
 
 #include <dxc/Support/Global.h>
-#include <dxc/Support/Unicode.h>
 #include <dxc/Support/WinAdapter.h>
 #include <dxc/Support/WinIncludes.h>
 
@@ -36,7 +35,12 @@
 #include <cctype>
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <tuple>
+
+#ifndef _WIN32
+#include <clocale>
+#endif
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -47,7 +51,6 @@
 #pragma clang diagnostic pop
 #endif
 #include <dxc/dxcapi.h>
-#include <llvm/Support/ErrorHandling.h>
 
 #include <spirv-tools/libspirv.h>
 #include <spirv.hpp>
@@ -57,7 +60,7 @@
 #include <spirv_hlsl.hpp>
 #include <spirv_msl.hpp>
 
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
 #include <d3d12shader.h>
 #endif
 
@@ -67,6 +70,100 @@ using namespace ShaderConductor;
 
 namespace
 {
+#if defined(__clang__)
+#define SC_BUILTIN_UNREACHABLE __builtin_unreachable()
+#elif defined(__GNUC__)
+#define SC_BUILTIN_UNREACHABLE __builtin_unreachable()
+#elif defined(_MSC_VER)
+#define SC_BUILTIN_UNREACHABLE __assume(false)
+#endif
+
+#if defined(_DEBUG) || !defined(SC_BUILTIN_UNREACHABLE)
+    [[noreturn]] void UnreachableInternal(const char* msg, const char* file, uint32_t line)
+    {
+        std::stringstream errorLog;
+        if (msg)
+        {
+            errorLog << msg << '\n';
+        }
+        errorLog << "Run into UNREACHABLE";
+        if (file)
+        {
+            errorLog << " at " << file << ':' << line;
+        }
+        errorLog << '.';
+
+        throw std::runtime_error(errorLog.str());
+    }
+
+#define SC_UNREACHABLE(msg) UnreachableInternal(msg, __FILE__, __LINE__)
+#else
+#define SC_UNREACHABLE(msg) SC_BUILTIN_UNREACHABLE
+#endif
+
+    std::wstring Utf8ToWide(const char* utf8Str)
+    {
+        std::wstring wideStr;
+
+        const size_t utf8Len = (utf8Str == nullptr) ? 0 : std::strlen(utf8Str);
+        if (utf8Len > 0)
+        {
+#ifdef _WIN32
+            const int wideLen = ::MultiByteToWideChar(CP_UTF8, 0, utf8Str, static_cast<int>(utf8Len), nullptr, 0);
+            if (wideLen > 0)
+            {
+                wideStr.resize(wideLen);
+                ::MultiByteToWideChar(CP_UTF8, 0, utf8Str, static_cast<int>(utf8Len), wideStr.data(), wideLen);
+            }
+#else
+            char* const locale = std::setlocale(LC_CTYPE, CPToLocale(CP_UTF8));
+
+            const size_t wideLen = ::mbstowcs(nullptr, utf8Str, utf8Len);
+            if (wideLen > 0)
+            {
+                wideStr.resize(wideLen);
+                ::mbstowcs(wideStr.data(), utf8Str, utf8Len);
+            }
+
+            std::setlocale(LC_CTYPE, locale);
+#endif
+        }
+
+        return wideStr;
+    }
+
+    std::string WideToUtf8(const wchar_t* wideStr)
+    {
+        std::string utf8Str;
+
+        const size_t wideLen = (wideStr == nullptr) ? 0 : std::wcslen(wideStr);
+        if (wideLen > 0)
+        {
+#ifdef _WIN32
+            const int utf8Len = ::WideCharToMultiByte(CP_UTF8, 0, wideStr, static_cast<int>(wideLen), nullptr, 0, nullptr, nullptr);
+            if (utf8Len > 0)
+            {
+                utf8Str.resize(utf8Len);
+                ::WideCharToMultiByte(CP_UTF8, 0, wideStr, static_cast<int>(wideLen), utf8Str.data(), static_cast<int>(utf8Str.size()),
+                                      nullptr, nullptr);
+            }
+#else
+            char* const locale = std::setlocale(LC_CTYPE, CPToLocale(CP_UTF8));
+
+            const size_t utf8Len = ::wcstombs(nullptr, wideStr, wideLen);
+            if (utf8Len > 0)
+            {
+                utf8Str.resize(utf8Len);
+                ::wcstombs(utf8Str.data(), wideStr, wideLen);
+            }
+
+            std::setlocale(LC_CTYPE, locale);
+#endif
+        }
+
+        return utf8Str;
+    }
+
     bool dllDetaching = false;
 
     class Dxcompiler
@@ -231,15 +328,10 @@ namespace
                 fileName += 2;
             }
 
-            std::string utf8FileName;
-            if (!Unicode::WideToUTF8String(fileName, &utf8FileName))
-            {
-                return E_FAIL;
-            }
-
             Blob source;
             try
             {
+                const std::string utf8FileName = WideToUtf8(fileName);
                 source = m_loadCallback(utf8FileName.c_str());
             }
             catch (...)
@@ -370,7 +462,7 @@ namespace
                 break;
 
             default:
-                llvm_unreachable("Invalid shader stage.");
+                SC_UNREACHABLE("Invalid shader stage.");
             }
         }
 
@@ -382,7 +474,7 @@ namespace
         return shaderProfile;
     }
 
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
     Reflection MakeDxilReflection(IDxcBlob* dxilBlob, bool asModule);
 #endif
     Reflection MakeSpirVReflection(const spirv_cross::Compiler& compiler);
@@ -435,7 +527,7 @@ namespace
 
             if (needReflection)
             {
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
                 if (targetLanguage == ShadingLanguage::Dxil)
                 {
                     // Gather reflection information only for ShadingLanguage::Dxil. SPIR-V reflection is gathered when cross-compiling.
@@ -467,7 +559,7 @@ namespace
         assert((target.language == ShadingLanguage::Dxil) || (target.language == ShadingLanguage::SpirV));
         if (target.asModule && (target.language != ShadingLanguage::Dxil))
         {
-            llvm_unreachable("Spir-V module is not supported.");
+            SC_UNREACHABLE("Spir-V module is not supported.");
         }
 
         DxcBuffer sourceBuf;
@@ -482,25 +574,16 @@ namespace
         {
             const auto& define = source.defines[i];
 
-            std::wstring nameWideStr;
-            Unicode::UTF8ToWideString(define.name, &nameWideStr);
-
-            std::wstring defineStr = L"-D " + nameWideStr;
-
+            std::wstring defineStr = L"-D " + Utf8ToWide(define.name);
             if (define.value != nullptr)
             {
-                std::wstring valueWideStr;
-                Unicode::UTF8ToWideString(define.value, &valueWideStr);
-                defineStr += L"=" + valueWideStr;
+                defineStr += L"=" + Utf8ToWide(define.value);
             }
 
             dxcArgStrings.emplace_back(std::move(defineStr));
         }
 
-        std::wstring entryPointWide;
-        Unicode::UTF8ToWideString(source.entryPoint, &entryPointWide);
-        dxcArgStrings.push_back(L"-E " + entryPointWide);
-
+        dxcArgStrings.push_back(L"-E " + Utf8ToWide(source.entryPoint));
         dxcArgStrings.push_back(L"-T " + ShaderProfileName(source.stage, options.shaderModel, target.asModule));
 
         // HLSL matrices are translated into SPIR-V OpTypeMatrixs in a transposed manner,
@@ -543,7 +626,7 @@ namespace
             }
             else
             {
-                llvm_unreachable("Invalid optimization level.");
+                SC_UNREACHABLE("Invalid optimization level.");
             }
         }
 
@@ -582,13 +665,12 @@ namespace
 
             if ((target.version != nullptr) && (std::strlen(target.version) >= 2))
             {
-                std::wstring version_wide;
-                Unicode::UTF8ToWideString(target.version, &version_wide);
+                const std::wstring versionWide = Utf8ToWide(target.version);
 
                 std::wstring arg = L"-fspv-target-env=universal";
-                arg += version_wide[0];
+                arg += versionWide[0];
                 arg += L'.';
-                arg += &version_wide[1];
+                arg += &versionWide[1];
                 dxcArgStrings.emplace_back(std::move(arg));
             }
         }
@@ -601,9 +683,7 @@ namespace
         // Reflection info has its own blob. No need to keep it in the DXIL blob.
         dxcArgStrings.push_back(L"-Qstrip_reflect");
 
-        std::wstring shaderNameWide;
-        Unicode::UTF8ToWideString(source.fileName, &shaderNameWide);
-        dxcArgStrings.emplace_back(std::move(shaderNameWide));
+        dxcArgStrings.emplace_back(Utf8ToWide(source.fileName));
 
         std::vector<const wchar_t*> dxcArgs;
         dxcArgs.reserve(dxcArgStrings.size());
@@ -724,7 +804,7 @@ namespace
             break;
 
         default:
-            llvm_unreachable("Invalid target language.");
+            SC_UNREACHABLE("Invalid target language.");
         }
 
         spv::ExecutionModel model;
@@ -755,7 +835,7 @@ namespace
             break;
 
         default:
-            llvm_unreachable("Invalid shader stage.");
+            SC_UNREACHABLE("Invalid shader stage.");
         }
         compiler->set_entry_point(source.entryPoint, model);
 
@@ -911,8 +991,7 @@ namespace
                     return CrossCompile(binaryResult, source, options, target);
 
                 default:
-                    llvm_unreachable("Invalid shading language.");
-                    break;
+                    SC_UNREACHABLE("Invalid shading language.");
                 }
             }
         }
@@ -922,7 +1001,7 @@ namespace
         }
     }
 
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
     template <typename T>
     void ExtractDxilResourceDesc(std::vector<Reflection::ResourceDesc>& resourceDescs,
                                  std::vector<Reflection::ConstantBuffer>& constantBuffers, T* d3d12Reflection, uint32_t resourceIndex)
@@ -972,8 +1051,7 @@ namespace
                 break;
 
             default:
-                llvm_unreachable("Unknown bind type.");
-                break;
+                SC_UNREACHABLE("Unknown bind type.");
             }
         }
 
@@ -1077,7 +1155,7 @@ namespace ShaderConductor
     class Reflection::VariableType::VariableTypeImpl
     {
     public:
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
         explicit VariableTypeImpl(ID3D12ShaderReflectionType* d3d12Type)
         {
             D3D12_SHADER_TYPE_DESC d3d12ShaderTypeDesc;
@@ -1153,7 +1231,7 @@ namespace ShaderConductor
                 break;
 
             default:
-                llvm_unreachable("Unsupported variable type.");
+                SC_UNREACHABLE("Unsupported variable type.");
             }
 
             m_rows = d3d12ShaderTypeDesc.Rows;
@@ -1234,8 +1312,7 @@ namespace ShaderConductor
                 break;
 
             default:
-                llvm_unreachable("Unsupported variable type.");
-                break;
+                SC_UNREACHABLE("Unsupported variable type.");
             }
 
             if (spirvReflectionType.columns == 1)
@@ -1333,7 +1410,7 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
         static VariableType Make(ID3D12ShaderReflectionType* d3d12ReflectionType)
         {
             VariableType ret;
@@ -1457,7 +1534,7 @@ namespace ShaderConductor
     class Reflection::ConstantBuffer::ConstantBufferImpl
     {
     public:
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
         explicit ConstantBufferImpl(ID3D12ShaderReflectionConstantBuffer* constantBuffer)
         {
             D3D12_SHADER_BUFFER_DESC bufferDesc;
@@ -1635,7 +1712,7 @@ namespace ShaderConductor
     class Reflection::Function::FunctionImpl
     {
     public:
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
         explicit FunctionImpl(ID3D12FunctionReflection* d3d12FuncReflection)
         {
             D3D12_FUNCTION_DESC d3d12FuncDesc;
@@ -1711,7 +1788,7 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
         static Function Make(ID3D12FunctionReflection* d3d12FuncReflection)
         {
             Function ret;
@@ -1813,7 +1890,7 @@ namespace ShaderConductor
     class Reflection::ReflectionImpl
     {
     public:
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
         ReflectionImpl(IDxcBlob* dxilBlob, bool asModule)
         {
             if (asModule)
@@ -1879,8 +1956,7 @@ namespace ShaderConductor
                         break;
 
                     default:
-                        llvm_unreachable("Unsupported input component type.");
-                        break;
+                        SC_UNREACHABLE("Unsupported input component type.");
                     }
                     paramDesc.mask = static_cast<ComponentMask>(signatureParamDesc.Mask);
 
@@ -1911,8 +1987,7 @@ namespace ShaderConductor
                         break;
 
                     default:
-                        llvm_unreachable("Unsupported output component type.");
-                        break;
+                        SC_UNREACHABLE("Unsupported output component type.");
                     }
                     paramDesc.mask = static_cast<ComponentMask>(signatureParamDesc.Mask);
 
@@ -2037,8 +2112,7 @@ namespace ShaderConductor
                     break;
 
                 default:
-                    llvm_unreachable("Unsupported input primitive type.");
-                    break;
+                    SC_UNREACHABLE("Unsupported input primitive type.");
                 }
 
                 switch (shaderDesc.GSOutputTopology)
@@ -2171,8 +2245,7 @@ namespace ShaderConductor
                     break;
 
                 default:
-                    llvm_unreachable("Unsupported output topoloty type.");
-                    break;
+                    SC_UNREACHABLE("Unsupported output topoloty type.");
                 }
 
                 m_gsMaxNumOutputVertices = shaderDesc.GSMaxOutputVertexCount;
@@ -2197,8 +2270,7 @@ namespace ShaderConductor
                     break;
 
                 default:
-                    llvm_unreachable("Unsupported output primitive type.");
-                    break;
+                    SC_UNREACHABLE("Unsupported output primitive type.");
                 }
 
                 switch (shaderDesc.HSPartitioning)
@@ -2220,8 +2292,7 @@ namespace ShaderConductor
                     break;
 
                 default:
-                    llvm_unreachable("Unsupported partitioning type.");
-                    break;
+                    SC_UNREACHABLE("Unsupported partitioning type.");
                 }
 
                 switch (shaderDesc.TessellatorDomain)
@@ -2240,8 +2311,7 @@ namespace ShaderConductor
                     break;
 
                 default:
-                    llvm_unreachable("Unsupported tessellator domain type.");
-                    break;
+                    SC_UNREACHABLE("Unsupported tessellator domain type.");
                 }
 
                 for (uint32_t patchConstantParamIndex = 0; patchConstantParamIndex < shaderDesc.PatchConstantParameters;
@@ -2269,8 +2339,7 @@ namespace ShaderConductor
                         break;
 
                     default:
-                        llvm_unreachable("Unsupported patch constant component type.");
-                        break;
+                        SC_UNREACHABLE("Unsupported patch constant component type.");
                     }
                     paramDesc.mask = static_cast<ComponentMask>(signatureParamDesc.Mask);
 
@@ -2797,7 +2866,7 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
         static Reflection Make(IDxcBlob* dxilBlob, bool asModule)
         {
             Reflection ret;
@@ -2813,7 +2882,7 @@ namespace ShaderConductor
             return ret;
         }
 
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
         static ConstantBuffer Make(ID3D12ShaderReflectionConstantBuffer* constantBuffer)
         {
             ConstantBuffer ret;
@@ -2905,8 +2974,7 @@ namespace ShaderConductor
                 break;
 
             default:
-                llvm_unreachable("Unsupported parameter component type.");
-                break;
+                SC_UNREACHABLE("Unsupported parameter component type.");
             }
 
             if (type.vecsize > 0)
@@ -3267,13 +3335,12 @@ namespace ShaderConductor
             IFT(utils->CreateBlob(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8, &moduleBlobs[i]));
             IFTARG(moduleBlobs[i]->GetBufferSize() >= 4);
 
-            Unicode::UTF8ToWideString(modules.modules[i]->name, &moduleNames[i]);
+            moduleNames[i] = Utf8ToWide(modules.modules[i]->name);
             moduleNamesWide[i] = moduleNames[i].c_str();
             IFT(linker->RegisterLibrary(moduleNamesWide[i], moduleBlobs[i]));
         }
 
-        std::wstring entryPointWide;
-        Unicode::UTF8ToWideString(modules.entryPoint, &entryPointWide);
+        const std::wstring entryPointWide = Utf8ToWide(modules.entryPoint);
 
         const std::wstring shaderProfile = ShaderProfileName(modules.stage, options.shaderModel, false);
         CComPtr<IDxcOperationResult> linkOpResult;
@@ -3295,7 +3362,7 @@ namespace ShaderConductor
 
 namespace
 {
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
     Reflection MakeDxilReflection(IDxcBlob* dxilBlob, bool asModule)
     {
         return Reflection::ReflectionImpl::Make(dxilBlob, asModule);

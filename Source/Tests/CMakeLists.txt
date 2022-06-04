@@ -61,6 +61,4 @@ target_link_libraries(${EXE_NAME}
         gtest
 )
 
-add_dependencies(${EXE_NAME} ShaderConductor gtest)
-
 set_target_properties(${EXE_NAME} PROPERTIES FOLDER "Tests")
