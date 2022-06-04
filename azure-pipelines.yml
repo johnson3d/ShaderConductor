@@ -211,6 +211,24 @@ stages:
         condition: ne(variables.prebuiltDxcUrl, '')
         continueOnError: true
 
+      - task: Cache@2
+        inputs:
+          key: 'Build | External/DirectXShaderCompiler.cmake | $(combination)'
+          restoreKeys: |
+            Build | $(combination)
+            Build
+          path: $(buildFolder)/External/DirectXShaderCompiler
+        displayName: Cache Build
+
+      - task: Cache@2
+        inputs:
+          key: 'External | External/CMakeLists.txt | External/*.cmake | $(combination)'
+          restoreKeys: |
+            External | $(combination)
+            External
+          path: External
+        displayName: Cache External
+
       - task: PythonScript@0
         displayName: 'Build'
         inputs:
