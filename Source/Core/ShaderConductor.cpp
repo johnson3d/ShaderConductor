@@ -164,12 +164,10 @@ namespace
         return utf8Str;
     }
 
-    bool dllDetaching = false;
-
     class Dxcompiler
     {
     public:
-        ~Dxcompiler()
+        ~Dxcompiler() noexcept
         {
             this->Destroy();
         }
@@ -180,17 +178,22 @@ namespace
             return instance;
         }
 
-        IDxcUtils* Utils() const
+        static void DllDetaching(bool detaching) noexcept
+        {
+            m_dllDetaching = detaching;
+        }
+
+        IDxcUtils* Utils() const noexcept
         {
             return m_utils;
         }
 
-        IDxcCompiler3* Compiler() const
+        IDxcCompiler3* Compiler() const noexcept
         {
             return m_compiler;
         }
 
-        IDxcContainerReflection* ContainerReflection() const
+        IDxcContainerReflection* ContainerReflection() const noexcept
         {
             return m_containerReflection;
         }
@@ -206,12 +209,12 @@ namespace
             return linker;
         }
 
-        bool LinkerSupport() const
+        bool LinkerSupport() const noexcept
         {
             return m_linkerSupport;
         }
 
-        void Destroy()
+        void Destroy() noexcept
         {
             if (m_dxcompilerDll)
             {
@@ -231,7 +234,7 @@ namespace
             }
         }
 
-        void Terminate()
+        void Terminate() noexcept
         {
             if (m_dxcompilerDll)
             {
@@ -248,7 +251,7 @@ namespace
     private:
         Dxcompiler()
         {
-            if (dllDetaching)
+            if (m_dllDetaching)
             {
                 return;
             }
@@ -304,6 +307,8 @@ namespace
         }
 
     private:
+        static bool m_dllDetaching;
+
         HMODULE m_dxcompilerDll = nullptr;
         DxcCreateInstanceProc m_createInstanceFunc = nullptr;
 
@@ -314,10 +319,13 @@ namespace
         bool m_linkerSupport = false;
     };
 
+    bool Dxcompiler::m_dllDetaching = false;
+
     class ScIncludeHandler : public IDxcIncludeHandler
     {
     public:
-        explicit ScIncludeHandler(std::function<Blob(const char* includeName)> loadCallback) : m_loadCallback(std::move(loadCallback))
+        explicit ScIncludeHandler(std::function<Blob(const char* includeName)> loadCallback) noexcept
+            : m_loadCallback(std::move(loadCallback))
         {
         }
 
@@ -1126,7 +1134,7 @@ namespace ShaderConductor
         return *this;
     }
 
-    void Blob::Reset()
+    void Blob::Reset() noexcept
     {
         delete m_impl;
         m_impl = nullptr;
@@ -2622,7 +2630,7 @@ namespace ShaderConductor
 
             for (const auto& inputParam : resources.stage_inputs)
             {
-                const SignatureParameterDesc paramDesc = this->ExtractParameter(compiler, inputParam);
+                SignatureParameterDesc paramDesc = this->ExtractParameter(compiler, inputParam);
 
                 if (compiler.get_decoration(inputParam.id, spv::DecorationPatch))
                 {
@@ -2899,7 +2907,7 @@ namespace ShaderConductor
         }
 
     private:
-        static bool IsNonTrivialBuiltIn(spv::BuiltIn builtin)
+        static bool IsNonTrivialBuiltIn(spv::BuiltIn builtin) noexcept
         {
             switch (builtin)
             {
@@ -3313,7 +3321,7 @@ namespace ShaderConductor
         return ret;
     }
 
-    bool Compiler::LinkSupport()
+    bool Compiler::LinkSupport() noexcept
     {
         return Dxcompiler::Instance().LinkerSupport();
     }
@@ -3383,7 +3391,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
     BOOL result = TRUE;
     if (reason == DLL_PROCESS_DETACH)
     {
-        dllDetaching = true;
+        Dxcompiler::DllDetaching(true);
 
         if (reserved == 0)
         {

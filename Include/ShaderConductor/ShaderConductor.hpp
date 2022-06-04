@@ -111,7 +111,7 @@ namespace ShaderConductor
         Blob& operator=(const Blob& other);
         Blob& operator=(Blob&& other) noexcept;
 
-        void Reset();
+        void Reset() noexcept;
         void Reset(const void* data, uint32_t size);
 
         const void* Data() const noexcept;
@@ -501,35 +501,35 @@ namespace ShaderConductor
         static ResultDesc Disassemble(const DisassembleDesc& source);
 
         // Currently only Dxil on Windows supports linking
-        static bool LinkSupport();
+        static bool LinkSupport() noexcept;
         static ResultDesc Link(const LinkDesc& modules, const Options& options, const TargetDesc& target);
     };
 
-    inline Reflection::ComponentMask& operator|=(Reflection::ComponentMask& lhs, Reflection::ComponentMask rhs)
+    inline Reflection::ComponentMask& operator|=(Reflection::ComponentMask& lhs, Reflection::ComponentMask rhs) noexcept
     {
         lhs = static_cast<Reflection::ComponentMask>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
         return lhs;
     }
-    inline constexpr Reflection::ComponentMask operator|(Reflection::ComponentMask lhs, Reflection::ComponentMask rhs)
+    inline constexpr Reflection::ComponentMask operator|(Reflection::ComponentMask lhs, Reflection::ComponentMask rhs) noexcept
     {
         return static_cast<Reflection::ComponentMask>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
     }
 
-    inline Reflection::ComponentMask& operator&=(Reflection::ComponentMask& lhs, Reflection::ComponentMask rhs)
+    inline Reflection::ComponentMask& operator&=(Reflection::ComponentMask& lhs, Reflection::ComponentMask rhs) noexcept
     {
         lhs = static_cast<Reflection::ComponentMask>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
         return lhs;
     }
-    inline constexpr Reflection::ComponentMask operator&(Reflection::ComponentMask lhs, Reflection::ComponentMask rhs)
+    inline constexpr Reflection::ComponentMask operator&(Reflection::ComponentMask lhs, Reflection::ComponentMask rhs) noexcept
     {
         return static_cast<Reflection::ComponentMask>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
     }
 
-    inline bool HasAllFlags(Reflection::ComponentMask flags, Reflection::ComponentMask contains)
+    inline bool HasAllFlags(Reflection::ComponentMask flags, Reflection::ComponentMask contains) noexcept
     {
         return (static_cast<uint8_t>(flags) & static_cast<uint8_t>(contains)) == static_cast<uint8_t>(contains);
     }
-    inline bool HasAnyFlags(Reflection::ComponentMask flags, Reflection::ComponentMask contains)
+    inline bool HasAnyFlags(Reflection::ComponentMask flags, Reflection::ComponentMask contains) noexcept
     {
         return (static_cast<uint8_t>(flags) & static_cast<uint8_t>(contains)) != 0;
     }
