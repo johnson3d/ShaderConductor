@@ -125,7 +125,7 @@
          %59 = OpLoad %v3float %58
          %60 = OpDot %float %57 %59
          %61 = OpVectorShuffle %v2float %59 %59 0 1
-         %62 = OpExtInst %float %1 FMin %60 %float_0
+         %62 = OpExtInst %float %1 NMin %60 %float_0
          %63 = OpAccessChain %_ptr_Uniform_float %cbSimulationConstants %int_1 %int_0
          %64 = OpLoad %float %63
          %65 = OpFNegate %float %64
@@ -136,7 +136,7 @@
          %70 = OpLoad %v3float %69
          %71 = OpDot %float %57 %70
          %72 = OpVectorShuffle %v2float %70 %70 0 1
-         %73 = OpExtInst %float %1 FMin %71 %float_0
+         %73 = OpExtInst %float %1 NMin %71 %float_0
          %74 = OpFMul %float %73 %65
          %75 = OpVectorTimesScalar %v2float %72 %74
          %76 = OpFAdd %v2float %68 %75
@@ -144,7 +144,7 @@
          %78 = OpLoad %v3float %77
          %79 = OpDot %float %57 %78
          %80 = OpVectorShuffle %v2float %78 %78 0 1
-         %81 = OpExtInst %float %1 FMin %79 %float_0
+         %81 = OpExtInst %float %1 NMin %79 %float_0
          %82 = OpFMul %float %81 %65
          %83 = OpVectorTimesScalar %v2float %80 %82
          %84 = OpFAdd %v2float %76 %83
@@ -152,7 +152,7 @@
          %86 = OpLoad %v3float %85
          %87 = OpDot %float %57 %86
          %88 = OpVectorShuffle %v2float %86 %86 0 1
-         %89 = OpExtInst %float %1 FMin %87 %float_0
+         %89 = OpExtInst %float %1 NMin %87 %float_0
          %90 = OpFMul %float %89 %65
          %91 = OpVectorTimesScalar %v2float %88 %90
          %92 = OpFAdd %v2float %84 %91

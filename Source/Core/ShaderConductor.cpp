@@ -688,8 +688,11 @@ namespace
             dxcArgStrings.push_back(L"-default-linkage external");
         }
 
-        // Reflection info has its own blob. No need to keep it in the DXIL blob.
-        dxcArgStrings.push_back(L"-Qstrip_reflect");
+        if (target.language != ShadingLanguage::SpirV)
+        {
+            // Reflection info has its own blob. No need to keep it in the DXIL blob.
+            dxcArgStrings.push_back(L"-Qstrip_reflect");
+        }
 
         dxcArgStrings.emplace_back(Utf8ToWide(source.fileName));
 
