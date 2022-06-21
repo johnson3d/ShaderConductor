@@ -329,6 +329,8 @@ namespace
         {
         }
 
+        virtual ~ScIncludeHandler() noexcept = default;
+
         HRESULT STDMETHODCALLTYPE LoadSource(LPCWSTR fileName, IDxcBlob** includeSource) override
         {
             if ((fileName[0] == L'.') && (fileName[1] == L'/'))
@@ -567,6 +569,7 @@ namespace
         assert((target.language == ShadingLanguage::Dxil) || (target.language == ShadingLanguage::SpirV));
         if (target.asModule && (target.language != ShadingLanguage::Dxil))
         {
+            // Check https://github.com/microsoft/DirectXShaderCompiler/issues/2633 for details
             SC_UNREACHABLE("Spir-V module is not supported.");
         }
 
