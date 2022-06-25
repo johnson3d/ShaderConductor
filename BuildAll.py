@@ -131,7 +131,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		tblgenOptions = " -DCLANG_TABLEGEN=\"%s\" -DLLVM_TABLEGEN=\"%s\"" % tblgenPath
 
 	prebuiltDxcDirOptions = ""
-	if "PREBUILTDXCDIR" in os.environ:
+	if ("PREBUILTDXCDIR" in os.environ) and os.path.isdir(os.environ["PREBUILTDXCDIR"]):
 		prebuiltDxcDirOptions = " -DSC_PREBUILT_DXC_DIR=\"%s\"" % os.environ["PREBUILTDXCDIR"]
 
 	parallel = multiprocessing.cpu_count()

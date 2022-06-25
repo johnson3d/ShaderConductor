@@ -5,22 +5,18 @@ variables:
   prebuiltDxcUrl_Linux: 'https://ci.appveyor.com/api/buildjobs/cst4bjftxe2n1t0n/artifacts/build/dxc-artifacts.tar.gz'
   prebuiltDxcExtract_Windows: '7z x -odxc-artifacts dxc-artifacts.zip'
   prebuiltDxcExtract_Linux: 'tar -xvf dxc-artifacts.tar.gz'
+  prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
   testCommand_Windows: './$(buildFolder)/bin/ShaderConductorTest.exe'
-  testCommand_Linux: './$(buildFolder)/bin/ShaderConductorTest'
-  testCommand_macOS: './$(buildFolder)/bin/ShaderConductorTest'
+  testCommand_Nix: './$(buildFolder)/bin/ShaderConductorTest'
   artifactBinaries_Windows: |
     bin/ShaderConductor.dll
     bin/ShaderConductorCmd.exe
     bin/dxcompiler.dll
     lib/ShaderConductor.lib
-  artifactBinaries_Linux: |
+  artifactBinaries_Nix: |
     bin/ShaderConductorCmd
-    lib/libdxcompiler.so
-    lib/libShaderConductor.so
-  artifactBinaries_macOS: |
-    bin/ShaderConductorCmd
-    lib/libdxcompiler.dylib
-    lib/libShaderConductor.dylib
+    lib/libdxcompiler.*
+    lib/libShaderConductor.*
 
 resources:
 - repo: self
@@ -74,7 +70,6 @@ stages:
           combination: 'win-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: 'choco install ninja wget'
-          prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
           prebuiltDxcUrl: $(prebuiltDxcUrl_Windows)
           prebuiltDxcExtract: $(prebuiltDxcExtract_Windows)
           testCommand: $(testCommand_Windows)
@@ -93,7 +88,6 @@ stages:
           combination: 'win-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: 'choco install ninja wget'
-          prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
           prebuiltDxcUrl: $(prebuiltDxcUrl_Windows)
           prebuiltDxcExtract: $(prebuiltDxcExtract_Windows)
           testCommand: $(testCommand_Windows)
@@ -115,11 +109,10 @@ stages:
             sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install g++-9 ninja-build python3
-          prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
           prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
           prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Linux)
-          artifactBinaries: $(artifactBinaries_Linux)
+          testCommand: $(testCommand_Nix)
+          artifactBinaries: $(artifactBinaries_Nix)
           CC: gcc-9
           CXX: g++-9
         Linux_gcc10:
@@ -131,11 +124,10 @@ stages:
             sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install g++-10 ninja-build python3
-          prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
           prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
           prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Linux)
-          artifactBinaries: $(artifactBinaries_Linux)
+          testCommand: $(testCommand_Nix)
+          artifactBinaries: $(artifactBinaries_Nix)
           CC: gcc-10
           CXX: g++-10
         Linux_clang11:
@@ -149,11 +141,10 @@ stages:
             sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev lld-11 ninja-build python3
-          prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
           prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
           prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Linux)
-          artifactBinaries: $(artifactBinaries_Linux)
+          testCommand: $(testCommand_Nix)
+          artifactBinaries: $(artifactBinaries_Nix)
           CC: clang-11
           CXX: clang++-11
         Linux_clang13:
@@ -167,11 +158,10 @@ stages:
             sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install clang-13 libc++-13-dev libc++abi-13-dev lld-13 ninja-build python3
-          prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
           prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
           prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Linux)
-          artifactBinaries: $(artifactBinaries_Linux)
+          testCommand: $(testCommand_Nix)
+          artifactBinaries: $(artifactBinaries_Nix)
           CC: clang-13
           CXX: clang++-13
         macOS_10_clang:
@@ -180,8 +170,8 @@ stages:
           combination: 'osx-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: brew install ninja
-          testCommand: $(testCommand_macOS)
-          artifactBinaries: $(artifactBinaries_macOS)
+          testCommand: $(testCommand_Nix)
+          artifactBinaries: $(artifactBinaries_Nix)
           CC: clang
           CXX: clang++
 
@@ -254,7 +244,7 @@ stages:
           Contents: $(artifactBinaries)
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
-      - task: PublishBuildArtifacts@1
+      - task: PublishPipelineArtifact@1
         inputs:
-          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          targetPath: '$(Build.ArtifactStagingDirectory)'
           artifactName: ShaderConductor-$(combination)
