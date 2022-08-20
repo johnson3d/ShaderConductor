@@ -141,7 +141,6 @@ namespace ShaderConductor
             uint32_t NumVariables() const noexcept;
             const VariableDesc* VariableByIndex(uint32_t index) const noexcept;
             const VariableDesc* VariableByName(const char* name) const noexcept;
-
         private:
             class ConstantBufferImpl;
             ConstantBufferImpl* m_impl = nullptr;
@@ -378,6 +377,9 @@ namespace ShaderConductor
         const Function* FunctionByIndex(uint32_t index) const noexcept;
         const Function* FunctionByName(const char* name) const noexcept;
 
+        // modify by johnson3d
+        void* GetD3D12ShaderReflection() const noexcept;
+        // end modify
     private:
         ReflectionImpl* m_impl = nullptr;
     };

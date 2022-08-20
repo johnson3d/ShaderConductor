@@ -1938,6 +1938,10 @@ namespace ShaderConductor
                 IFT(Dxcompiler::Instance().Utils()->CreateReflection(&reflectionBuffer, __uuidof(ID3D12ShaderReflection),
                                                                      reinterpret_cast<void**>(&shaderReflection)));
 
+                // modify by johnson3d
+                m_shaderReflection = shaderReflection;
+                // end modify
+
                 D3D12_SHADER_DESC shaderDesc;
                 IFT(shaderReflection->GetDesc(&shaderDesc));
 
@@ -2365,6 +2369,10 @@ namespace ShaderConductor
                 shaderReflection->GetThreadGroupSize(&m_csBlockSizeX, &m_csBlockSizeY, &m_csBlockSizeZ);
             }
         }
+
+        // modify by johnson3d
+        CComPtr<ID3D12ShaderReflection> m_shaderReflection;
+        // end modify
 #endif
 
         explicit ReflectionImpl(const spirv_cross::Compiler& compiler)
@@ -3214,7 +3222,13 @@ namespace ShaderConductor
     {
         return m_impl->FunctionByName(name);
     }
-
+    
+    // modify by johnson3d
+    void* Reflection::GetD3D12ShaderReflection() const noexcept
+    {
+        return m_impl->m_shaderReflection;
+    }
+    // end modify
 
     Compiler::ResultDesc Compiler::Compile(const SourceDesc& source, const Options& options, const TargetDesc& target)
     {
