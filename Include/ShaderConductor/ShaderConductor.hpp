@@ -445,6 +445,7 @@ namespace ShaderConductor
             int shiftAllUABuffersBindings = 0;
 
             bool needReflection = false;
+            bool stripReflection = false;               //renderdoc needs those infomations
         };
 
         struct TargetDesc

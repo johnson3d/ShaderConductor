@@ -691,7 +691,7 @@ namespace
             dxcArgStrings.push_back(L"-default-linkage external");
         }
 
-        if (target.language != ShadingLanguage::SpirV)
+        if (options.stripReflection && target.language != ShadingLanguage::SpirV)
         {
             // Reflection info has its own blob. No need to keep it in the DXIL blob.
             dxcArgStrings.push_back(L"-Qstrip_reflect");
