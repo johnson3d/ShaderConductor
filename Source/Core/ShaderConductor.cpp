@@ -672,7 +672,9 @@ namespace
         if (target.language == ShadingLanguage::SpirV)
         {
             dxcArgStrings.push_back(L"-spirv");
-            dxcArgStrings.push_back(L"-fspv-reflect");
+            //modify by johnson:DecorationHlslSemanticGOOGLE will enable SPV_GOOGLE_hlsl_functionality1...
+            //dxcArgStrings.push_back(L"-fspv-reflect");
+            //end modify
 
             if ((target.version != nullptr) && (std::strlen(target.version) >= 2))
             {
