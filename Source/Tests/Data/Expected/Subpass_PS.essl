@@ -1,0 +1,23 @@
+#version 310 es
+#extension GL_EXT_shader_framebuffer_fetch : require
+precision mediump float;
+precision highp int;
+
+highp vec4 subpassInput0;
+highp uvec4 subpassInput1;
+highp vec4 subpassInput2;
+
+layout(location = 0) inout highp vec4 out_var_SV_Target0;
+layout(location = 1) inout uint out_var_SV_Target1;
+layout(location = 2) inout highp vec2 out_var_SV_Target2;
+
+void main()
+{
+    subpassInput0 = out_var_SV_Target0;
+    subpassInput1.x = out_var_SV_Target1;
+    subpassInput2.xy = out_var_SV_Target2;
+    out_var_SV_Target0 = (subpassInput0 + vec4(float(subpassInput1.x))) + vec4(subpassInput2.xy, 0.0, 0.0);
+    out_var_SV_Target1 = 0u;
+    out_var_SV_Target2 = vec2(0.0);
+}
+

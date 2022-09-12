@@ -758,4 +758,37 @@ namespace
                                 expectedNames[i], 2);
         }
     }
+
+    TEST(SubpassInputTest, SubpassInput)
+    {
+        const std::string fileName = TEST_DATA_DIR "Input/Subpass_PS.hlsl";
+
+        std::vector<uint8_t> input = LoadFile(fileName, true);
+        const std::string source = std::string(reinterpret_cast<char*>(input.data()), input.size());
+
+        const std::tuple<Compiler::TargetDesc, std::string> targets[] = {{{ShadingLanguage::SpirV, "15"}, "spvasm"},
+                                                                         {{ShadingLanguage::Glsl, "300"}, "glsl"},
+                                                                         {{ShadingLanguage::Essl, "310"}, "essl"},
+                                                                         {{ShadingLanguage::Msl_iOS}, "msl"}};
+
+        for (const auto& target : targets)
+        {
+            auto result = Compiler::Compile({source.c_str(), fileName.c_str(), "main", ShaderStage::PixelShader}, {}, std::get<0>(target));
+
+            EXPECT_FALSE(result.hasError);
+
+            if ((std::get<0>(target).language == ShadingLanguage::Dxil) || (std::get<0>(target).language == ShadingLanguage::SpirV))
+            {
+                EXPECT_FALSE(result.isText);
+                result = Disassemble(std::get<0>(target).language, result);
+            }
+
+            EXPECT_FALSE(result.hasError);
+            EXPECT_TRUE(result.isText);
+
+            const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
+            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText,
+                                "Subpass_PS." + std::get<1>(target));
+        }
+    }
 } // namespace
