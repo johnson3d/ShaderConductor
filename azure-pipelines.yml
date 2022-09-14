@@ -164,9 +164,9 @@ stages:
           artifactBinaries: $(artifactBinaries_Nix)
           CC: clang-13
           CXX: clang++-13
-        macOS_10_clang:
-          vmImage: macOS-10.15
-          compiler: clang9
+        macOS_11_clang:
+          vmImage: macOS-11
+          compiler: clang13
           combination: 'osx-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: brew install ninja
