@@ -36,6 +36,7 @@ set(DATA_FILES
     Data/Input/PassThrough_PS.hlsl
     Data/Input/PassThrough_VS.hlsl
     Data/Input/PNTriangles_DS.hlsl
+    Data/Input/Subpass_PS.hlsl
     Data/Input/ToneMapping_PS.hlsl
     Data/Input/Transform_VS.hlsl
 )

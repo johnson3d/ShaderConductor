@@ -10,7 +10,7 @@
 ; Name                 Index   Mask Register SysValue  Format   Used
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; no parameters
-; shader hash: 16bd141418b60ca832f0a6edd3e1ee90
+; shader hash: f63fb7487112aeb66ca00a305149222f
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -186,7 +186,7 @@ attributes #2 = { nounwind }
 !dx.resources = !{!4}
 !dx.entryPoints = !{!14}
 
-!0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
+!0 = !{!"dxc(private) 1.7.0.3636 (bdb110f42)"}
 !1 = !{i32 1, i32 0}
 !2 = !{i32 1, i32 7}
 !3 = !{!"cs", i32 6, i32 0}

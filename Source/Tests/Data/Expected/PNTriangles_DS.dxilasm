@@ -31,7 +31,7 @@
 ; POSITION                 8   xyz         6     NONE   float      w
 ; CENTER                   0   xyz         7     NONE   float      w
 ;
-; shader hash: fbed13923404e9c005f7bd4bc1b02a07
+; shader hash: ce13083f198fede2fea1d47b18558dea
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -316,7 +316,7 @@ attributes #2 = { nounwind readonly }
 !dx.viewIdState = !{!7}
 !dx.entryPoints = !{!8}
 
-!0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
+!0 = !{!"dxc(private) 1.7.0.3636 (bdb110f42)"}
 !1 = !{i32 1, i32 0}
 !2 = !{i32 1, i32 7}
 !3 = !{!"ds", i32 6, i32 0}

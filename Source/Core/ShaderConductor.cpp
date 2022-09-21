@@ -903,6 +903,7 @@ namespace
                 mslOpts.msl_version = opts.version;
             }
             mslOpts.swizzle_texture_samples = false;
+            mslOpts.use_framebuffer_fetch_subpasses = true;
             mslOpts.platform = (target.language == ShadingLanguage::Msl_iOS) ? spirv_cross::CompilerMSL::Options::iOS
                                                                              : spirv_cross::CompilerMSL::Options::macOS;
 
@@ -959,6 +960,16 @@ namespace
             {
                 compiler->set_decoration(newBuiltin, spv::DecorationDescriptorSet, 0);
                 compiler->set_decoration(newBuiltin, spv::DecorationBinding, 0);
+            }
+        }
+
+        if ((target.language == ShadingLanguage::Msl_iOS) || (target.language == ShadingLanguage::Essl))
+        {
+            const spirv_cross::ShaderResources resources = compiler->get_shader_resources();
+            for (const auto& resource : resources.subpass_inputs)
+            {
+                const uint32_t binding = compiler->get_decoration(resource.id, spv::DecorationBinding);
+                compiler->remap_ext_framebuffer_fetch(binding, binding, true);
             }
         }
 

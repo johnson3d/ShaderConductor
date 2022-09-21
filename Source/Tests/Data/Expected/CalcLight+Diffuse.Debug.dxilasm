@@ -15,8 +15,8 @@
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; SV_Target                0   xyzw        0   TARGET   float   xyzw
 ;
-; shader debug name: 1c9ff017e8c534734cdc26123d89517a.pdb
-; shader hash: 1c9ff017e8c534734cdc26123d89517a
+; shader debug name: f629a99caae8c63ce8f54d0cdfb746b0.pdb
+; shader hash: f629a99caae8c63ce8f54d0cdfb746b0
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -70,6 +70,7 @@ target triple = "dxil-ms-dx"
 
 %dx.types.CBufRet.f32 = type { float, float, float, float }
 %dx.types.Handle = type { i8* }
+%cbPS = type { <3 x float>, <3 x float>, float }
 
 ; Function Attrs: nounwind readnone
 declare float @dx.op.loadInput.f32(i32, i32, i32, i8, i32) #0
@@ -87,28 +88,27 @@ declare float @dx.op.dot3.f32(i32, float, float, float, float, float, float) #0
 declare float @dx.op.binary.f32(i32, float, float) #0
 
 define void @main() {
-entry:
   %cbPS_cbuffer = call %dx.types.Handle @dx.op.createHandle(i32 57, i8 2, i32 0, i32 0, i1 false)  ; CreateHandle(resourceClass,rangeId,index,nonUniformIndex)
-  %0 = call float @dx.op.loadInput.f32(i32 4, i32 2, i32 0, i8 0, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
-  %1 = call float @dx.op.loadInput.f32(i32 4, i32 2, i32 0, i8 1, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
-  %2 = call float @dx.op.loadInput.f32(i32 4, i32 2, i32 0, i8 2, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
-  %3 = call float @dx.op.loadInput.f32(i32 4, i32 1, i32 0, i8 0, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
-  %4 = call float @dx.op.loadInput.f32(i32 4, i32 1, i32 0, i8 1, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
-  %5 = call float @dx.op.loadInput.f32(i32 4, i32 1, i32 0, i8 2, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
-  %6 = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %cbPS_cbuffer, i32 0)  ; CBufferLoadLegacy(handle,regIndex)
-  %7 = extractvalue %dx.types.CBufRet.f32 %6, 0
-  %8 = extractvalue %dx.types.CBufRet.f32 %6, 1
-  %9 = extractvalue %dx.types.CBufRet.f32 %6, 2
-  %10 = call float @dx.op.dot3.f32(i32 55, float %3, float %4, float %5, float %0, float %1, float %2) #2  ; Dot3(ax,ay,az,bx,by,bz)
-  %mul.i0.i = fmul fast float %10, %7
-  %mul.i1.i = fmul fast float %10, %8
-  %mul.i2.i = fmul fast float %10, %9
-  %FMax.i = call float @dx.op.binary.f32(i32 35, float %mul.i0.i, float 0.000000e+00) #2  ; FMax(a,b)
-  %FMax2.i = call float @dx.op.binary.f32(i32 35, float %mul.i1.i, float 0.000000e+00) #2  ; FMax(a,b)
-  %FMax3.i = call float @dx.op.binary.f32(i32 35, float %mul.i2.i, float 0.000000e+00) #2  ; FMax(a,b)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %FMax.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %FMax2.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
-  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %FMax3.i)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  %1 = call float @dx.op.loadInput.f32(i32 4, i32 2, i32 0, i8 0, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
+  %2 = call float @dx.op.loadInput.f32(i32 4, i32 2, i32 0, i8 1, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
+  %3 = call float @dx.op.loadInput.f32(i32 4, i32 2, i32 0, i8 2, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
+  %4 = call float @dx.op.loadInput.f32(i32 4, i32 1, i32 0, i8 0, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
+  %5 = call float @dx.op.loadInput.f32(i32 4, i32 1, i32 0, i8 1, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
+  %6 = call float @dx.op.loadInput.f32(i32 4, i32 1, i32 0, i8 2, i32 undef)  ; LoadInput(inputSigId,rowIndex,colIndex,gsVertexAxis)
+  %7 = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %cbPS_cbuffer, i32 0)  ; CBufferLoadLegacy(handle,regIndex)
+  %8 = extractvalue %dx.types.CBufRet.f32 %7, 0
+  %9 = extractvalue %dx.types.CBufRet.f32 %7, 1
+  %10 = extractvalue %dx.types.CBufRet.f32 %7, 2
+  %11 = call float @dx.op.dot3.f32(i32 55, float %4, float %5, float %6, float %1, float %2, float %3) #2  ; Dot3(ax,ay,az,bx,by,bz)
+  %12 = fmul fast float %11, %8
+  %13 = fmul fast float %11, %9
+  %14 = fmul fast float %11, %10
+  %15 = call float @dx.op.binary.f32(i32 35, float %12, float 0.000000e+00) #2  ; FMax(a,b)
+  %16 = call float @dx.op.binary.f32(i32 35, float %13, float 0.000000e+00) #2  ; FMax(a,b)
+  %17 = call float @dx.op.binary.f32(i32 35, float %14, float 0.000000e+00) #2  ; FMax(a,b)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %15)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 1, float %16)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
+  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 2, float %17)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 3, float 1.000000e+00)  ; StoreOutput(outputSigId,rowIndex,colIndex,value)
   ret void
 }
@@ -129,13 +129,13 @@ attributes #2 = { nounwind }
 !dx.viewIdState = !{!11}
 !dx.entryPoints = !{!12}
 
-!0 = !{!"clang version 3.7 (tags/RELEASE_370/final)"}
-!1 = !{i32 1, i32 0}
+!0 = !{!"dxc(private) 1.7.0.3636 (bdb110f42)"}
+!1 = !{i32 1, i32 5}
 !2 = !{i32 1, i32 7}
-!3 = !{!"ps", i32 6, i32 0}
+!3 = !{!"ps", i32 6, i32 5}
 !4 = !{null, null, !5, null}
 !5 = !{!6}
-!6 = !{i32 0, %dx.types.Handle* undef, !"cbPS", i32 0, i32 0, i32 1, i32 32, null}
+!6 = !{i32 0, %cbPS* undef, !"cbPS", i32 0, i32 0, i32 1, i32 32, null}
 !7 = !{i32 1, void ()* @main, !8}
 !8 = !{!9}
 !9 = !{i32 0, !10, !10}
