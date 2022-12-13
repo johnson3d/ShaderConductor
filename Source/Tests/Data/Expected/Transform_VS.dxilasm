@@ -12,7 +12,7 @@
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; SV_Position              0   xyzw        0      POS   float   xyzw
 ;
-; shader hash: 5a9cfac7d747714120e739ffce1a0980
+; shader hash: ********************************
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -142,7 +142,7 @@ attributes #2 = { nounwind readonly }
 !dx.viewIdState = !{!7}
 !dx.entryPoints = !{!8}
 
-!0 = !{!"dxc(private) 1.7.0.3636 (bdb110f42)"}
+!0 = !{!"dxc(private) **********************"}
 !1 = !{i32 1, i32 0}
 !2 = !{i32 1, i32 7}
 !3 = !{!"vs", i32 6, i32 0}

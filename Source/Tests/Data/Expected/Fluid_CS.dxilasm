@@ -10,7 +10,7 @@
 ; Name                 Index   Mask Register SysValue  Format   Used
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; no parameters
-; shader hash: f63fb7487112aeb66ca00a305149222f
+; shader hash: ********************************
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -186,7 +186,7 @@ attributes #2 = { nounwind }
 !dx.resources = !{!4}
 !dx.entryPoints = !{!14}
 
-!0 = !{!"dxc(private) 1.7.0.3636 (bdb110f42)"}
+!0 = !{!"dxc(private) **********************"}
 !1 = !{i32 1, i32 0}
 !2 = !{i32 1, i32 7}
 !3 = !{!"cs", i32 6, i32 0}

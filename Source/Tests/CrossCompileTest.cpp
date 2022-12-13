@@ -79,8 +79,14 @@ namespace
                 }
                 compareName += "." + extMap[static_cast<uint32_t>(targets[i].language)];
 
-                const uint8_t* target_ptr = reinterpret_cast<const uint8_t*>(result.target.Data());
-                CompareWithExpected(std::vector<uint8_t>(target_ptr, target_ptr + result.target.Size()), result.isText, compareName);
+                const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
+                std::vector<uint8_t> actualTarget(targetPtr, targetPtr + result.target.Size());
+                if (targets[i].language == ShadingLanguage::Dxil)
+                {
+                    RemoveDxilAsmHash(actualTarget);
+                }
+
+                CompareWithExpected(actualTarget, result.isText, compareName);
             }
             else
             {
@@ -803,8 +809,13 @@ namespace
             EXPECT_TRUE(result.isText);
 
             const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText,
-                                "Subpass_PS." + std::get<1>(target));
+            std::vector<uint8_t> actualTarget(targetPtr, targetPtr + result.target.Size());
+            if (std::get<0>(target).language == ShadingLanguage::Dxil)
+            {
+                RemoveDxilAsmHash(actualTarget);
+            }
+
+            CompareWithExpected(actualTarget, result.isText, "Subpass_PS." + std::get<1>(target));
         }
     }
 } // namespace
