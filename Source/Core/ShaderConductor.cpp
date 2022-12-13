@@ -61,7 +61,7 @@
 #include <spirv_msl.hpp>
 
 #ifdef _WIN32
-#include <d3d12shader.h>
+#include <directx/d3d12shader.h>
 #endif
 
 #define SC_UNUSED(x) (void)(x);
@@ -553,7 +553,10 @@ namespace
                         IFT(dxcResult->GetResult(&reflectionBlob));
                     }
 
-                    result.reflection = MakeDxilReflection(reflectionBlob, asModule);
+                    if (reflectionBlob != nullptr)
+                    {
+                        result.reflection = MakeDxilReflection(reflectionBlob, asModule);
+                    }
                 }
 #else
                 SC_UNUSED(targetLanguage);

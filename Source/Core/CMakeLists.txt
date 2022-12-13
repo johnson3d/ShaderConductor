@@ -72,6 +72,7 @@ if(MSVC)
 endif()
 target_link_libraries(${LIB_NAME}
     PRIVATE
+        DirectX-Headers
         spirv-cross-core
         spirv-cross-glsl
         spirv-cross-hlsl
