@@ -35,7 +35,7 @@ namespace ShaderConductor
 {
     std::vector<uint8_t> LoadFile(const std::string& name, bool isText);
     void CompareWithExpected(const std::vector<uint8_t>& actual, bool isText, const std::string& compareName);
-    void CompareWithExpected(const std::vector<uint8_t>& actual, bool isText, const std::string compareNames[], uint32_t numCompareNames);
+    void RemoveDxilAsmHash(std::vector<uint8_t>& text);
 } // namespace ShaderConductor
 
 #endif

@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 
 #include <fstream>
+#include <iterator> // For std::size on raw array
 #include <string>
 #include <vector>
 
@@ -55,23 +56,8 @@ namespace ShaderConductor
 
     void CompareWithExpected(const std::vector<uint8_t>& actual, bool isText, const std::string& compareName)
     {
-        CompareWithExpected(actual, isText, &compareName, 1);
-    }
-
-    void CompareWithExpected(const std::vector<uint8_t>& actual, bool isText, const std::string compareNames[], uint32_t numCompareNames)
-    {
-        bool match = false;
-        for (uint32_t i = 0; i < numCompareNames; ++i)
-        {
-            std::vector<uint8_t> expected = LoadFile(TEST_DATA_DIR "Expected/" + compareNames[i], isText);
-            if (expected == actual)
-            {
-                match = true;
-                break;
-            }
-        }
-
-        if (!match)
+        std::vector<uint8_t> expected = LoadFile(TEST_DATA_DIR "Expected/" + compareName, isText);
+        if (expected != actual)
         {
             if (!actual.empty())
             {
@@ -80,12 +66,32 @@ namespace ShaderConductor
                 {
                     mode |= std::ios_base::binary;
                 }
-                std::ofstream actualFile(TEST_DATA_DIR "Result/" + compareNames[0], mode);
+                std::ofstream actualFile(TEST_DATA_DIR "Result/" + compareName, mode);
                 actualFile.write(reinterpret_cast<const char*>(actual.data()), actual.size());
             }
         }
 
-        EXPECT_TRUE(match);
+        EXPECT_EQ(std::string(expected.begin(), expected.end()), std::string(actual.begin(), actual.end()));
+    }
+
+    void RemoveDxilAsmHash(std::vector<uint8_t>& text)
+    {
+        const std::tuple<std::string, uint32_t> landmarks[] = {{"shader debug name: ", 32}, {"shader hash: ", 32}, {"\"dxc(private) ", 22}};
+
+        const std::string_view text_view(reinterpret_cast<const char*>(text.data()), text.size());
+        for (size_t i = 0; i < std::size(landmarks); ++i)
+        {
+            size_t location = text_view.find(std::get<0>(landmarks[i]));
+            if (location != std::string::npos)
+            {
+                location += std::get<0>(landmarks[i]).size();
+                for (size_t j = 0; j < std::get<1>(landmarks[i]); ++j)
+                {
+                    text[location] = '*';
+                    ++location;
+                }
+            }
+        }
     }
 } // namespace ShaderConductor
 

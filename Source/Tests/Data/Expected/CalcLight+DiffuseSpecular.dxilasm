@@ -15,8 +15,8 @@
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; SV_Target                0   xyzw        0   TARGET   float   xyzw
 ;
-; shader debug name: d61fc8d96aa9e1479c569c3ec99aaf7d.pdb
-; shader hash: d61fc8d96aa9e1479c569c3ec99aaf7d
+; shader debug name: ********************************.pdb
+; shader hash: ********************************
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -175,7 +175,7 @@ attributes #2 = { nounwind }
 !dx.viewIdState = !{!11}
 !dx.entryPoints = !{!12}
 
-!0 = !{!"dxc(private) 1.7.0.3636 (bdb110f42)"}
+!0 = !{!"dxc(private) **********************"}
 !1 = !{i32 1, i32 5}
 !2 = !{i32 1, i32 7}
 !3 = !{!"ps", i32 6, i32 5}

@@ -631,8 +631,13 @@ namespace
             EXPECT_TRUE(result.isText);
 
             const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText,
-                                "DotHalfPS." + std::get<1>(target));
+            std::vector<uint8_t> actualTarget(targetPtr, targetPtr + result.target.Size());
+            if (std::get<0>(target).language == ShadingLanguage::Dxil)
+            {
+                RemoveDxilAsmHash(actualTarget);
+            }
+
+            CompareWithExpected(actualTarget, result.isText, "DotHalfPS." + std::get<1>(target));
         }
     }
 
@@ -670,8 +675,13 @@ namespace
             EXPECT_TRUE(result.isText);
 
             const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText,
-                                "HalfOutParamPS." + std::get<1>(target));
+            std::vector<uint8_t> actualTarget(targetPtr, targetPtr + result.target.Size());
+            if (std::get<0>(target).language == ShadingLanguage::Dxil)
+            {
+                RemoveDxilAsmHash(actualTarget);
+            }
+
+            CompareWithExpected(actualTarget, result.isText, "HalfOutParamPS." + std::get<1>(target));
         }
     }
 
@@ -709,8 +719,13 @@ namespace
             EXPECT_TRUE(result.isText);
 
             const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(result.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + result.target.Size()), result.isText,
-                                "HalfBufferPS." + std::get<1>(target));
+            std::vector<uint8_t> actualTarget(targetPtr, targetPtr + result.target.Size());
+            if (std::get<0>(target).language == ShadingLanguage::Dxil)
+            {
+                RemoveDxilAsmHash(actualTarget);
+            }
+
+            CompareWithExpected(actualTarget, result.isText, "HalfBufferPS." + std::get<1>(target));
         }
     }
 
@@ -736,8 +751,7 @@ namespace
             {&dxilModules[0], &dxilModules[2]},
         };
 
-        const std::string expectedNames[][2] = {{"CalcLight+Diffuse.Debug.dxilasm", "CalcLight+Diffuse.Release.dxilasm"},
-                                                {"CalcLight+DiffuseSpecular.Debug.dxilasm", "CalcLight+DiffuseSpecular.Release.dxilasm"}};
+        const std::string expectedNames[] = {"CalcLight+Diffuse.dxilasm", "CalcLight+DiffuseSpecular.dxilasm"};
 
         for (size_t i = 0; i < 2; ++i)
         {
@@ -754,8 +768,10 @@ namespace
             EXPECT_TRUE(disasmResult.isText);
 
             const uint8_t* targetPtr = reinterpret_cast<const uint8_t*>(disasmResult.target.Data());
-            CompareWithExpected(std::vector<uint8_t>(targetPtr, targetPtr + disasmResult.target.Size()), disasmResult.isText,
-                                expectedNames[i], 2);
+            std::vector<uint8_t> actualTarget(targetPtr, targetPtr + disasmResult.target.Size());
+            RemoveDxilAsmHash(actualTarget);
+
+            CompareWithExpected(actualTarget, disasmResult.isText, expectedNames[i]);
         }
     }
 
