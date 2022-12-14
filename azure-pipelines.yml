@@ -1,8 +1,8 @@
 variables:
   configuration: Release
   platform: x64
-  prebuiltDxcUrl_Windows: 'https://ci.appveyor.com/api/buildjobs/u0p7an7d1nagpod4/artifacts/build/Release/dxc-artifacts.zip'
-  prebuiltDxcUrl_Linux: 'https://ci.appveyor.com/api/buildjobs/qadbviql6d35n27y/artifacts/build/dxc-artifacts.tar.gz'
+  prebuiltDxcUrl_Windows: 'https://ci.appveyor.com/api/buildjobs/hstx61po9r2w6rbj/artifacts/build/Release/dxc-artifacts.zip'
+  prebuiltDxcUrl_Linux: 'https://ci.appveyor.com/api/buildjobs/5egi1wkhwwd353er/artifacts/build/dxc-artifacts.tar.gz'
   prebuiltDxcExtract_Windows: '7z x -odxc-artifacts dxc-artifacts.zip'
   prebuiltDxcExtract_Linux: 'tar -xvf dxc-artifacts.tar.gz'
   prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'

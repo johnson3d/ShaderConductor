@@ -42,8 +42,11 @@ struct type_StructuredBuffer_ParticleForces
     ParticleForces _m0[1];
 };
 
-kernel void main0(constant type_cbSimulationConstants& cbSimulationConstants [[buffer(0)]], device type_RWStructuredBuffer_Particle& particlesRW [[buffer(1)]], const device type_StructuredBuffer_Particle& particlesRO [[buffer(2)]], const device type_StructuredBuffer_ParticleForces& particlesForcesRO [[buffer(3)]], uint3 gl_GlobalInvocationID [[thread_position_in_grid]])
+kernel void main0(constant void* spvBufferAliasSet0Binding0 [[buffer(0)]], const device type_StructuredBuffer_ParticleForces& particlesForcesRO [[buffer(1)]], uint3 gl_GlobalInvocationID [[thread_position_in_grid]])
 {
+    constant auto& cbSimulationConstants = *(constant type_cbSimulationConstants*)spvBufferAliasSet0Binding0;
+    device auto& particlesRW = *(device type_RWStructuredBuffer_Particle*)spvBufferAliasSet0Binding0;
+    const device auto& particlesRO = *(const device type_StructuredBuffer_Particle*)spvBufferAliasSet0Binding0;
     float2 _50 = particlesRO._m0[gl_GlobalInvocationID.x].position;
     float2 _52 = particlesRO._m0[gl_GlobalInvocationID.x].velocity;
     float2 _54 = particlesForcesRO._m0[gl_GlobalInvocationID.x].acceleration;

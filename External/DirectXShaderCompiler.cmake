@@ -1,9 +1,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-set(DirectXShaderCompiler_REV "bdb110f425727cc5aeb6b8324795957792ae8a5b")
+set(DirectXShaderCompiler_REV "ae87945a3c07e7088f525ea034767f175a682167")
 
-UpdateExternalLib("DirectXShaderCompiler" "https://github.com/Microsoft/DirectXShaderCompiler.git" ${DirectXShaderCompiler_REV})
+UpdateExternalLib("DirectXShaderCompiler" "https://github.com/Microsoft/DirectXShaderCompiler.git" ${DirectXShaderCompiler_REV} need_patch)
+if(need_patch)
+    foreach(patch "0001-Enable-to-set-the-location-of-DirectX-Headers")
+        ApplyPatch("DirectXShaderCompiler" "${CMAKE_CURRENT_SOURCE_DIR}/Patches/${patch}.patch")
+    endforeach()
+endif()
 
 set(ENABLE_SPIRV_CODEGEN ON CACHE BOOL "" FORCE)
 set(ENABLE_DXIL2SPV OFF CACHE BOOL "" FORCE)
@@ -29,15 +34,6 @@ set(LLVM_DEFAULT_TARGET_TRIPLE "dxil-ms-dx" CACHE STRING "" FORCE)
 set(CLANG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(LLVM_REQUIRES_RTTI ON CACHE BOOL "" FORCE)
 set(CLANG_CL OFF CACHE BOOL "" FORCE)
-if(SC_ARCH_NAME STREQUAL "x86")
-    set(DXC_BUILD_ARCH "Win32" CACHE STRING "" FORCE)
-elseif(SC_ARCH_NAME STREQUAL "arm")
-    set(DXC_BUILD_ARCH "ARM" CACHE STRING "" FORCE)
-elseif(SC_ARCH_NAME STREQUAL "arm64")
-    set(DXC_BUILD_ARCH "ARM64" CACHE STRING "" FORCE)
-else()
-    set(DXC_BUILD_ARCH "${SC_ARCH_NAME}" CACHE STRING "" FORCE)
-endif()
 set(SPIRV_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
 set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
@@ -58,9 +54,9 @@ foreach(target
     "DxcDisassembler" "DxcOptimizer" "DxilConstants" "DxilCounters" "DxilDocs" "DxilInstructions" "DxilIntrinsicTables"
     "DxilMetadata" "DxilOperations" "DxilPIXPasses" "DxilShaderModel" "DxilShaderModelInc" "DxilSigPoint" "DxilValidation" "DxilValidationInc"
     "HCTGen" "HLSLIntrinsicOp" "HLSLOptions"
-    "LLVMAnalysis" "LLVMAsmParser" "LLVMBitReader" "LLVMBitWriter" "LLVMCore" "LLVMDxcBindingTable" "LLVMDxcSupport" "LLVMDXIL" "LLVMDxilContainer"
-    "LLVMDxilPIXPasses" "LLVMDxilRootSignature" "LLVMDxrFallback" "LLVMHLSL" "LLVMInstCombine" "LLVMipa" "LLVMipo" "LLVMIRReader"
-    "LLVMLinker" "LLVMMiniz" "LLVMMSSupport" "LLVMOption" "LLVMPasses" "LLVMPassPrinters" "LLVMProfileData" "LLVMScalarOpts" "LLVMSupport"
+    "LLVMAnalysis" "LLVMAsmParser" "LLVMBitReader" "LLVMBitWriter" "LLVMCore" "LLVMDxcBindingTable" "LLVMDxcSupport" "LLVMDXIL" "LLVMDxilCompression" "LLVMDxilContainer"
+    "LLVMDxilPIXPasses" "LLVMDxilRDATBuilder" "LLVMDxilRootSignature" "LLVMDxrFallback" "LLVMHLSL" "LLVMInstCombine" "LLVMipa" "LLVMipo" "LLVMIRReader"
+    "LLVMLinker" "LLVMMSSupport" "LLVMOption" "LLVMPasses" "LLVMPassPrinters" "LLVMProfileData" "LLVMScalarOpts" "LLVMSupport"
     "LLVMTableGen" "LLVMTarget" "LLVMTransformUtils" "LLVMVectorize"
     "ClangDriverOptions" "DxcEtw" "intrinsics_gen" "TablegenHLSLOptions"
     "clang-tblgen" "llvm-tblgen" "hlsl_dxcversion_autogen" "hlsl_version_autogen" "RDAT_LibraryTypes")
