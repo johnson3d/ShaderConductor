@@ -60,8 +60,12 @@
 #include <spirv_hlsl.hpp>
 #include <spirv_msl.hpp>
 
-#ifdef _WIN32
+#ifndef _WIN32
+#define interface struct
+#endif
 #include <directx/d3d12shader.h>
+#ifndef _WIN32
+#undef interface
 #endif
 
 #define SC_UNUSED(x) (void)(x);
@@ -484,9 +488,7 @@ namespace
         return shaderProfile;
     }
 
-#ifdef _WIN32
     Reflection MakeDxilReflection(IDxcBlob* dxilBlob, bool asModule);
-#endif
     Reflection MakeSpirVReflection(const spirv_cross::Compiler& compiler);
 
     void ConvertDxcResult(Compiler::ResultDesc& result, IDxcResult* dxcResult, ShadingLanguage targetLanguage, bool asModule,
@@ -537,7 +539,6 @@ namespace
 
             if (needReflection)
             {
-#ifdef _WIN32
                 if (targetLanguage == ShadingLanguage::Dxil)
                 {
                     // Gather reflection information only for ShadingLanguage::Dxil. SPIR-V reflection is gathered when cross-compiling.
@@ -558,10 +559,6 @@ namespace
                         result.reflection = MakeDxilReflection(reflectionBlob, asModule);
                     }
                 }
-#else
-                SC_UNUSED(targetLanguage);
-                SC_UNUSED(asModule);
-#endif
             }
         }
     }
@@ -1029,63 +1026,9 @@ namespace
         }
     }
 
-#ifdef _WIN32
     template <typename T>
     void ExtractDxilResourceDesc(std::vector<Reflection::ResourceDesc>& resourceDescs,
-                                 std::vector<Reflection::ConstantBuffer>& constantBuffers, T* d3d12Reflection, uint32_t resourceIndex)
-    {
-        D3D12_SHADER_INPUT_BIND_DESC bindDesc;
-        d3d12Reflection->GetResourceBindingDesc(resourceIndex, &bindDesc);
-
-        Reflection::ResourceDesc reflectionDesc{};
-
-        std::strncpy(reflectionDesc.name, bindDesc.Name, sizeof(reflectionDesc.name));
-        reflectionDesc.name[sizeof(reflectionDesc.name) - 1] = '\0';
-        reflectionDesc.space = bindDesc.Space;
-        reflectionDesc.bindPoint = bindDesc.BindPoint;
-        reflectionDesc.bindCount = bindDesc.BindCount;
-
-        if (bindDesc.Type == D3D_SIT_CBUFFER || bindDesc.Type == D3D_SIT_TBUFFER)
-        {
-            reflectionDesc.type = ShaderResourceType::ConstantBuffer;
-
-            ID3D12ShaderReflectionConstantBuffer* d3d12CBuffer = d3d12Reflection->GetConstantBufferByName(bindDesc.Name);
-            constantBuffers.emplace_back(Reflection::ReflectionImpl::Make(d3d12CBuffer));
-        }
-        else
-        {
-            switch (bindDesc.Type)
-            {
-            case D3D_SIT_TEXTURE:
-                reflectionDesc.type = ShaderResourceType::Texture;
-                break;
-
-            case D3D_SIT_SAMPLER:
-                reflectionDesc.type = ShaderResourceType::Sampler;
-                break;
-
-            case D3D_SIT_STRUCTURED:
-            case D3D_SIT_BYTEADDRESS:
-                reflectionDesc.type = ShaderResourceType::ShaderResourceView;
-                break;
-
-            case D3D_SIT_UAV_RWTYPED:
-            case D3D_SIT_UAV_RWSTRUCTURED:
-            case D3D_SIT_UAV_RWBYTEADDRESS:
-            case D3D_SIT_UAV_APPEND_STRUCTURED:
-            case D3D_SIT_UAV_CONSUME_STRUCTURED:
-            case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
-                reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
-                break;
-
-            default:
-                SC_UNREACHABLE("Unknown bind type.");
-            }
-        }
-
-        resourceDescs.emplace_back(std::move(reflectionDesc));
-    }
-#endif
+                                 std::vector<Reflection::ConstantBuffer>& constantBuffers, T* d3d12Reflection, uint32_t resourceIndex);
 } // namespace
 
 namespace ShaderConductor
@@ -1183,7 +1126,6 @@ namespace ShaderConductor
     class Reflection::VariableType::VariableTypeImpl
     {
     public:
-#ifdef _WIN32
         explicit VariableTypeImpl(ID3D12ShaderReflectionType* d3d12Type)
         {
             D3D12_SHADER_TYPE_DESC d3d12ShaderTypeDesc;
@@ -1275,7 +1217,6 @@ namespace ShaderConductor
                 m_elementStride = 0;
             }
         }
-#endif
 
         VariableTypeImpl(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& spirvParentReflectionType,
                          uint32_t variableIndex, const spirv_cross::SPIRType& spirvReflectionType)
@@ -1438,14 +1379,12 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef _WIN32
         static VariableType Make(ID3D12ShaderReflectionType* d3d12ReflectionType)
         {
             VariableType ret;
             ret.m_impl = new VariableTypeImpl(d3d12ReflectionType);
             return ret;
         }
-#endif
 
         static VariableType Make(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& spirvParentReflectionType,
                                  uint32_t variableIndex, const spirv_cross::SPIRType& spirvReflectionType)
@@ -1562,7 +1501,6 @@ namespace ShaderConductor
     class Reflection::ConstantBuffer::ConstantBufferImpl
     {
     public:
-#ifdef _WIN32
         explicit ConstantBufferImpl(ID3D12ShaderReflectionConstantBuffer* constantBuffer)
         {
             D3D12_SHADER_BUFFER_DESC bufferDesc;
@@ -1591,7 +1529,6 @@ namespace ShaderConductor
 
             m_size = bufferDesc.Size;
         }
-#endif
 
         explicit ConstantBufferImpl(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
         {
@@ -1740,7 +1677,6 @@ namespace ShaderConductor
     class Reflection::Function::FunctionImpl
     {
     public:
-#ifdef _WIN32
         explicit FunctionImpl(ID3D12FunctionReflection* d3d12FuncReflection)
         {
             D3D12_FUNCTION_DESC d3d12FuncDesc;
@@ -1753,7 +1689,6 @@ namespace ShaderConductor
                 ExtractDxilResourceDesc(m_resourceDescs, m_constantBuffers, d3d12FuncReflection, resourceIndex);
             }
         }
-#endif
 
         const char* Name() const noexcept
         {
@@ -1816,14 +1751,12 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef _WIN32
         static Function Make(ID3D12FunctionReflection* d3d12FuncReflection)
         {
             Function ret;
             ret.m_impl = new FunctionImpl(d3d12FuncReflection);
             return ret;
         }
-#endif
 
     private:
         std::string m_name;
@@ -1918,7 +1851,6 @@ namespace ShaderConductor
     class Reflection::ReflectionImpl
     {
     public:
-#ifdef _WIN32
         ReflectionImpl(IDxcBlob* dxilBlob, bool asModule)
         {
             if (asModule)
@@ -2379,7 +2311,6 @@ namespace ShaderConductor
                 shaderReflection->GetThreadGroupSize(&m_csBlockSizeX, &m_csBlockSizeY, &m_csBlockSizeZ);
             }
         }
-#endif
 
         explicit ReflectionImpl(const spirv_cross::Compiler& compiler)
         {
@@ -2894,14 +2825,12 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef _WIN32
         static Reflection Make(IDxcBlob* dxilBlob, bool asModule)
         {
             Reflection ret;
             ret.m_impl = new ReflectionImpl(dxilBlob, asModule);
             return ret;
         }
-#endif
 
         static Reflection Make(const spirv_cross::Compiler& compiler)
         {
@@ -2910,14 +2839,12 @@ namespace ShaderConductor
             return ret;
         }
 
-#ifdef _WIN32
         static ConstantBuffer Make(ID3D12ShaderReflectionConstantBuffer* constantBuffer)
         {
             ConstantBuffer ret;
             ret.m_impl = new ConstantBuffer::ConstantBufferImpl(constantBuffer);
             return ret;
         }
-#endif
 
         static ConstantBuffer Make(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
         {
@@ -3390,16 +3317,70 @@ namespace ShaderConductor
 
 namespace
 {
-#ifdef _WIN32
     Reflection MakeDxilReflection(IDxcBlob* dxilBlob, bool asModule)
     {
         return Reflection::ReflectionImpl::Make(dxilBlob, asModule);
     }
-#endif
 
     Reflection MakeSpirVReflection(const spirv_cross::Compiler& compiler)
     {
         return Reflection::ReflectionImpl::Make(compiler);
+    }
+
+    template <typename T>
+    void ExtractDxilResourceDesc(std::vector<Reflection::ResourceDesc>& resourceDescs,
+                                 std::vector<Reflection::ConstantBuffer>& constantBuffers, T* d3d12Reflection, uint32_t resourceIndex)
+    {
+        D3D12_SHADER_INPUT_BIND_DESC bindDesc;
+        d3d12Reflection->GetResourceBindingDesc(resourceIndex, &bindDesc);
+
+        Reflection::ResourceDesc reflectionDesc{};
+
+        std::strncpy(reflectionDesc.name, bindDesc.Name, sizeof(reflectionDesc.name));
+        reflectionDesc.name[sizeof(reflectionDesc.name) - 1] = '\0';
+        reflectionDesc.space = bindDesc.Space;
+        reflectionDesc.bindPoint = bindDesc.BindPoint;
+        reflectionDesc.bindCount = bindDesc.BindCount;
+
+        if (bindDesc.Type == D3D_SIT_CBUFFER || bindDesc.Type == D3D_SIT_TBUFFER)
+        {
+            reflectionDesc.type = ShaderResourceType::ConstantBuffer;
+
+            ID3D12ShaderReflectionConstantBuffer* d3d12CBuffer = d3d12Reflection->GetConstantBufferByName(bindDesc.Name);
+            constantBuffers.emplace_back(Reflection::ReflectionImpl::Make(d3d12CBuffer));
+        }
+        else
+        {
+            switch (bindDesc.Type)
+            {
+            case D3D_SIT_TEXTURE:
+                reflectionDesc.type = ShaderResourceType::Texture;
+                break;
+
+            case D3D_SIT_SAMPLER:
+                reflectionDesc.type = ShaderResourceType::Sampler;
+                break;
+
+            case D3D_SIT_STRUCTURED:
+            case D3D_SIT_BYTEADDRESS:
+                reflectionDesc.type = ShaderResourceType::ShaderResourceView;
+                break;
+
+            case D3D_SIT_UAV_RWTYPED:
+            case D3D_SIT_UAV_RWSTRUCTURED:
+            case D3D_SIT_UAV_RWBYTEADDRESS:
+            case D3D_SIT_UAV_APPEND_STRUCTURED:
+            case D3D_SIT_UAV_CONSUME_STRUCTURED:
+            case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
+                reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
+                break;
+
+            default:
+                SC_UNREACHABLE("Unknown bind type.");
+            }
+        }
+
+        resourceDescs.emplace_back(std::move(reflectionDesc));
     }
 } // namespace
 
