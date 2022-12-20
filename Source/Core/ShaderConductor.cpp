@@ -122,11 +122,11 @@ namespace
 #else
             char* const locale = std::setlocale(LC_CTYPE, CPToLocale(CP_UTF8));
 
-            const size_t wideLen = ::mbstowcs(nullptr, utf8Str, utf8Len);
+            const size_t wideLen = ::mbstowcs(nullptr, utf8Str, 0);
             if (wideLen > 0)
             {
                 wideStr.resize(wideLen);
-                ::mbstowcs(wideStr.data(), utf8Str, utf8Len);
+                ::mbstowcs(wideStr.data(), utf8Str, wideLen);
             }
 
             std::setlocale(LC_CTYPE, locale);
@@ -154,11 +154,11 @@ namespace
 #else
             char* const locale = std::setlocale(LC_CTYPE, CPToLocale(CP_UTF8));
 
-            const size_t utf8Len = ::wcstombs(nullptr, wideStr, wideLen);
+            const size_t utf8Len = ::wcstombs(nullptr, wideStr, 0);
             if (utf8Len > 0)
             {
                 utf8Str.resize(utf8Len);
-                ::wcstombs(utf8Str.data(), wideStr, wideLen);
+                ::wcstombs(utf8Str.data(), wideStr, utf8Len);
             }
 
             std::setlocale(LC_CTYPE, locale);
