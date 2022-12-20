@@ -100,21 +100,6 @@ stages:
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: 'choco install ninja wget'
           artifactBinaries: $(artifactBinaries_Windows)
-        Linux_gcc9:
-          vmImage: Ubuntu-20.04
-          compiler: gcc9
-          combination: 'linux-$(compiler)-$(platform)-$(configuration)'
-          buildFolder: 'Build/ninja-$(combination)'
-          installCommand: |
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            sudo apt-get update
-            sudo apt-get install g++-9 ninja-build python3
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Nix)
-          artifactBinaries: $(artifactBinaries_Nix)
-          CC: gcc-9
-          CXX: g++-9
         Linux_gcc10:
           vmImage: Ubuntu-20.04
           compiler: gcc10
@@ -130,6 +115,21 @@ stages:
           artifactBinaries: $(artifactBinaries_Nix)
           CC: gcc-10
           CXX: g++-10
+        Linux_gcc11:
+          vmImage: Ubuntu-20.04
+          compiler: gcc11
+          combination: 'linux-$(compiler)-$(platform)-$(configuration)'
+          buildFolder: 'Build/ninja-$(combination)'
+          installCommand: |
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get install g++-11 ninja-build python3
+          prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
+          prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
+          testCommand: $(testCommand_Nix)
+          artifactBinaries: $(artifactBinaries_Nix)
+          CC: gcc-11
+          CXX: g++-11
         Linux_clang11:
           vmImage: Ubuntu-20.04
           compiler: clang11
