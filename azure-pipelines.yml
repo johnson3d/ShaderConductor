@@ -100,21 +100,6 @@ stages:
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: 'choco install ninja wget'
           artifactBinaries: $(artifactBinaries_Windows)
-        Linux_gcc10:
-          vmImage: Ubuntu-20.04
-          compiler: gcc10
-          combination: 'linux-$(compiler)-$(platform)-$(configuration)'
-          buildFolder: 'Build/ninja-$(combination)'
-          installCommand: |
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            sudo apt-get update
-            sudo apt-get install g++-10 ninja-build python3
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Nix)
-          artifactBinaries: $(artifactBinaries_Nix)
-          CC: gcc-10
-          CXX: g++-10
         Linux_gcc11:
           vmImage: Ubuntu-20.04
           compiler: gcc11
@@ -130,6 +115,20 @@ stages:
           artifactBinaries: $(artifactBinaries_Nix)
           CC: gcc-11
           CXX: g++-11
+        Linux_gcc12:
+          vmImage: Ubuntu-22.04
+          compiler: gcc12
+          combination: 'linux-$(compiler)-$(platform)-$(configuration)'
+          buildFolder: 'Build/ninja-$(combination)'
+          installCommand: |
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get install g++-12 ninja-build python3
+          # Prebuilt DXC for Linux doesn't work on Ubuntu 22.04
+          testCommand: $(testCommand_Nix)
+          artifactBinaries: $(artifactBinaries_Nix)
+          CC: gcc-12
+          CXX: g++-12
         Linux_clang14:
           vmImage: Ubuntu-20.04
           compiler: clang14

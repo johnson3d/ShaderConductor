@@ -42,12 +42,17 @@
 #include <clocale>
 #endif
 
-#if defined(__clang__)
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations" // Deprecated std::iterator
+#elif defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations" // Deprecated std::iterator
 #endif
 #include <dxc/DxilContainer/DxilContainer.h>
-#if defined(__clang__)
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#elif defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 #include <dxc/dxcapi.h>
