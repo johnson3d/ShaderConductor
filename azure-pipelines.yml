@@ -130,40 +130,38 @@ stages:
           artifactBinaries: $(artifactBinaries_Nix)
           CC: gcc-11
           CXX: g++-11
-        Linux_clang11:
+        Linux_clang14:
           vmImage: Ubuntu-20.04
-          compiler: clang11
+          compiler: clang14
           combination: 'linux-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: |
             wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-            sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main"
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main"
             sudo apt-get update
-            sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev lld-11 ninja-build python3
+            sudo apt-get install clang-14 libc++-14-dev libc++abi-14-dev lld-14 ninja-build python3
           prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
           prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
           testCommand: $(testCommand_Nix)
           artifactBinaries: $(artifactBinaries_Nix)
-          CC: clang-11
-          CXX: clang++-11
-        Linux_clang13:
+          CC: clang-14
+          CXX: clang++-14
+        Linux_clang15:
           vmImage: Ubuntu-20.04
-          compiler: clang13
+          compiler: clang15
           combination: 'linux-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: |
             wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-            sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-15 main"
             sudo apt-get update
-            sudo apt-get install clang-13 libc++-13-dev libc++abi-13-dev lld-13 ninja-build python3
+            sudo apt-get install clang-15 libc++-15-dev libc++abi-15-dev lld-15 ninja-build python3
           prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
           prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
           testCommand: $(testCommand_Nix)
           artifactBinaries: $(artifactBinaries_Nix)
-          CC: clang-13
-          CXX: clang++-13
+          CC: clang-15
+          CXX: clang++-15
         macOS_11_clang:
           vmImage: macOS-11
           compiler: clang13
