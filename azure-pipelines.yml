@@ -55,15 +55,6 @@ stages:
   - job: Build
     strategy:
       matrix:
-        Windows_vc142_x86:
-          vmImage: windows-2019
-          compiler: vc142
-          platform: x86
-          combination: 'win-$(compiler)-$(platform)-$(configuration)'
-          buildFolder: 'Build/ninja-$(combination)'
-          installCommand: 'choco install ninja wget'
-          testCommand: $(testCommand_Windows)
-          artifactBinaries: $(artifactBinaries_Windows)
         Windows_vc142_x64:
           vmImage: windows-2019
           compiler: vc142
