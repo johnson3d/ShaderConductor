@@ -121,7 +121,6 @@ stages:
           combination: 'linux-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: |
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install g++-12 ninja-build python3
           # Prebuilt DXC for Linux doesn't work on Ubuntu 22.04
@@ -146,17 +145,16 @@ stages:
           CC: clang-14
           CXX: clang++-14
         Linux_clang15:
-          vmImage: Ubuntu-20.04
+          vmImage: Ubuntu-22.04
           compiler: clang15
           combination: 'linux-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: |
             wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-            sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-15 main"
+            sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-15 main"
             sudo apt-get update
             sudo apt-get install clang-15 libc++-15-dev libc++abi-15-dev lld-15 ninja-build python3
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
+          # Prebuilt DXC for Linux doesn't work on Ubuntu 22.04
           testCommand: $(testCommand_Nix)
           artifactBinaries: $(artifactBinaries_Nix)
           CC: clang-15
