@@ -180,7 +180,9 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		if configuration == "clangformat":
 			options = "-DSC_CLANGFORMAT=\"ON\""
 		else:
-			options = "-DCMAKE_BUILD_TYPE=\"%s\" -DSC_ARCH_NAME=\"%s\" %s %s" % (configuration, arch, tblgenOptions, prebuiltDxcDirOptions)
+			options = "-DCMAKE_BUILD_TYPE=\"%s\" %s %s" % (configuration, tblgenOptions, prebuiltDxcDirOptions)
+			if hostPlatform != "win":
+				options += " -DSC_ARCH_NAME=\"%s\"" % arch
 		batCmd.AddCommand("cmake -G Ninja %s ../../" % options)
 		ninja_options = "-j%d" % parallel
 		if tblgenMode:
