@@ -93,18 +93,22 @@ endif()
 
 set(usePrebuilt FALSE)
 if(SC_PREBUILT_DXC_DIR)
-    find_file(prebuiltDxcBinary
-        ${dxcompilerName}
-        PATHS ${SC_PREBUILT_DXC_DIR}/${dxcompilerLibDir}
-        NO_DEFAULT_PATH
-    )
-    find_path(prebuiltDxcIncludeDir
-        dxc/dxcapi.h
-        PATHS ${SC_PREBUILT_DXC_DIR}/include
-        NO_DEFAULT_PATH
-    )
-    if(prebuiltDxcBinary AND prebuiltDxcIncludeDir)
-        set(usePrebuilt TRUE)
+    if(IS_DIRECTORY ${SC_PREBUILT_DXC_DIR})
+        find_file(prebuiltDxcBinary
+            ${dxcompilerName}
+            PATHS ${SC_PREBUILT_DXC_DIR}/${dxcompilerLibDir}
+            NO_DEFAULT_PATH
+        )
+        find_path(prebuiltDxcIncludeDir
+            dxc/dxcapi.h
+            PATHS ${SC_PREBUILT_DXC_DIR}/include
+            NO_DEFAULT_PATH
+        )
+        if(prebuiltDxcBinary AND prebuiltDxcIncludeDir)
+            set(usePrebuilt TRUE)
+        endif()
+    else()
+        unset(SC_PREBUILT_DXC_DIR CACHE)
     endif()
 endif()
 
