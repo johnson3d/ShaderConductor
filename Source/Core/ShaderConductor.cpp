@@ -597,6 +597,11 @@ namespace
         dxcArgStrings.push_back(L"-E " + Utf8ToWide(source.entryPoint));
         dxcArgStrings.push_back(L"-T " + ShaderProfileName(source.stage, options.shaderModel, target.asModule));
 
+        // modify by johnson
+        if (source.hlslExtVersion != nullptr)
+            dxcArgStrings.push_back(L"-HV " + Utf8ToWide(source.hlslExtVersion));
+        // end modify
+        
         // HLSL matrices are translated into SPIR-V OpTypeMatrixs in a transposed manner,
         // See also https://antiagainst.github.io/post/hlsl-for-vulkan-matrices/
         if (options.packMatricesInRowMajor)
