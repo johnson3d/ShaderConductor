@@ -26,8 +26,8 @@
 #include <ShaderConductor/ShaderConductor.hpp>
 
 #include <dxc/Support/Global.h>
-#include <dxc/Support/WinAdapter.h>
 #include <dxc/Support/WinIncludes.h>
+#include <dxc/WinAdapter.h>
 
 #include <algorithm>
 #include <atomic>
@@ -42,19 +42,7 @@
 #include <clocale>
 #endif
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations" // Deprecated std::iterator
-#elif defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations" // Deprecated std::iterator
-#endif
 #include <dxc/DxilContainer/DxilContainer.h>
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#elif defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 #include <dxc/dxcapi.h>
 
 #include <spirv-tools/libspirv.h>

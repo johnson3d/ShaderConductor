@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-set(googletest_REV "e649993a402d96afe25fbf3413749adf0f2947f6")
+set(googletest_REV "8a6feabf04bec8fb125e0df0ad1195c42350725f")
 
 UpdateExternalLib("googletest" "https://github.com/google/googletest.git" ${googletest_REV})
 

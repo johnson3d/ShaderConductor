@@ -4,7 +4,6 @@
 ; Bound: 27
 ; Schema: 0
                OpCapability Shader
-               OpCapability StorageBuffer16BitAccess
                OpCapability Float16
                OpExtension "SPV_GOOGLE_hlsl_functionality1"
                OpExtension "SPV_GOOGLE_user_type"

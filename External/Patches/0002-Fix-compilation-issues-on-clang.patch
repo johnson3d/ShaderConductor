@@ -1,0 +1,36 @@
+From 4f04c8c8035c5b6fde5475caf48afdc82f7590b2 Mon Sep 17 00:00:00 2001
+From: Minmin Gong <gongminmin@msn.com>
+Date: Sat, 9 Sep 2023 21:33:06 -0700
+Subject: [PATCH 2/3] Fix compilation issues on clang
+
+ErrorOr has a implicit constructor. A move is required for construct an ErrorOr object. Then it's returned by the function.
+---
+ lib/Support/MemoryBuffer.cpp | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/lib/Support/MemoryBuffer.cpp b/lib/Support/MemoryBuffer.cpp
+index 700955c78..9a511e076 100644
+--- a/lib/Support/MemoryBuffer.cpp
++++ b/lib/Support/MemoryBuffer.cpp
+@@ -373,7 +373,8 @@ getOpenFileImpl(int FD, const Twine &Filename, uint64_t FileSize,
+         new (NamedBufferAlloc(Filename))
+         MemoryBufferMMapFile(RequiresNullTerminator, FD, MapSize, Offset, EC));
+     if (!EC)
+-      return Result; // HLSL Change - Fix redundant move warning.
++      return ErrorOr(
++          std::move(Result)); // HLSL Change - Fix redundant move warning.
+   }
+ 
+   std::unique_ptr<MemoryBuffer> Buf =
+@@ -413,7 +414,7 @@ getOpenFileImpl(int FD, const Twine &Filename, uint64_t FileSize,
+     BufPtr += NumRead;
+   }
+ 
+-  return Buf; // HLSL Change - Fix redundant move warning.
++  return ErrorOr(std::move(Buf)); // HLSL Change - Fix redundant move warning.
+ }
+ 
+ ErrorOr<std::unique_ptr<MemoryBuffer>>
+-- 
+2.42.0.windows.2
+

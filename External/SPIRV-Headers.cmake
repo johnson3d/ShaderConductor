@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-set(SPIRV_Headers_REV "87d5b782bec60822aa878941e6b13c0a9a954c9b")
+set(SPIRV_Headers_REV "d790ced752b5bfc06b6988baadef6eb2d16bdf96")
 
 UpdateExternalLib("SPIRV-Headers" "https://github.com/KhronosGroup/SPIRV-Headers.git" ${SPIRV_Headers_REV})
 

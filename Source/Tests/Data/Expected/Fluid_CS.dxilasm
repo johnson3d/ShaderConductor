@@ -66,8 +66,8 @@ target triple = "dxil-ms-dx"
 %"class.StructuredBuffer<ParticleForces>" = type { %struct.ParticleForces }
 %struct.ParticleForces = type { <2 x float> }
 %"class.RWStructuredBuffer<Particle>" = type { %struct.Particle }
-%cbSimulationConstants = type { float, %struct.Scene }
-%struct.Scene = type { float, <4 x float>, [4 x <3 x float>] }
+%cbSimulationConstants = type { <4 x float>, %struct.Scene }
+%struct.Scene = type { <4 x float>, <4 x float>, [4 x <3 x float>] }
 
 define void @main() {
   %1 = call %dx.types.Handle @dx.op.createHandle(i32 57, i8 1, i32 0, i32 0, i1 false)  ; CreateHandle(resourceClass,rangeId,index,nonUniformIndex)

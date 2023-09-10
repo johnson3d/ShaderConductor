@@ -4,7 +4,7 @@ layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 struct Scene
 {
-    float wallStiffness;
+    vec4 wallStiffness;
     vec4 gravity;
     vec3 planes[4];
 };
@@ -22,7 +22,7 @@ struct ParticleForces
 
 layout(std140) uniform type_cbSimulationConstants
 {
-    float timeStep;
+    vec4 timeStep;
     Scene scene;
 } cbSimulationConstants;
 
@@ -47,12 +47,12 @@ void main()
     vec2 _54 = particlesForcesRO._m0[gl_GlobalInvocationID.x].acceleration;
     vec3 _57 = vec3(particlesRO._m0[gl_GlobalInvocationID.x].position, 1.0);
     float _60 = dot(_57, cbSimulationConstants.scene.planes[0u]);
-    float _65 = -cbSimulationConstants.scene.wallStiffness;
+    float _65 = -cbSimulationConstants.scene.wallStiffness.x;
     float _71 = dot(_57, cbSimulationConstants.scene.planes[1u]);
     float _79 = dot(_57, cbSimulationConstants.scene.planes[2u]);
     float _87 = dot(_57, cbSimulationConstants.scene.planes[3u]);
-    vec2 _100 = _52 + ((((((_54 + (cbSimulationConstants.scene.planes[0u].xy * ((isnan(0.0) ? _60 : (isnan(_60) ? 0.0 : min(_60, 0.0))) * _65))) + (cbSimulationConstants.scene.planes[1u].xy * ((isnan(0.0) ? _71 : (isnan(_71) ? 0.0 : min(_71, 0.0))) * _65))) + (cbSimulationConstants.scene.planes[2u].xy * ((isnan(0.0) ? _79 : (isnan(_79) ? 0.0 : min(_79, 0.0))) * _65))) + (cbSimulationConstants.scene.planes[3u].xy * ((isnan(0.0) ? _87 : (isnan(_87) ? 0.0 : min(_87, 0.0))) * _65))) + cbSimulationConstants.scene.gravity.xy) * cbSimulationConstants.timeStep);
-    particlesRW._m0[gl_GlobalInvocationID.x].position = particlesRO._m0[gl_GlobalInvocationID.x].position + (_100 * cbSimulationConstants.timeStep);
+    vec2 _100 = _52 + ((((((_54 + (cbSimulationConstants.scene.planes[0u].xy * ((isnan(0.0) ? _60 : (isnan(_60) ? 0.0 : min(_60, 0.0))) * _65))) + (cbSimulationConstants.scene.planes[1u].xy * ((isnan(0.0) ? _71 : (isnan(_71) ? 0.0 : min(_71, 0.0))) * _65))) + (cbSimulationConstants.scene.planes[2u].xy * ((isnan(0.0) ? _79 : (isnan(_79) ? 0.0 : min(_79, 0.0))) * _65))) + (cbSimulationConstants.scene.planes[3u].xy * ((isnan(0.0) ? _87 : (isnan(_87) ? 0.0 : min(_87, 0.0))) * _65))) + cbSimulationConstants.scene.gravity.xy) * cbSimulationConstants.timeStep.x);
+    particlesRW._m0[gl_GlobalInvocationID.x].position = particlesRO._m0[gl_GlobalInvocationID.x].position + (_100 * cbSimulationConstants.timeStep.x);
     particlesRW._m0[gl_GlobalInvocationID.x].velocity = _100;
 }
 

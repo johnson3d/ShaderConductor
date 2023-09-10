@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-set(DirectXShaderCompiler_REV "ae87945a3c07e7088f525ea034767f175a682167")
+set(DirectXShaderCompiler_REV "18328d51057863c0d643a23d3b72ee77912d4b54")
 
 UpdateExternalLib("DirectXShaderCompiler" "https://github.com/Microsoft/DirectXShaderCompiler.git" ${DirectXShaderCompiler_REV} need_patch)
 if(need_patch)
-    foreach(patch "0001-Enable-to-set-the-location-of-DirectX-Headers")
+    foreach(patch "0001-Enable-to-set-the-location-of-DirectX-Headers" "0002-Fix-compilation-issues-on-clang" "0003-Fix-build-on-ARM-with-non-VS-generator")
         ApplyPatch("DirectXShaderCompiler" "${CMAKE_CURRENT_SOURCE_DIR}/Patches/${patch}.patch")
     endforeach()
 endif()
@@ -55,7 +55,7 @@ foreach(target
     "DxilMetadata" "DxilOperations" "DxilPIXPasses" "DxilShaderModel" "DxilShaderModelInc" "DxilSigPoint" "DxilValidation" "DxilValidationInc"
     "HCTGen" "HLSLIntrinsicOp" "HLSLOptions"
     "LLVMAnalysis" "LLVMAsmParser" "LLVMBitReader" "LLVMBitWriter" "LLVMCore" "LLVMDxcBindingTable" "LLVMDxcSupport" "LLVMDXIL" "LLVMDxilCompression" "LLVMDxilContainer"
-    "LLVMDxilPIXPasses" "LLVMDxilRDATBuilder" "LLVMDxilRootSignature" "LLVMDxrFallback" "LLVMHLSL" "LLVMInstCombine" "LLVMipa" "LLVMipo" "LLVMIRReader"
+    "LLVMDxilPIXPasses" "LLVMDxilRootSignature" "LLVMDxrFallback" "LLVMHLSL" "LLVMInstCombine" "LLVMipa" "LLVMipo" "LLVMIRReader"
     "LLVMLinker" "LLVMMSSupport" "LLVMOption" "LLVMPasses" "LLVMPassPrinters" "LLVMProfileData" "LLVMScalarOpts" "LLVMSupport"
     "LLVMTableGen" "LLVMTarget" "LLVMTransformUtils" "LLVMVectorize"
     "ClangDriverOptions" "DxcEtw" "intrinsics_gen" "TablegenHLSLOptions"
@@ -84,9 +84,9 @@ if(WIN32)
     set(dxcompilerLibDir "bin")
 else()
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        set(dxcompilerName "libdxcompiler.3.7.dylib")
+        set(dxcompilerName "libdxcompiler.dylib")
     else()
-        set(dxcompilerName "libdxcompiler.so.3.7")
+        set(dxcompilerName "libdxcompiler.so")
     endif()
     set(dxcompilerLibDir "lib")
 endif()

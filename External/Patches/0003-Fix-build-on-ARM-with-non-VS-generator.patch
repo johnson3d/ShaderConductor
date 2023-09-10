@@ -1,0 +1,29 @@
+From 06df46de98423f4ed37b6667b4a99dea42b8ca53 Mon Sep 17 00:00:00 2001
+From: Minmin Gong <gongminmin@msn.com>
+Date: Sat, 9 Sep 2023 22:53:44 -0700
+Subject: [PATCH 3/3] Fix build on ARM with non-VS generator
+
+---
+ CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4258cfa56..458716faa 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -119,9 +119,9 @@ add_link_options(/guard:cf)
+ endif(WIN32)
+ 
+ # Enable CET Shadow Stack
+-if(WIN32 AND NOT (CMAKE_GENERATOR_PLATFORM MATCHES "ARM.*"))
+-add_link_options(/CETCOMPAT)
+-endif(WIN32 AND NOT (CMAKE_GENERATOR_PLATFORM MATCHES "ARM.*"))
++if(WIN32 AND NOT (CMAKE_C_COMPILER_ARCHITECTURE_ID MATCHES "ARM.*"))
++  add_link_options(/CETCOMPAT)
++endif()
+ 
+ # HLSL Change Ends
+ 
+-- 
+2.42.0.windows.2
+
