@@ -64,18 +64,11 @@ target_include_directories(${LIB_NAME}
         ${SC_BUILD_DIR}/External/DirectXShaderCompiler/include
         ${SC_ROOT_DIR}/External/DirectXShaderCompiler/include
 )
-target_compile_definitions(${LIB_NAME}
-    PRIVATE
-        -DSHADER_CONDUCTOR_SOURCE
-)
 if(MSVC)
     target_compile_definitions(${LIB_NAME}
         PRIVATE
             -D_CRT_SECURE_NO_DEPRECATE
             -D_CRT_SECURE_NO_WARNINGS
-            -D_SCL_SECURE_NO_DEPRECATE
-            -D_SCL_SECURE_NO_WARNINGS
-            -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
     )
 endif()
 target_link_libraries(${LIB_NAME}

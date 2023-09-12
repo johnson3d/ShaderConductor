@@ -25,10 +25,6 @@
 
 #include <ShaderConductor/ShaderConductor.hpp>
 
-#include <dxc/Support/Global.h>
-#include <dxc/Support/WinIncludes.h>
-#include <dxc/WinAdapter.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cassert>
@@ -41,6 +37,10 @@
 #ifndef _WIN32
 #include <clocale>
 #endif
+
+#include <dxc/Support/Global.h>
+#include <dxc/Support/WinIncludes.h>
+#include <dxc/WinAdapter.h>
 
 #include <dxc/DxilContainer/DxilContainer.h>
 #include <dxc/dxcapi.h>
@@ -60,8 +60,6 @@
 #ifndef _WIN32
 #undef interface
 #endif
-
-#define SC_UNUSED(x) (void)(x);
 
 using namespace ShaderConductor;
 
@@ -271,9 +269,9 @@ namespace
             if (m_dxcompilerDll != nullptr)
             {
 #ifdef _WIN32
-                m_createInstanceFunc = (DxcCreateInstanceProc)::GetProcAddress(m_dxcompilerDll, functionName);
+                m_createInstanceFunc = reinterpret_cast<DxcCreateInstanceProc>(::GetProcAddress(m_dxcompilerDll, functionName));
 #else
-                m_createInstanceFunc = (DxcCreateInstanceProc)::dlsym(m_dxcompilerDll, functionName);
+                m_createInstanceFunc = reinterpret_cast<DxcCreateInstanceProc>(::dlsym(m_dxcompilerDll, functionName));
 #endif
 
                 if (m_createInstanceFunc != nullptr)
@@ -3378,10 +3376,8 @@ namespace
 } // namespace
 
 #ifdef _WIN32
-BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
+BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE instance, DWORD reason, LPVOID reserved)
 {
-    SC_UNUSED(instance);
-
     BOOL result = TRUE;
     if (reason == DLL_PROCESS_DETACH)
     {
