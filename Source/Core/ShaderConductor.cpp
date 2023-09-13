@@ -178,14 +178,14 @@ namespace
             m_dllDetaching = detaching;
         }
 
-        IDxcUtils* Utils() const noexcept
+        IDxcUtils& Utils() const noexcept
         {
-            return m_utils;
+            return *m_utils;
         }
 
-        IDxcCompiler3* Compiler() const noexcept
+        IDxcCompiler3& Compiler() const noexcept
         {
-            return m_compiler;
+            return *m_compiler;
         }
 
         CComPtr<IDxcLinker> CreateLinker() const
@@ -330,8 +330,8 @@ namespace
             }
 
             *includeSource = nullptr;
-            return Dxcompiler::Instance().Utils()->CreateBlob(source.Data(), source.Size(), CP_UTF8,
-                                                              reinterpret_cast<IDxcBlobEncoding**>(includeSource));
+            return Dxcompiler::Instance().Utils().CreateBlob(source.Data(), source.Size(), CP_UTF8,
+                                                             reinterpret_cast<IDxcBlobEncoding**>(includeSource));
         }
 
         ULONG STDMETHODCALLTYPE AddRef() override
@@ -684,8 +684,8 @@ namespace
 
         CComPtr<IDxcIncludeHandler> includeHandler = new ScIncludeHandler(source.loadIncludeCallback);
         CComPtr<IDxcResult> compileResult;
-        IFT(Dxcompiler::Instance().Compiler()->Compile(&sourceBuf, dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()), includeHandler,
-                                                       __uuidof(IDxcResult), reinterpret_cast<void**>(&compileResult)));
+        IFT(Dxcompiler::Instance().Compiler().Compile(&sourceBuf, dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()), includeHandler,
+                                                      __uuidof(IDxcResult), reinterpret_cast<void**>(&compileResult)));
 
         Compiler::ResultDesc ret{};
         ConvertDxcResult(ret, compileResult, target.language, target.asModule, options.needReflection);
@@ -1506,7 +1506,7 @@ namespace ShaderConductor
             m_size = bufferDesc.Size;
         }
 
-        explicit ConstantBufferImpl(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
+        ConstantBufferImpl(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
         {
             const auto& cbufferType = compiler.get_type(resource.type_id);
 
@@ -1829,16 +1829,17 @@ namespace ShaderConductor
     public:
         ReflectionImpl(IDxcBlob* dxilBlob, bool asModule)
         {
+            auto& utils = Dxcompiler::Instance().Utils();
+
+            DxcBuffer reflectionBuffer;
+            reflectionBuffer.Ptr = dxilBlob->GetBufferPointer();
+            reflectionBuffer.Size = dxilBlob->GetBufferSize();
+            reflectionBuffer.Encoding = DXC_CP_ACP;
+
             if (asModule)
             {
                 CComPtr<ID3D12LibraryReflection> libReflection;
-
-                DxcBuffer reflectionBuffer;
-                reflectionBuffer.Ptr = dxilBlob->GetBufferPointer();
-                reflectionBuffer.Size = dxilBlob->GetBufferSize();
-                reflectionBuffer.Encoding = DXC_CP_ACP;
-                IFT(Dxcompiler::Instance().Utils()->CreateReflection(&reflectionBuffer, __uuidof(ID3D12LibraryReflection),
-                                                                     reinterpret_cast<void**>(&libReflection)));
+                IFT(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12LibraryReflection), reinterpret_cast<void**>(&libReflection)));
 
                 D3D12_LIBRARY_DESC d3d12LibDesc;
                 IFT(libReflection->GetDesc(&d3d12LibDesc));
@@ -1852,13 +1853,8 @@ namespace ShaderConductor
             else
             {
                 CComPtr<ID3D12ShaderReflection> shaderReflection;
-
-                DxcBuffer reflectionBuffer;
-                reflectionBuffer.Ptr = dxilBlob->GetBufferPointer();
-                reflectionBuffer.Size = dxilBlob->GetBufferSize();
-                reflectionBuffer.Encoding = DXC_CP_ACP;
-                IFT(Dxcompiler::Instance().Utils()->CreateReflection(&reflectionBuffer, __uuidof(ID3D12ShaderReflection),
-                                                                     reinterpret_cast<void**>(&shaderReflection)));
+                IFT(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12ShaderReflection),
+                                           reinterpret_cast<void**>(&shaderReflection)));
 
                 D3D12_SHADER_DESC shaderDesc;
                 IFT(shaderReflection->GetDesc(&shaderDesc));
@@ -3235,8 +3231,8 @@ namespace ShaderConductor
             sourceBuf.Encoding = CP_UTF8;
 
             CComPtr<IDxcResult> disassemblyResult;
-            IFT(Dxcompiler::Instance().Compiler()->Disassemble(&sourceBuf, __uuidof(IDxcResult),
-                                                               reinterpret_cast<void**>(&disassemblyResult)));
+            IFT(Dxcompiler::Instance().Compiler().Disassemble(&sourceBuf, __uuidof(IDxcResult),
+                                                              reinterpret_cast<void**>(&disassemblyResult)));
 
             ConvertDxcResult(ret, disassemblyResult, source.language, false, false);
         }
@@ -3254,7 +3250,7 @@ namespace ShaderConductor
         auto linker = Dxcompiler::Instance().CreateLinker();
         IFTPTR(linker);
 
-        auto* utils = Dxcompiler::Instance().Utils();
+        auto& utils = Dxcompiler::Instance().Utils();
 
         std::vector<std::wstring> moduleNames(modules.numModules);
         std::vector<const wchar_t*> moduleNamesWide(modules.numModules);
@@ -3263,7 +3259,7 @@ namespace ShaderConductor
         {
             IFTARG(modules.modules[i] != nullptr);
 
-            IFT(utils->CreateBlob(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8, &moduleBlobs[i]));
+            IFT(utils.CreateBlob(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8, &moduleBlobs[i]));
             IFTARG(moduleBlobs[i]->GetBufferSize() >= 4);
 
             moduleNames[i] = Utf8ToWide(modules.modules[i]->name);
