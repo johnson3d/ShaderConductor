@@ -188,11 +188,6 @@ namespace
             return m_compiler;
         }
 
-        IDxcContainerReflection* ContainerReflection() const noexcept
-        {
-            return m_containerReflection;
-        }
-
         CComPtr<IDxcLinker> CreateLinker() const
         {
             CComPtr<IDxcLinker> linker;
@@ -215,7 +210,6 @@ namespace
             {
                 m_compiler = nullptr;
                 m_utils = nullptr;
-                m_containerReflection = nullptr;
 
                 m_createInstanceFunc = nullptr;
 
@@ -235,7 +229,6 @@ namespace
             {
                 m_compiler.Detach();
                 m_utils.Detach();
-                m_containerReflection.Detach();
 
                 m_createInstanceFunc = nullptr;
 
@@ -278,13 +271,6 @@ namespace
                 {
                     IFT(m_createInstanceFunc(CLSID_DxcUtils, __uuidof(IDxcUtils), reinterpret_cast<void**>(&m_utils)));
                     IFT(m_createInstanceFunc(CLSID_DxcCompiler, __uuidof(IDxcCompiler3), reinterpret_cast<void**>(&m_compiler)));
-
-                    const HRESULT hr = m_createInstanceFunc(CLSID_DxcContainerReflection, __uuidof(IDxcContainerReflection),
-                                                            reinterpret_cast<void**>(&m_containerReflection));
-                    if (FAILED(hr))
-                    {
-                        m_containerReflection = nullptr;
-                    }
                 }
                 else
                 {
@@ -309,7 +295,6 @@ namespace
 
         CComPtr<IDxcUtils> m_utils;
         CComPtr<IDxcCompiler3> m_compiler;
-        CComPtr<IDxcContainerReflection> m_containerReflection;
 
         bool m_linkerSupport = false;
     };
