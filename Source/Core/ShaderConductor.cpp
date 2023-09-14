@@ -1430,46 +1430,55 @@ namespace ShaderConductor
 
     const char* Reflection::VariableType::Name() const noexcept
     {
+        assert(Valid());
         return m_impl->Name();
     }
 
     Reflection::VariableType::DataType Reflection::VariableType::Type() const noexcept
     {
+        assert(Valid());
         return m_impl->Type();
     }
 
     uint32_t Reflection::VariableType::Rows() const noexcept
     {
+        assert(Valid());
         return m_impl->Rows();
     }
 
     uint32_t Reflection::VariableType::Columns() const noexcept
     {
+        assert(Valid());
         return m_impl->Columns();
     }
 
     uint32_t Reflection::VariableType::Elements() const noexcept
     {
+        assert(Valid());
         return m_impl->Elements();
     }
 
     uint32_t Reflection::VariableType::ElementStride() const noexcept
     {
+        assert(Valid());
         return m_impl->ElementStride();
     }
 
     uint32_t Reflection::VariableType::NumMembers() const noexcept
     {
+        assert(Valid());
         return m_impl->NumMembers();
     }
 
     const Reflection::VariableDesc* Reflection::VariableType::MemberByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->MemberByIndex(index);
     }
 
     const Reflection::VariableDesc* Reflection::VariableType::MemberByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->MemberByName(name);
     }
 
@@ -1626,26 +1635,31 @@ namespace ShaderConductor
 
     const char* Reflection::ConstantBuffer::Name() const noexcept
     {
+        assert(Valid());
         return m_impl->Name();
     }
 
     uint32_t Reflection::ConstantBuffer::Size() const noexcept
     {
+        assert(Valid());
         return m_impl->Size();
     }
 
     uint32_t Reflection::ConstantBuffer::NumVariables() const noexcept
     {
+        assert(Valid());
         return m_impl->NumVariables();
     }
 
     const Reflection::VariableDesc* Reflection::ConstantBuffer::VariableByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->VariableByIndex(index);
     }
 
     const Reflection::VariableDesc* Reflection::ConstantBuffer::VariableByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->VariableByName(name);
     }
 
@@ -1790,36 +1804,43 @@ namespace ShaderConductor
 
     const char* Reflection::Function::Name() const noexcept
     {
+        assert(Valid());
         return m_impl->Name();
     }
 
     uint32_t Reflection::Function::NumResources() const noexcept
     {
+        assert(Valid());
         return m_impl->NumResources();
     }
 
     const Reflection::ResourceDesc* Reflection::Function::ResourceByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->ResourceByIndex(index);
     }
 
     const Reflection::ResourceDesc* Reflection::Function::ResourceByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->ResourceByName(name);
     }
 
     uint32_t Reflection::Function::NumConstantBuffers() const noexcept
     {
+        assert(Valid());
         return m_impl->NumConstantBuffers();
     }
 
     const Reflection::ConstantBuffer* Reflection::Function::ConstantBufferByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->ConstantBufferByIndex(index);
     }
 
     const Reflection::ConstantBuffer* Reflection::Function::ConstantBufferByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->ConstantBufferByName(name);
     }
 
@@ -3000,131 +3021,157 @@ namespace ShaderConductor
 
     uint32_t Reflection::NumResources() const noexcept
     {
+        assert(Valid());
         return m_impl->NumResources();
     }
 
     const Reflection::ResourceDesc* Reflection::ResourceByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->ResourceByIndex(index);
     }
 
     const Reflection::ResourceDesc* Reflection::ResourceByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->ResourceByName(name);
     }
 
     uint32_t Reflection::NumConstantBuffers() const noexcept
     {
+        assert(Valid());
         return m_impl->NumConstantBuffers();
     }
 
     const Reflection::ConstantBuffer* Reflection::ConstantBufferByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->ConstantBufferByIndex(index);
     }
 
     const Reflection::ConstantBuffer* Reflection::ConstantBufferByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->ConstantBufferByName(name);
     }
 
     uint32_t Reflection::NumInputParameters() const noexcept
     {
+        assert(Valid());
         return m_impl->NumInputParameters();
     }
 
     const Reflection::SignatureParameterDesc* Reflection::InputParameter(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->InputParameter(index);
     }
 
     uint32_t Reflection::NumOutputParameters() const noexcept
     {
+        assert(Valid());
         return m_impl->NumOutputParameters();
     }
 
     const Reflection::SignatureParameterDesc* Reflection::OutputParameter(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->OutputParameter(index);
     }
 
     Reflection::PrimitiveTopology Reflection::GSHSInputPrimitive() const noexcept
     {
+        assert(Valid());
         return m_impl->GSHSInputPrimitive();
     }
 
     Reflection::PrimitiveTopology Reflection::GSOutputTopology() const noexcept
     {
+        assert(Valid());
         return m_impl->GSOutputTopology();
     }
 
     uint32_t Reflection::GSMaxNumOutputVertices() const noexcept
     {
+        assert(Valid());
         return m_impl->GSMaxNumOutputVertices();
     }
 
     uint32_t Reflection::GSNumInstances() const noexcept
     {
+        assert(Valid());
         return m_impl->GSNumInstances();
     }
 
     Reflection::TessellatorOutputPrimitive Reflection::HSOutputPrimitive() const noexcept
     {
+        assert(Valid());
         return m_impl->HSOutputPrimitive();
     }
 
     Reflection::TessellatorPartitioning Reflection::HSPartitioning() const noexcept
     {
+        assert(Valid());
         return m_impl->HSPartitioning();
     }
 
     Reflection::TessellatorDomain Reflection::HSDSTessellatorDomain() const noexcept
     {
+        assert(Valid());
         return m_impl->HSDSTessellatorDomain();
     }
 
     uint32_t Reflection::HSDSNumPatchConstantParameters() const noexcept
     {
+        assert(Valid());
         return m_impl->HSDSNumPatchConstantParameters();
     }
 
     const Reflection::SignatureParameterDesc* Reflection::HSDSPatchConstantParameter(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->HSDSPatchConstantParameter(index);
     }
 
     uint32_t Reflection::HSDSNumConrolPoints() const noexcept
     {
+        assert(Valid());
         return m_impl->HSDSNumConrolPoints();
     }
 
     uint32_t Reflection::CSBlockSizeX() const noexcept
     {
+        assert(Valid());
         return m_impl->CSBlockSizeX();
     }
 
     uint32_t Reflection::CSBlockSizeY() const noexcept
     {
+        assert(Valid());
         return m_impl->CSBlockSizeY();
     }
 
     uint32_t Reflection::CSBlockSizeZ() const noexcept
     {
+        assert(Valid());
         return m_impl->CSBlockSizeZ();
     }
 
     uint32_t Reflection::NumFunctions() const noexcept
     {
+        assert(Valid());
         return m_impl->NumFunctions();
     }
 
     const Reflection::Function* Reflection::FunctionByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->FunctionByIndex(index);
     }
 
     const Reflection::Function* Reflection::FunctionByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->FunctionByName(name);
     }
 
