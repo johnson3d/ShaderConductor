@@ -31,12 +31,12 @@ def FindProgramFilesFolder():
 		if "ProgramFiles(x86)" in env:
 			programFilesFolder = env["ProgramFiles(x86)"]
 		else:
-			programFilesFolder = "C:\Program Files (x86)"
+			programFilesFolder = "C:\\Program Files (x86)"
 	else:
 		if "ProgramFiles" in env:
 			programFilesFolder = env["ProgramFiles"]
 		else:
-			programFilesFolder = "C:\Program Files"
+			programFilesFolder = "C:\\Program Files"
 	return programFilesFolder
 
 def FindVS2017OrUpFolder(programFilesFolder, vsVersion, vsName):
@@ -110,7 +110,7 @@ class BatchCommand:
 		os.remove(batchFileName)
 		return retCode
 
-def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblgenMode, tblgenPath):
+def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblgenMode, tblgenPath, prebuiltDxcDir):
 	originalDir = os.path.abspath(os.curdir)
 
 	if not os.path.exists("Build"):
@@ -127,12 +127,12 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 	buildDir = os.path.abspath(os.curdir)
 
 	tblgenOptions = ""
-	if (tblgenPath != None):
+	if tblgenPath != None:
 		tblgenOptions = " -DCLANG_TABLEGEN=\"%s\" -DLLVM_TABLEGEN=\"%s\"" % tblgenPath
 
 	prebuiltDxcDirOptions = ""
-	if ("PREBUILTDXCDIR" in os.environ) and os.path.isdir(os.environ["PREBUILTDXCDIR"]):
-		prebuiltDxcDirOptions = " -DSC_PREBUILT_DXC_DIR=\"%s\"" % os.environ["PREBUILTDXCDIR"]
+	if prebuiltDxcDir != None:
+		prebuiltDxcDirOptions = " -DSC_PREBUILT_DXC_DIR=\"%s\"" % prebuiltDxcDir
 
 	parallel = multiprocessing.cpu_count()
 
@@ -284,10 +284,14 @@ if __name__ == "__main__":
 	else:
 		configuration = "Release"
 
+	prebuiltDxcDir = None
+	if ("PREBUILTDXCDIR" in os.environ) and os.path.isdir(os.environ["PREBUILTDXCDIR"]):
+		prebuiltDxcDir = os.environ["PREBUILTDXCDIR"]
+
 	tblgenPath = None
-	if (configuration != "clangformat") and (hostArch != arch) and (not ((hostArch == "x64") and (arch == "x86"))):
+	if (configuration != "clangformat") and (prebuiltDxcDir == None) and (hostArch != arch) and (not ((hostArch == "x64") and (arch == "x86"))):
 		# Cross compiling:
 		# Generate a project with host architecture, build clang-tblgen and llvm-tblgen, and keep the path of clang-tblgen and llvm-tblgen
-		tblgenPath = Build(hostPlatform, hostArch, buildSys, compiler, hostArch, configuration, True, None)
+		tblgenPath = Build(hostPlatform, hostArch, buildSys, compiler, hostArch, configuration, True, None, None)
 
-	Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, False, tblgenPath)
+	Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, False, tblgenPath, prebuiltDxcDir)
