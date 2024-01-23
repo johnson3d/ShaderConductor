@@ -13,7 +13,7 @@ else()
     set(dxcompilerDeployDir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 endif()
 
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.19") 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.19")
     set(operation "create_hardlink")
 else()
     set(operation "copy")
@@ -67,7 +67,6 @@ target_include_directories(${LIB_NAME}
 if(MSVC)
     target_compile_definitions(${LIB_NAME}
         PRIVATE
-            -D_CRT_SECURE_NO_DEPRECATE
             -D_CRT_SECURE_NO_WARNINGS
     )
 endif()
@@ -81,7 +80,7 @@ target_link_libraries(${LIB_NAME}
         spirv-cross-util
         SPIRV-Tools
 )
-if(NOT MSVC)
+if(NOT WIN32)
     target_link_libraries(${LIB_NAME}
         PRIVATE
             LLVMDxcSupport

@@ -41,9 +41,9 @@
 
 #include <dxc/Support/Global.h>
 #include <dxc/Support/WinIncludes.h>
-#include <dxc/WinAdapter.h>
 
 #include <dxc/DxilContainer/DxilContainer.h>
+#include <dxc/WinAdapter.h>
 #include <dxc/dxcapi.h>
 
 #include <spirv-tools/libspirv.h>
