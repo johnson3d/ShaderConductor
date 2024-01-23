@@ -29,6 +29,7 @@
 #include <atomic>
 #include <cassert>
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -159,6 +160,25 @@ namespace
         return utf8Str;
     }
 
+    std::filesystem::path DllSelfPath()
+    {
+#if defined(_WIN32)
+        HMODULE dllModule;
+        ::GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                             reinterpret_cast<LPCSTR>(DllSelfPath), &dllModule);
+
+        char rawDllPath[MAX_PATH];
+        ::GetModuleFileNameA(dllModule, rawDllPath, sizeof(rawDllPath));
+        const std::filesystem::path dllPath(rawDllPath);
+#else
+        Dl_info dlInfo;
+        ::dladdr(reinterpret_cast<const void*>(DllSelfPath), &dlInfo);
+        const std::filesystem::path dllPath(dlInfo.dli_fname);
+#endif
+
+        return std::filesystem::absolute(dllPath);
+    }
+
     class Dxcompiler
     {
     public:
@@ -245,7 +265,7 @@ namespace
             }
 
 #ifdef _WIN32
-            const wchar_t* dllName = L"dxcompiler.dll";
+            const char* dllName = "dxcompiler.dll";
 #elif __APPLE__
             const char* dllName = "libdxcompiler.dylib";
 #else
@@ -253,10 +273,11 @@ namespace
 #endif
             const char* functionName = "DxcCreateInstance";
 
+            const std::filesystem::path dllPath = DllSelfPath().parent_path() / dllName;
 #ifdef _WIN32
-            m_dxcompilerDll = ::LoadLibraryW(dllName);
+            m_dxcompilerDll = ::LoadLibraryW(dllPath.wstring().c_str());
 #else
-            m_dxcompilerDll = ::dlopen(dllName, RTLD_LAZY);
+            m_dxcompilerDll = ::dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #endif
 
             if (m_dxcompilerDll != nullptr)

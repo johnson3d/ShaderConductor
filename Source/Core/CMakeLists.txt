@@ -87,6 +87,12 @@ if(NOT MSVC)
             LLVMDxcSupport
             dl
     )
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_libraries(${LIB_NAME}
+            PRIVATE
+                stdc++fs
+        )
+    endif()
 endif()
 
 add_dependencies(${LIB_NAME} DeployDxcompiler)
