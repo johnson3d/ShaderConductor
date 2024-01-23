@@ -119,7 +119,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 	multiConfig = (buildSys.find("vs") == 0)
 
 	buildDir = "Build/%s-%s-%s-%s" % (buildSys, hostPlatform, compiler, arch)
-	if (not multiConfig) or (configuration == "clangformat"):
+	if not multiConfig:
 		buildDir += "-%s" % configuration;
 	if not os.path.exists(buildDir):
 		os.mkdir(buildDir)
@@ -177,23 +177,16 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		if hostPlatform == "win":
 			batCmd.AddCommand("set CC=cl.exe")
 			batCmd.AddCommand("set CXX=cl.exe")
-		if configuration == "clangformat":
-			options = "-DSC_CLANGFORMAT=\"ON\""
-		else:
-			options = "-DCMAKE_BUILD_TYPE=\"%s\" %s %s" % (configuration, tblgenOptions, prebuiltDxcDirOptions)
-			if hostPlatform != "win":
-				options += " -DSC_ARCH_NAME=\"%s\"" % arch
+		options = "-DCMAKE_BUILD_TYPE=\"%s\" %s %s" % (configuration, tblgenOptions, prebuiltDxcDirOptions)
+		if hostPlatform != "win":
+			options += " -DSC_ARCH_NAME=\"%s\"" % arch
 		batCmd.AddCommand("cmake -G Ninja %s ../../" % options)
 		ninja_options = "-j%d" % parallel
 		if tblgenMode:
 			batCmd.AddCommand("ninja clang-tblgen %s" % ninja_options)
 			batCmd.AddCommand("ninja llvm-tblgen %s" % ninja_options)
 		else:
-			if configuration == "clangformat":
-				target = "clangformat"
-			else:
-				target = ""
-			batCmd.AddCommand("ninja %s %s" % (target, ninja_options))
+			batCmd.AddCommand("ninja %s" % ninja_options)
 	else:
 		if buildSys == "vs2022":
 			generator = "\"Visual Studio 17\""
@@ -203,22 +196,14 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 			generator = "\"Visual Studio 15\""
 		elif buildSys == "vs2015":
 			generator = "\"Visual Studio 14\""
-		if configuration == "clangformat":
-			cmake_options = "-DSC_CLANGFORMAT=\"ON\""
-			msbuild_options = ""
-		else:
-			cmake_options = "-T %shost=x64 -A %s %s" % (vcToolset, vcArch, tblgenOptions)
-			msbuild_options = "/m:%d /v:m /p:Configuration=%s,Platform=%s" % (parallel, configuration, vcArch)
+		cmake_options = "-T %shost=x64 -A %s %s" % (vcToolset, vcArch, tblgenOptions)
+		msbuild_options = "/m:%d /v:m /p:Configuration=%s,Platform=%s" % (parallel, configuration, vcArch)
 		batCmd.AddCommand("cmake -G %s %s ../../" % (generator, cmake_options))
 		if tblgenMode:
 			batCmd.AddCommand("MSBuild External\\DirectXShaderCompiler\\tools\\clang\\utils\\TableGen\\clang-tblgen.vcxproj /nologo %s" % msbuild_options)
 			batCmd.AddCommand("MSBuild External\\DirectXShaderCompiler\\utils\\TableGen\\llvm-tblgen.vcxproj /nologo %s" % msbuild_options)
 		else:
-			if configuration == "clangformat":
-				target = "clangformat"
-			else:
-				target = "ALL_BUILD"
-			batCmd.AddCommand("MSBuild %s.vcxproj /nologo %s" % (target, msbuild_options))
+			batCmd.AddCommand("MSBuild ALL_BUILD.vcxproj /nologo %s" % msbuild_options)
 	if batCmd.Execute() != 0:
 		LogError("Build failed.\n")
 
@@ -289,7 +274,7 @@ if __name__ == "__main__":
 		prebuiltDxcDir = os.environ["PREBUILTDXCDIR"]
 
 	tblgenPath = None
-	if (configuration != "clangformat") and (prebuiltDxcDir == None) and (hostArch != arch) and (not ((hostArch == "x64") and (arch == "x86"))):
+	if (prebuiltDxcDir == None) and (hostArch != arch) and (not ((hostArch == "x64") and (arch == "x86"))):
 		# Cross compiling:
 		# Generate a project with host architecture, build clang-tblgen and llvm-tblgen, and keep the path of clang-tblgen and llvm-tblgen
 		tblgenPath = Build(hostPlatform, hostArch, buildSys, compiler, hostArch, configuration, True, None, None)

@@ -28,10 +28,6 @@ variables:
     lib/libdxcompiler.*
     lib/libShaderConductor.*
 
-resources:
-- repo: self
-  fetchDepth: 5
-
 stages:
 - stage: ClangFormat
   jobs:
@@ -44,17 +40,12 @@ stages:
       CXX: g++
 
     steps:
-    - bash: |
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-        sudo apt-get update
-        sudo apt-get install clang-format-10 ninja-build python3
-      displayName: 'Install'
-    - task: PythonScript@0
-      displayName: 'Build'
-      inputs:
-        scriptPath: BuildAll.py
-        arguments: 'ninja gcc linux clangformat'
+    - checkout: self
+      fetchDepth: 1
+
     - script: |
+        cmake -B Build -G "Unix Makefiles" -DSC_CLANGFORMAT=ON .
+        cmake --build Build -t clangformat
         git diff --exit-code $(Build.SourceVersion)
       failOnStderr: true
       displayName: 'Clang-Format'
@@ -183,6 +174,9 @@ stages:
       vmImage: $(vmImage)
 
     steps:
+      - checkout: self
+        fetchDepth: 5
+
       - bash: eval '$(installCommand)'
         displayName: 'Install'
 

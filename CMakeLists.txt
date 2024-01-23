@@ -64,7 +64,6 @@ set(Python_ADDITIONAL_VERSIONS 3.5 3.6 3.7 3.8 3.9 3.10)
 if(SC_CLANGFORMAT)
     find_program(CLANG_FORMAT
         NAMES
-            clang-format-10
             clang-format
     )
 
