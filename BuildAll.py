@@ -40,6 +40,7 @@ def FindProgramFilesFolder():
 	return programFilesFolder
 
 def FindVS2017OrUpFolder(programFilesFolder, vsVersion, vsName):
+	tryVcvarsall = "VCVARSALL.BAT"
 	tryVswhereLocation = programFilesFolder + "\\Microsoft Visual Studio\\Installer\\vswhere.exe"
 	if os.path.exists(tryVswhereLocation):
 		vsLocation = subprocess.check_output([tryVswhereLocation,
@@ -49,7 +50,6 @@ def FindVS2017OrUpFolder(programFilesFolder, vsVersion, vsName):
 			"-version", f"[{vsVersion}.0,{vsVersion + 1}.0)",
 			"-prerelease"]).decode().split("\r\n")[0]
 		tryFolder = vsLocation + "\\VC\\Auxiliary\\Build\\"
-		tryVcvarsall = "VCVARSALL.BAT"
 		if os.path.exists(tryFolder + tryVcvarsall):
 			return tryFolder
 	else:
@@ -58,7 +58,6 @@ def FindVS2017OrUpFolder(programFilesFolder, vsVersion, vsName):
 		for name in names:
 			for sku in skus:
 				tryFolder = programFilesFolder + f"\\Microsoft Visual Studio\\{name}\\{sku}\\VC\\Auxiliary\\Build\\"
-				tryVcvarsall = "VCVARSALL.BAT"
 				if os.path.exists(tryFolder + tryVcvarsall):
 					return tryFolder
 	LogError(f"Could NOT find VS{vsName}.\n")
@@ -126,12 +125,8 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 	os.chdir(buildDir)
 	buildDir = os.path.abspath(os.curdir)
 
-	prebuiltDxcDirOptions = ""
-	if prebuiltDxcDir != None:
-		prebuiltDxcDirOptions = f' -DSC_PREBUILT_DXC_DIR="{prebuiltDxcDir}"'
-
 	batCmd = BatchCommand(hostPlatform)
-	if hostPlatform == "win":
+	if compiler.startswith("vc"):
 		programFilesFolder = FindProgramFilesFolder()
 		if (buildSys == "vs2022") or ((buildSys == "ninja") and (compiler == "vc143")):
 			vsFolder = FindVS2022Folder(programFilesFolder)
@@ -141,6 +136,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 			vsFolder = FindVS2017Folder(programFilesFolder)
 		elif (buildSys == "vs2015") or ((buildSys == "ninja") and (compiler == "vc140")):
 			vsFolder = FindVS2015Folder(programFilesFolder)
+
 		if "x64" == arch:
 			vcOption = "amd64"
 			vcArch = "x64"
@@ -155,6 +151,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 			vcArch = "ARM"
 		else:
 			LogError("Unsupported architecture.\n")
+
 		vcToolset = ""
 		if (buildSys == "vs2022") and (compiler == "vc142"):
 			vcOption += " -vcvars_ver=14.2"
@@ -165,39 +162,44 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		elif ((buildSys == "vs2022") or (buildSys == "vs2019") or (buildSys == "vs2017")) and (compiler == "vc140"):
 			vcOption += " -vcvars_ver=14.0"
 			vcToolset = "v140,"
+
 		batCmd.AddCommand(f'@call "{vsFolder}VCVARSALL.BAT" {vcOption}')
 		batCmd.AddCommand(f'@cd /d "{buildDir}"')
-	if (buildSys == "ninja"):
+
+	if buildSys == "vs2022":
+		generator = '"Visual Studio 17"'
+	elif buildSys == "vs2019":
+		generator = '"Visual Studio 16"'
+	elif buildSys == "vs2017":
+		generator = '"Visual Studio 15"'
+	elif buildSys == "vs2015":
+		generator = '"Visual Studio 14"'
+	elif buildSys == "ninja":
 		generator = "Ninja"
-		if hostPlatform == "win":
+		if compiler.startswith("vc"):
 			batCmd.AddCommand("set CC=cl.exe")
 			batCmd.AddCommand("set CXX=cl.exe")
-		cmakeGenOptions = f'-DCMAKE_BUILD_TYPE="{configuration}" {prebuiltDxcDirOptions}'
-		if hostPlatform != "win":
-			cmakeGenOptions += f' -DSC_ARCH_NAME="{arch}"'
 
-		cmakeBuildOptions = ""
+	cmakeGenOptions = ""
+	cmakeBuildOptions = ""
+	if multiConfig:
+		cmakeBuildOptions += f" --config {configuration}"
 	else:
-		if buildSys == "vs2022":
-			generator = '"Visual Studio 17"'
-		elif buildSys == "vs2019":
-			generator = '"Visual Studio 16"'
-		elif buildSys == "vs2017":
-			generator = '"Visual Studio 15"'
-		elif buildSys == "vs2015":
-			generator = '"Visual Studio 14"'
-		cmakeGenOptions = f"-T {vcToolset}host=x64 -A {vcArch}"
+		cmakeGenOptions += f' -DCMAKE_BUILD_TYPE="{configuration}"'
 
-		cmakeBuildOptions = f"--config {configuration}"
-
+	if buildSys.startswith("vs"):
+		cmakeGenOptions += f" -T {vcToolset}host=x64 -A {vcArch}"
 	if tblgenPath != None:
 		cmakeGenOptions += f' -DCLANG_TABLEGEN="{tblgenPath[0]}" -DLLVM_TABLEGEN="{tblgenPath[1]}"'
+	if prebuiltDxcDir != None:
+		cmakeGenOptions += f' -DSC_PREBUILT_DXC_DIR="{prebuiltDxcDir}"'
+	if hostPlatform != "win":
+		cmakeGenOptions += f' -DSC_ARCH_NAME="{arch}"'
 	batCmd.AddCommand(f"cmake -G {generator} {cmakeGenOptions} ../../")
 
-	cmakeBuildOptions += " -j"
 	if tblgenMode:
 		cmakeBuildOptions += " -t clang-tblgen llvm-tblgen"
-	batCmd.AddCommand(f"cmake --build . {cmakeBuildOptions}")
+	batCmd.AddCommand(f"cmake --build . -j {cmakeBuildOptions}")
 
 	if batCmd.Execute() != 0:
 		LogError("Build failed.\n")

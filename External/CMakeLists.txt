@@ -12,7 +12,7 @@ endif()
 
 function(UpdateExternalLib name url rev)
     set(need_checkout FALSE)
-    set(external_folder "${SC_ROOT_DIR}/External")
+    set(external_folder "${PROJECT_SOURCE_DIR}/External")
     set(external_lib_folder "${external_folder}/${name}")
     if(EXISTS "${external_lib_folder}/.git")
         message(STATUS "Updating ${name} to revision ${rev}...")
@@ -38,7 +38,7 @@ function(UpdateExternalLib name url rev)
 endfunction()
 
 function(ApplyPatch name patch)
-    set(external_folder "${SC_ROOT_DIR}/External")
+    set(external_folder "${PROJECT_SOURCE_DIR}/External")
     set(external_lib_folder "${external_folder}/${name}")
 
     execute_process(COMMAND "${git_executable}" "apply" "--check" "--ignore-space-change" "${patch}" WORKING_DIRECTORY ${external_lib_folder} RESULT_VARIABLE checkout_err)
@@ -60,7 +60,4 @@ include(SPIRV-Tools.cmake)
 include(DirectXShaderCompiler.cmake)
 include(SPIRV-Cross.cmake)
 
-foreach(target
-    "SPIRV-Tools-static" "SPIRV-Tools-opt")
-    set_target_properties(${target} PROPERTIES FOLDER "External/SPIRV-Tools/SPIRV-Tools libraries")
-endforeach()
+set_target_properties(SPIRV-Tools-static SPIRV-Tools-opt PROPERTIES FOLDER "External/SPIRV-Tools/SPIRV-Tools libraries")

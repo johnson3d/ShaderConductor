@@ -60,7 +60,7 @@ foreach(target
     "LLVMTableGen" "LLVMTarget" "LLVMTransformUtils" "LLVMVectorize"
     "ClangDriverOptions" "DxcEtw" "intrinsics_gen" "TablegenHLSLOptions"
     "clang-tblgen" "llvm-tblgen" "hlsl_dxcversion_autogen" "hlsl_version_autogen" "RDAT_LibraryTypes")
-    get_target_property(vsFolder ${target} FOLDER)	
+    get_target_property(vsFolder ${target} FOLDER)
     if(NOT vsFolder)
         set(vsFolder "")
     endif()
@@ -92,32 +92,44 @@ else()
 endif()
 
 set(usePrebuilt FALSE)
-if(SC_PREBUILT_DXC_DIR)
-    if(IS_DIRECTORY ${SC_PREBUILT_DXC_DIR})
-        find_file(prebuiltDxcBinary
-            ${dxcompilerName}
-            PATHS ${SC_PREBUILT_DXC_DIR}/${dxcompilerLibDir}
-            NO_DEFAULT_PATH
-        )
-        find_path(prebuiltDxcIncludeDir
-            dxc/dxcapi.h
-            PATHS ${SC_PREBUILT_DXC_DIR}/include
-            NO_DEFAULT_PATH
-        )
-        if(prebuiltDxcBinary AND prebuiltDxcIncludeDir)
-            set(usePrebuilt TRUE)
-        endif()
-    else()
-        unset(SC_PREBUILT_DXC_DIR CACHE)
+if(SC_PREBUILT_DXC_DIR AND (IS_DIRECTORY ${SC_PREBUILT_DXC_DIR}))
+    find_file(prebuiltDxcBinary
+        ${dxcompilerName}
+        PATHS ${SC_PREBUILT_DXC_DIR}/${dxcompilerLibDir}
+        NO_DEFAULT_PATH
+    )
+    find_path(prebuiltDxcIncludeDir
+        dxc/dxcapi.h
+        PATHS ${SC_PREBUILT_DXC_DIR}/include
+        NO_DEFAULT_PATH
+    )
+    if(prebuiltDxcBinary AND prebuiltDxcIncludeDir)
+        set(usePrebuilt TRUE)
     endif()
 endif()
 
 if(usePrebuilt)
-    set(dxcompilerBinary ${prebuiltDxcBinary} CACHE INTERNAL "" FORCE)
-    set(dxcompilerIncludeDir ${prebuiltDxcIncludeDir} CACHE INTERNAL "" FORCE)
+    set(dxcPackageIncludeDir ${prebuiltDxcIncludeDir})
+    set(dxcPackageBinary ${prebuiltDxcBinary})
+
     message(STATUS "Using prebuilt dxc binary from ${prebuiltDxcBinary}.")
 else()
-    set(dxcompilerBinary "${SC_BUILD_DIR}/External/DirectXShaderCompiler/${CMAKE_CFG_INTDIR}/${dxcompilerLibDir}/${dxcompilerName}" CACHE INTERNAL "" FORCE)
+    set(dxcPackageIncludeDir
+        ${CMAKE_CURRENT_BINARY_DIR}/DirectXShaderCompiler/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompiler/include
+    )
+    set(dxcPackageBinary ${CMAKE_CURRENT_BINARY_DIR}/DirectXShaderCompiler/${CMAKE_CFG_INTDIR}/${dxcompilerLibDir}/${dxcompilerName})
 endif()
 
-set(dxcompileUsePrebuilt ${usePrebuilt} CACHE INTERNAL "" FORCE)
+add_library(DxcPackage SHARED IMPORTED GLOBAL)
+target_include_directories(DxcPackage
+    INTERFACE
+        ${dxcPackageIncludeDir}
+)
+set_target_properties(DxcPackage PROPERTIES
+    IMPORTED_LOCATION ${dxcPackageBinary}
+)
+
+if(NOT usePrebuilt)
+    add_dependencies(DxcPackage dxcompiler)
+endif()

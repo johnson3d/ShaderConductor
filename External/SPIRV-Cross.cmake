@@ -17,8 +17,6 @@ set(SPIRV_CROSS_ENABLE_UTIL ON CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
 
 add_subdirectory(SPIRV-Cross EXCLUDE_FROM_ALL)
-foreach(target
-    "spirv-cross-core" "spirv-cross-glsl" "spirv-cross-hlsl" "spirv-cross-msl" "spirv-cross-reflect"
-    "spirv-cross-util")
-    set_target_properties(${target} PROPERTIES FOLDER "External/SPIRV-Cross")
-endforeach()
+
+set_target_properties(spirv-cross-core spirv-cross-glsl spirv-cross-hlsl spirv-cross-msl spirv-cross-reflect
+    spirv-cross-util PROPERTIES FOLDER "External/SPIRV-Cross")

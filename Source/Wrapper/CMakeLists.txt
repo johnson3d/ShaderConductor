@@ -1,41 +1,32 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-set(DLL_NAME ShaderConductorWrapper)
-
-set(SOURCE_FILES
+add_library(ShaderConductorWrapper SHARED
     Native.cpp
     Native.h
 )
 
-source_group("Source Files" FILES ${SOURCE_FILES})
-
-add_library(${DLL_NAME} SHARED ${SOURCE_FILES})
-
-target_link_libraries(${DLL_NAME}
+target_link_libraries(ShaderConductorWrapper
     PRIVATE
         ShaderConductor
 )
 
-set_target_properties(${DLL_NAME} PROPERTIES FOLDER "Wrapper")
-
-set(CSHARP_TEST CSharpPinvoke)
-
-set(SOURCE_FILES
-    Program.cs
-    Wrapper.cs    
-)
+set_target_properties(ShaderConductorWrapper PROPERTIES FOLDER "Wrapper")
 
 set(DATA_FILES
-    shader.hlsl 
+    shader.hlsl
 )
 
-set_source_files_properties(${DATA_FILES}
-    PROPERTIES VS_TOOL_OVERRIDE "None"    
-    		   VS_COPY_TO_OUT_DIR "PreserveNewest"
+set_source_files_properties(${DATA_FILES} PROPERTIES
+    VS_TOOL_OVERRIDE "None"
+    VS_COPY_TO_OUT_DIR "PreserveNewest"
 )
 
-add_executable(${CSHARP_TEST} ${SOURCE_FILES} ${DATA_FILES})
-add_dependencies(${CSHARP_TEST} ShaderConductorWrapper)
+add_executable(CSharpPinvoke
+    Program.cs
+    Wrapper.cs
+    ${DATA_FILES}
+)
+add_dependencies(CSharpPinvoke ShaderConductorWrapper)
 
-set_target_properties(${CSHARP_TEST} PROPERTIES FOLDER "Wrapper")
+set_target_properties(CSharpPinvoke PROPERTIES FOLDER "Wrapper")
