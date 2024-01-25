@@ -1,6 +1,66 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+if(WIN32)
+    set(dxcompilerName "dxcompiler.dll")
+    set(dxcompilerLibDir "bin")
+else()
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        set(dxcompilerName "libdxcompiler.dylib")
+    else()
+        set(dxcompilerName "libdxcompiler.so")
+    endif()
+    set(dxcompilerLibDir "lib")
+endif()
+
+set(usePrebuilt FALSE)
+if(SC_PREBUILT_DXC_DIR AND (IS_DIRECTORY ${SC_PREBUILT_DXC_DIR}))
+    find_file(prebuiltDxcBinary
+        ${dxcompilerName}
+        PATHS ${SC_PREBUILT_DXC_DIR}/${dxcompilerLibDir}
+        NO_DEFAULT_PATH
+    )
+    find_path(prebuiltDxcIncludeDir
+        dxc/dxcapi.h
+        PATHS ${SC_PREBUILT_DXC_DIR}/include
+        NO_DEFAULT_PATH
+    )
+    if(prebuiltDxcBinary AND prebuiltDxcIncludeDir)
+        set(usePrebuilt TRUE)
+    endif()
+endif()
+
+if(usePrebuilt)
+    set(dxcPackageIncludeDir ${prebuiltDxcIncludeDir})
+    set(dxcPackageBinary ${prebuiltDxcBinary})
+
+    message(STATUS "Using prebuilt dxc binary from ${prebuiltDxcBinary}.")
+else()
+    set(dxcPackageIncludeDir
+        ${CMAKE_CURRENT_BINARY_DIR}/DirectXShaderCompiler/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompiler/include
+    )
+    set(dxcPackageBinary ${CMAKE_CURRENT_BINARY_DIR}/DirectXShaderCompiler/${CMAKE_CFG_INTDIR}/${dxcompilerLibDir}/${dxcompilerName})
+endif()
+
+add_library(DxcPackage SHARED IMPORTED GLOBAL)
+target_include_directories(DxcPackage
+    INTERFACE
+        ${dxcPackageIncludeDir}
+)
+set_target_properties(DxcPackage PROPERTIES
+    IMPORTED_LOCATION ${dxcPackageBinary}
+)
+
+if(NOT usePrebuilt)
+    add_dependencies(DxcPackage dxcompiler)
+endif()
+
+if(WIN32 AND usePrebuilt)
+    # On Windows, prebuilt package is complete. No need to sync the repository of DirectXShaderCompiler.
+    return()
+endif()
+
 set(DirectXShaderCompiler_REV "18328d51057863c0d643a23d3b72ee77912d4b54")
 
 UpdateExternalLib("DirectXShaderCompiler" "https://github.com/Microsoft/DirectXShaderCompiler.git" ${DirectXShaderCompiler_REV} need_patch)
@@ -77,59 +137,4 @@ if(WIN32)
         endif()
         set_target_properties(${target} PROPERTIES FOLDER "External/DirectXShaderCompiler/${vsFolder}")
     endforeach()
-endif()
-
-if(WIN32)
-    set(dxcompilerName "dxcompiler.dll")
-    set(dxcompilerLibDir "bin")
-else()
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        set(dxcompilerName "libdxcompiler.dylib")
-    else()
-        set(dxcompilerName "libdxcompiler.so")
-    endif()
-    set(dxcompilerLibDir "lib")
-endif()
-
-set(usePrebuilt FALSE)
-if(SC_PREBUILT_DXC_DIR AND (IS_DIRECTORY ${SC_PREBUILT_DXC_DIR}))
-    find_file(prebuiltDxcBinary
-        ${dxcompilerName}
-        PATHS ${SC_PREBUILT_DXC_DIR}/${dxcompilerLibDir}
-        NO_DEFAULT_PATH
-    )
-    find_path(prebuiltDxcIncludeDir
-        dxc/dxcapi.h
-        PATHS ${SC_PREBUILT_DXC_DIR}/include
-        NO_DEFAULT_PATH
-    )
-    if(prebuiltDxcBinary AND prebuiltDxcIncludeDir)
-        set(usePrebuilt TRUE)
-    endif()
-endif()
-
-if(usePrebuilt)
-    set(dxcPackageIncludeDir ${prebuiltDxcIncludeDir})
-    set(dxcPackageBinary ${prebuiltDxcBinary})
-
-    message(STATUS "Using prebuilt dxc binary from ${prebuiltDxcBinary}.")
-else()
-    set(dxcPackageIncludeDir
-        ${CMAKE_CURRENT_BINARY_DIR}/DirectXShaderCompiler/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompiler/include
-    )
-    set(dxcPackageBinary ${CMAKE_CURRENT_BINARY_DIR}/DirectXShaderCompiler/${CMAKE_CFG_INTDIR}/${dxcompilerLibDir}/${dxcompilerName})
-endif()
-
-add_library(DxcPackage SHARED IMPORTED GLOBAL)
-target_include_directories(DxcPackage
-    INTERFACE
-        ${dxcPackageIncludeDir}
-)
-set_target_properties(DxcPackage PROPERTIES
-    IMPORTED_LOCATION ${dxcPackageBinary}
-)
-
-if(NOT usePrebuilt)
-    add_dependencies(DxcPackage dxcompiler)
 endif()
