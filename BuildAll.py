@@ -109,7 +109,7 @@ class BatchCommand:
 		os.remove(batchFileName)
 		return retCode
 
-def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblgenMode, tblgenPath, prebuiltDxcDir):
+def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblgenMode, tblgenPath, prebuiltDxcDir, prebuiltDxcUrl, prebuiltDxcName):
 	originalDir = os.path.abspath(os.curdir)
 
 	if not os.path.exists("Build"):
@@ -193,6 +193,8 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		cmakeGenOptions += f' -DCLANG_TABLEGEN="{tblgenPath[0]}" -DLLVM_TABLEGEN="{tblgenPath[1]}"'
 	if prebuiltDxcDir != None:
 		cmakeGenOptions += f' -DSC_PREBUILT_DXC_DIR="{prebuiltDxcDir}"'
+	if prebuiltDxcUrl != None:
+		cmakeGenOptions += f' -DSC_PREBUILT_DXC_URL="{prebuiltDxcUrl}" -DSC_PREBUILT_DXC_NAME="{prebuiltDxcName}"'
 	if hostPlatform != "win":
 		cmakeGenOptions += f' -DSC_ARCH_NAME="{arch}"'
 	batCmd.AddCommand(f"cmake -G {generator} {cmakeGenOptions} ../../")
@@ -267,13 +269,21 @@ if __name__ == "__main__":
 		configuration = "Release"
 
 	prebuiltDxcDir = None
-	if ("PREBUILTDXCDIR" in os.environ) and os.path.isdir(os.environ["PREBUILTDXCDIR"]):
-		prebuiltDxcDir = os.environ["PREBUILTDXCDIR"]
+	if ("PREBUILT_DXC_DIR" in os.environ) and os.path.isdir(os.environ["PREBUILT_DXC_DIR"]):
+		prebuiltDxcDir = os.environ["PREBUILT_DXC_DIR"]
+
+	prebuiltDxcUrl = None
+	if "PREBUILT_DXC_URL" in os.environ:
+		prebuiltDxcUrl = os.environ["PREBUILT_DXC_URL"]
+
+	prebuiltDxcName = None
+	if "PREBUILT_DXC_NAME" in os.environ:
+		prebuiltDxcName = os.environ["PREBUILT_DXC_NAME"]
 
 	tblgenPath = None
-	if (prebuiltDxcDir == None) and (hostArch != arch) and (not ((hostArch == "x64") and (arch == "x86"))):
+	if (prebuiltDxcDir == None) and (prebuiltDxcUrl == None) and (hostArch != arch) and (not ((hostArch == "x64") and (arch == "x86"))):
 		# Cross compiling:
 		# Generate a project with host architecture, build clang-tblgen and llvm-tblgen, and keep the path of clang-tblgen and llvm-tblgen
-		tblgenPath = Build(hostPlatform, hostArch, buildSys, compiler, hostArch, configuration, True, None, None)
+		tblgenPath = Build(hostPlatform, hostArch, buildSys, compiler, hostArch, configuration, True, None, None, None, None)
 
-	Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, False, tblgenPath, prebuiltDxcDir)
+	Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, False, tblgenPath, prebuiltDxcDir, prebuiltDxcUrl, prebuiltDxcName)

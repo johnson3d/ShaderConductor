@@ -7,16 +7,10 @@ else()
     set(dxcompilerDeployDir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 endif()
 
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.19")
-    set(operation "create_hardlink")
-else()
-    set(operation "copy")
-endif()
-
 add_custom_target(DeployDxcompiler ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory
         ${dxcompilerDeployDir}
-    COMMAND ${CMAKE_COMMAND} -E ${operation}
+    COMMAND ${CMAKE_COMMAND} -E create_hardlink
         $<TARGET_FILE:DxcPackage>
         ${dxcompilerDeployDir}/$<TARGET_FILE_NAME:DxcPackage>
     COMMENT "Deploying dxcompiler..."

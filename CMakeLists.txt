@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 
 if(WIN32 AND (${CMAKE_GENERATOR} MATCHES "Visual Studio ([^9]|[9][0-9])") AND (NOT SC_CLANGFORMAT))
     set(SC_WITH_CSHARP ON)
@@ -107,6 +107,9 @@ if(NOT WIN32)
 endif()
 
 set(SC_PREBUILT_DXC_DIR "" CACHE STRING "The directory of prebuilt dxc")
+
+set(SC_PREBUILT_DXC_URL "AUTO" CACHE STRING "The URL of prebuilt dxc for downloading")
+set(SC_PREBUILT_DXC_NAME "AUTO" CACHE STRING "The file name of prebuilt dxc package")
 
 add_subdirectory(External)
 add_subdirectory(Source)
