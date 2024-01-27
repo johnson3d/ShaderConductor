@@ -109,7 +109,7 @@ class BatchCommand:
 		os.remove(batchFileName)
 		return retCode
 
-def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblgenMode, tblgenPath, prebuiltDxcDir, prebuiltDxcUrl, prebuiltDxcName):
+def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblgenMode, tblgenPath, prebuiltDxcDir, prebuiltDxcUrl):
 	originalDir = os.path.abspath(os.curdir)
 
 	if not os.path.exists("Build"):
@@ -194,7 +194,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 	if prebuiltDxcDir != None:
 		cmakeGenOptions += f' -DSC_PREBUILT_DXC_DIR="{prebuiltDxcDir}"'
 	if prebuiltDxcUrl != None:
-		cmakeGenOptions += f' -DSC_PREBUILT_DXC_URL="{prebuiltDxcUrl}" -DSC_PREBUILT_DXC_NAME="{prebuiltDxcName}"'
+		cmakeGenOptions += f' -DSC_PREBUILT_DXC_URL="{prebuiltDxcUrl}"'
 	if hostPlatform != "win":
 		cmakeGenOptions += f' -DSC_ARCH_NAME="{arch}"'
 	batCmd.AddCommand(f"cmake -G {generator} {cmakeGenOptions} ../../")
@@ -276,14 +276,10 @@ if __name__ == "__main__":
 	if "PREBUILT_DXC_URL" in os.environ:
 		prebuiltDxcUrl = os.environ["PREBUILT_DXC_URL"]
 
-	prebuiltDxcName = None
-	if "PREBUILT_DXC_NAME" in os.environ:
-		prebuiltDxcName = os.environ["PREBUILT_DXC_NAME"]
-
 	tblgenPath = None
 	if (prebuiltDxcDir == None) and (prebuiltDxcUrl == None) and (hostArch != arch) and (not ((hostArch == "x64") and (arch == "x86"))):
 		# Cross compiling:
 		# Generate a project with host architecture, build clang-tblgen and llvm-tblgen, and keep the path of clang-tblgen and llvm-tblgen
-		tblgenPath = Build(hostPlatform, hostArch, buildSys, compiler, hostArch, configuration, True, None, None, None, None)
+		tblgenPath = Build(hostPlatform, hostArch, buildSys, compiler, hostArch, configuration, True, None, None, None)
 
-	Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, False, tblgenPath, prebuiltDxcDir, prebuiltDxcUrl, prebuiltDxcName)
+	Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, False, tblgenPath, prebuiltDxcDir, prebuiltDxcUrl)

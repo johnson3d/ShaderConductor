@@ -59,7 +59,7 @@ This script automatically grabs external dependencies to External folder, genera
 
 After building, the output file ShaderConductor.dll can be located in \<YourCMakeTargetFolder\>/Bin/\<Configuration\>/. It depends on dxcompiler.dll in the same folder.
 
-By setting some CMake variables, you can use a prebuilt DXC package. The building time is dramatically shortened by doing that. The `SC_PREBUILT_DXC_DIR` represent a local directory of prebuilt DXC. More advance ones are `SC_PREBUILT_DXC_URL` and `SC_PREBUILT_DXC_NAME`. You can set a URL and the file name of an online DXC package. It'll be downloaded and extracted. Or you can simply set them to `AUTO`. There are predefined URLs and file names for Windows x64/arm64, Ubuntu 20/22 x64, and macOS x64.
+By setting some CMake variables, you can use a prebuilt DXC package. The building time is dramatically shortened by doing that. The `SC_PREBUILT_DXC_DIR` represent a local directory of prebuilt DXC. A more advance way is setting `SC_PREBUILT_DXC_URL` to an online DXC package URL. It'll be downloaded and extracted. Or you can simply set it to `AUTO`. Then predefined URLs for Windows x64/arm64, Ubuntu 20/22 x64, and macOS x64 will be used.
 
 ### Artifacts
 
