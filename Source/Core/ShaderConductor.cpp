@@ -32,17 +32,17 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
-#include <sstream>
 #include <tuple>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Unknwnbase.h>
+#include <Windows.h>
+#else
 #include <clocale>
 #endif
 
-#include <dxc/Support/Global.h>
-#include <dxc/Support/WinIncludes.h>
-
-#include <dxc/DxilContainer/DxilContainer.h>
 #include <dxc/WinAdapter.h>
 #include <dxc/dxcapi.h>
 
@@ -62,39 +62,17 @@
 #undef interface
 #endif
 
+#include "ComPtr.hpp"
+#include "ErrorHandling.hpp"
+
 using namespace ShaderConductor;
 
 namespace
 {
-#if defined(__clang__)
-#define SC_BUILTIN_UNREACHABLE __builtin_unreachable()
-#elif defined(__GNUC__)
-#define SC_BUILTIN_UNREACHABLE __builtin_unreachable()
-#elif defined(_MSC_VER)
-#define SC_BUILTIN_UNREACHABLE __assume(false)
-#endif
-
-#if defined(_DEBUG) || !defined(SC_BUILTIN_UNREACHABLE)
-    [[noreturn]] void UnreachableInternal(const char* msg, const char* file, uint32_t line)
-    {
-        std::stringstream errorLog;
-        if (msg)
-        {
-            errorLog << msg << '\n';
-        }
-        errorLog << "Run into UNREACHABLE";
-        if (file)
-        {
-            errorLog << " at " << file << ':' << line;
-        }
-        errorLog << '.';
-
-        throw std::runtime_error(errorLog.str());
-    }
-
-#define SC_UNREACHABLE(msg) UnreachableInternal(msg, __FILE__, __LINE__)
+#ifdef __APPLE__
+    constexpr const char* Utf8Locale = "en_US.UTF-8";
 #else
-#define SC_UNREACHABLE(msg) SC_BUILTIN_UNREACHABLE
+    constexpr const char* Utf8Locale = "en_US.utf8";
 #endif
 
     std::wstring Utf8ToWide(const char* utf8Str)
@@ -112,7 +90,7 @@ namespace
                 ::MultiByteToWideChar(CP_UTF8, 0, utf8Str, static_cast<int>(utf8Len), wideStr.data(), wideLen);
             }
 #else
-            char* const locale = std::setlocale(LC_CTYPE, CPToLocale(CP_UTF8));
+            char* const locale = std::setlocale(LC_CTYPE, Utf8Locale);
 
             const size_t wideLen = ::mbstowcs(nullptr, utf8Str, 0);
             if (wideLen > 0)
@@ -144,7 +122,7 @@ namespace
                                       nullptr, nullptr);
             }
 #else
-            char* const locale = std::setlocale(LC_CTYPE, CPToLocale(CP_UTF8));
+            char* const locale = std::setlocale(LC_CTYPE, Utf8Locale);
 
             const size_t utf8Len = ::wcstombs(nullptr, wideStr, 0);
             if (utf8Len > 0)
@@ -208,10 +186,10 @@ namespace
             return *m_compiler;
         }
 
-        CComPtr<IDxcLinker> CreateLinker() const
+        ComPtr<IDxcLinker> CreateLinker() const
         {
-            CComPtr<IDxcLinker> linker;
-            const HRESULT hr = m_createInstanceFunc(CLSID_DxcLinker, __uuidof(IDxcLinker), reinterpret_cast<void**>(&linker));
+            ComPtr<IDxcLinker> linker;
+            const HRESULT hr = m_createInstanceFunc(CLSID_DxcLinker, __uuidof(IDxcLinker), linker.PutVoid());
             if (FAILED(hr))
             {
                 linker = nullptr;
@@ -290,8 +268,8 @@ namespace
 
                 if (m_createInstanceFunc != nullptr)
                 {
-                    IFT(m_createInstanceFunc(CLSID_DxcUtils, __uuidof(IDxcUtils), reinterpret_cast<void**>(&m_utils)));
-                    IFT(m_createInstanceFunc(CLSID_DxcCompiler, __uuidof(IDxcCompiler3), reinterpret_cast<void**>(&m_compiler)));
+                    TIFHR(m_createInstanceFunc(CLSID_DxcUtils, __uuidof(IDxcUtils), m_utils.PutVoid()));
+                    TIFHR(m_createInstanceFunc(CLSID_DxcCompiler, __uuidof(IDxcCompiler3), m_compiler.PutVoid()));
                 }
                 else
                 {
@@ -314,8 +292,8 @@ namespace
         HMODULE m_dxcompilerDll = nullptr;
         DxcCreateInstanceProc m_createInstanceFunc = nullptr;
 
-        CComPtr<IDxcUtils> m_utils;
-        CComPtr<IDxcCompiler3> m_compiler;
+        ComPtr<IDxcUtils> m_utils;
+        ComPtr<IDxcCompiler3> m_compiler;
 
         bool m_linkerSupport = false;
     };
@@ -492,19 +470,19 @@ namespace
                           bool needReflection)
     {
         HRESULT status;
-        IFT(dxcResult->GetStatus(&status));
+        TIFHR(dxcResult->GetStatus(&status));
 
         result.target.Reset();
         result.errorWarningMsg.Reset();
 
         if (dxcResult->HasOutput(DXC_OUT_ERRORS))
         {
-            CComPtr<IDxcBlobUtf8> errors;
-            IFT(dxcResult->GetOutput(DXC_OUT_ERRORS, __uuidof(IDxcBlobUtf8), reinterpret_cast<void**>(&errors), nullptr));
+            ComPtr<IDxcBlobUtf8> errors;
+            TIFHR(dxcResult->GetOutput(DXC_OUT_ERRORS, __uuidof(IDxcBlobUtf8), errors.PutVoid(), nullptr));
             if (errors != nullptr)
             {
                 result.errorWarningMsg.Reset(errors->GetBufferPointer(), static_cast<uint32_t>(errors->GetBufferSize()));
-                errors = nullptr;
+                errors.Reset();
             }
         }
 
@@ -525,8 +503,8 @@ namespace
 
             if (outKind != DXC_OUT_NONE)
             {
-                CComPtr<IDxcBlob> resultBlob;
-                IFT(dxcResult->GetOutput(outKind, __uuidof(IDxcBlob), reinterpret_cast<void**>(&resultBlob), nullptr));
+                ComPtr<IDxcBlob> resultBlob;
+                TIFHR(dxcResult->GetOutput(outKind, __uuidof(IDxcBlob), resultBlob.PutVoid(), nullptr));
                 if (resultBlob != nullptr)
                 {
                     result.target.Reset(resultBlob->GetBufferPointer(), static_cast<uint32_t>(resultBlob->GetBufferSize() - sizeAdjust));
@@ -540,20 +518,19 @@ namespace
                 {
                     // Gather reflection information only for ShadingLanguage::Dxil. SPIR-V reflection is gathered when cross-compiling.
 
-                    CComPtr<IDxcBlob> reflectionBlob;
+                    ComPtr<IDxcBlob> reflectionBlob;
                     if (dxcResult->HasOutput(DXC_OUT_REFLECTION))
                     {
-                        IFT(dxcResult->GetOutput(DXC_OUT_REFLECTION, __uuidof(IDxcBlob), reinterpret_cast<void**>(&reflectionBlob),
-                                                 nullptr));
+                        TIFHR(dxcResult->GetOutput(DXC_OUT_REFLECTION, __uuidof(IDxcBlob), reflectionBlob.PutVoid(), nullptr));
                     }
                     else
                     {
-                        IFT(dxcResult->GetResult(&reflectionBlob));
+                        TIFHR(dxcResult->GetResult(reflectionBlob.Put()));
                     }
 
                     if (reflectionBlob != nullptr)
                     {
-                        result.reflection = MakeDxilReflection(reflectionBlob, asModule);
+                        result.reflection = MakeDxilReflection(reflectionBlob.Get(), asModule);
                     }
                 }
             }
@@ -574,7 +551,7 @@ namespace
         sourceBuf.Ptr = source.source;
         sourceBuf.Size = std::strlen(source.source);
         sourceBuf.Encoding = CP_UTF8;
-        IFTARG(sourceBuf.Size >= 4);
+        TIFFALSE(sourceBuf.Size >= 4);
 
         std::vector<std::wstring> dxcArgStrings;
 
@@ -703,13 +680,13 @@ namespace
             dxcArgs.push_back(arg.c_str());
         }
 
-        CComPtr<IDxcIncludeHandler> includeHandler = new ScIncludeHandler(source.loadIncludeCallback);
-        CComPtr<IDxcResult> compileResult;
-        IFT(Dxcompiler::Instance().Compiler().Compile(&sourceBuf, dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()), includeHandler,
-                                                      __uuidof(IDxcResult), reinterpret_cast<void**>(&compileResult)));
+        ComPtr<IDxcIncludeHandler> includeHandler(new ScIncludeHandler(source.loadIncludeCallback));
+        ComPtr<IDxcResult> compileResult;
+        TIFHR(Dxcompiler::Instance().Compiler().Compile(&sourceBuf, dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()),
+                                                        includeHandler.Get(), __uuidof(IDxcResult), compileResult.PutVoid()));
 
         Compiler::ResultDesc ret{};
-        ConvertDxcResult(ret, compileResult, target.language, target.asModule, options.needReflection);
+        ConvertDxcResult(ret, compileResult.Get(), target.language, target.asModule, options.needReflection);
 
         return ret;
     }
@@ -1126,7 +1103,7 @@ namespace ShaderConductor
         explicit VariableTypeImpl(ID3D12ShaderReflectionType* d3d12Type)
         {
             D3D12_SHADER_TYPE_DESC d3d12ShaderTypeDesc;
-            IFT(d3d12Type->GetDesc(&d3d12ShaderTypeDesc));
+            TIFHR(d3d12Type->GetDesc(&d3d12ShaderTypeDesc));
 
             if (d3d12ShaderTypeDesc.Name)
             {
@@ -1175,7 +1152,7 @@ namespace ShaderConductor
                         member.type = Make(d3d12MemberType);
 
                         D3D12_SHADER_TYPE_DESC d3d12MemberTypeDesc;
-                        IFT(d3d12MemberType->GetDesc(&d3d12MemberTypeDesc));
+                        TIFHR(d3d12MemberType->GetDesc(&d3d12MemberTypeDesc));
 
                         member.offset = d3d12MemberTypeDesc.Offset;
                         if (d3d12MemberTypeDesc.Elements == 0)
@@ -1510,7 +1487,7 @@ namespace ShaderConductor
         explicit ConstantBufferImpl(ID3D12ShaderReflectionConstantBuffer* constantBuffer)
         {
             D3D12_SHADER_BUFFER_DESC bufferDesc;
-            IFT(constantBuffer->GetDesc(&bufferDesc));
+            TIFHR(constantBuffer->GetDesc(&bufferDesc));
 
             m_name = bufferDesc.Name;
 
@@ -1518,7 +1495,7 @@ namespace ShaderConductor
             {
                 ID3D12ShaderReflectionVariable* variable = constantBuffer->GetVariableByIndex(variableIndex);
                 D3D12_SHADER_VARIABLE_DESC d3d12VariableDesc;
-                IFT(variable->GetDesc(&d3d12VariableDesc));
+                TIFHR(variable->GetDesc(&d3d12VariableDesc));
 
                 VariableDesc variableDesc{};
 
@@ -1691,7 +1668,7 @@ namespace ShaderConductor
         explicit FunctionImpl(ID3D12FunctionReflection* d3d12FuncReflection)
         {
             D3D12_FUNCTION_DESC d3d12FuncDesc;
-            IFT(d3d12FuncReflection->GetDesc(&d3d12FuncDesc));
+            TIFHR(d3d12FuncReflection->GetDesc(&d3d12FuncDesc));
 
             m_name = d3d12FuncDesc.Name;
 
@@ -1880,11 +1857,11 @@ namespace ShaderConductor
 
             if (asModule)
             {
-                CComPtr<ID3D12LibraryReflection> libReflection;
-                IFT(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12LibraryReflection), reinterpret_cast<void**>(&libReflection)));
+                ComPtr<ID3D12LibraryReflection> libReflection;
+                TIFHR(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12LibraryReflection), libReflection.PutVoid()));
 
                 D3D12_LIBRARY_DESC d3d12LibDesc;
-                IFT(libReflection->GetDesc(&d3d12LibDesc));
+                TIFHR(libReflection->GetDesc(&d3d12LibDesc));
 
                 for (uint32_t funcIndex = 0; funcIndex < d3d12LibDesc.FunctionCount; ++funcIndex)
                 {
@@ -1894,16 +1871,15 @@ namespace ShaderConductor
             }
             else
             {
-                CComPtr<ID3D12ShaderReflection> shaderReflection;
-                IFT(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12ShaderReflection),
-                                           reinterpret_cast<void**>(&shaderReflection)));
+                ComPtr<ID3D12ShaderReflection> shaderReflection;
+                TIFHR(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12ShaderReflection), shaderReflection.PutVoid()));
 
                 D3D12_SHADER_DESC shaderDesc;
-                IFT(shaderReflection->GetDesc(&shaderDesc));
+                TIFHR(shaderReflection->GetDesc(&shaderDesc));
 
                 for (uint32_t resourceIndex = 0; resourceIndex < shaderDesc.BoundResources; ++resourceIndex)
                 {
-                    ExtractDxilResourceDesc(m_resourceDescs, m_constantBuffers, shaderReflection.p, resourceIndex);
+                    ExtractDxilResourceDesc(m_resourceDescs, m_constantBuffers, shaderReflection.Get(), resourceIndex);
                 }
 
                 for (uint32_t inputParamIndex = 0; inputParamIndex < shaderDesc.InputParameters; ++inputParamIndex)
@@ -3298,11 +3274,10 @@ namespace ShaderConductor
             sourceBuf.Size = source.binary.Size();
             sourceBuf.Encoding = CP_UTF8;
 
-            CComPtr<IDxcResult> disassemblyResult;
-            IFT(Dxcompiler::Instance().Compiler().Disassemble(&sourceBuf, __uuidof(IDxcResult),
-                                                              reinterpret_cast<void**>(&disassemblyResult)));
+            ComPtr<IDxcResult> disassemblyResult;
+            TIFHR(Dxcompiler::Instance().Compiler().Disassemble(&sourceBuf, __uuidof(IDxcResult), disassemblyResult.PutVoid()));
 
-            ConvertDxcResult(ret, disassemblyResult, source.language, false, false);
+            ConvertDxcResult(ret, disassemblyResult.Get(), source.language, false, false);
         }
 
         return ret;
@@ -3316,37 +3291,36 @@ namespace ShaderConductor
     Compiler::ResultDesc Compiler::Link(const LinkDesc& modules, const Compiler::Options& options, const TargetDesc& target)
     {
         auto linker = Dxcompiler::Instance().CreateLinker();
-        IFTPTR(linker);
+        TIFFALSE(linker);
 
         auto& utils = Dxcompiler::Instance().Utils();
 
         std::vector<std::wstring> moduleNames(modules.numModules);
         std::vector<const wchar_t*> moduleNamesWide(modules.numModules);
-        std::vector<CComPtr<IDxcBlobEncoding>> moduleBlobs(modules.numModules);
+        std::vector<ComPtr<IDxcBlobEncoding>> moduleBlobs(modules.numModules);
         for (uint32_t i = 0; i < modules.numModules; ++i)
         {
-            IFTARG(modules.modules[i] != nullptr);
+            TIFFALSE(modules.modules[i] != nullptr);
 
-            IFT(utils.CreateBlob(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8, &moduleBlobs[i]));
-            IFTARG(moduleBlobs[i]->GetBufferSize() >= 4);
+            TIFHR(utils.CreateBlob(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8, moduleBlobs[i].Put()));
+            TIFFALSE(moduleBlobs[i]->GetBufferSize() >= 4);
 
             moduleNames[i] = Utf8ToWide(modules.modules[i]->name);
             moduleNamesWide[i] = moduleNames[i].c_str();
-            IFT(linker->RegisterLibrary(moduleNamesWide[i], moduleBlobs[i]));
+            TIFHR(linker->RegisterLibrary(moduleNamesWide[i], moduleBlobs[i].Get()));
         }
 
         const std::wstring entryPointWide = Utf8ToWide(modules.entryPoint);
 
         const std::wstring shaderProfile = ShaderProfileName(modules.stage, options.shaderModel, false);
-        CComPtr<IDxcOperationResult> linkOpResult;
-        IFT(linker->Link(entryPointWide.c_str(), shaderProfile.c_str(), moduleNamesWide.data(), static_cast<UINT32>(moduleNamesWide.size()),
-                         nullptr, 0, &linkOpResult));
+        ComPtr<IDxcOperationResult> linkOpResult;
+        TIFHR(linker->Link(entryPointWide.c_str(), shaderProfile.c_str(), moduleNamesWide.data(),
+                           static_cast<UINT32>(moduleNamesWide.size()), nullptr, 0, linkOpResult.Put()));
 
-        CComPtr<IDxcResult> linkResult;
-        IFT(linkOpResult.QueryInterface(&linkResult));
+        ComPtr<IDxcResult> linkResult = linkOpResult.As<IDxcResult>();
 
         Compiler::ResultDesc binaryResult{};
-        ConvertDxcResult(binaryResult, linkResult, ShadingLanguage::Dxil, false, options.needReflection);
+        ConvertDxcResult(binaryResult, linkResult.Get(), ShadingLanguage::Dxil, false, options.needReflection);
 
         Compiler::SourceDesc source{};
         source.entryPoint = modules.entryPoint;

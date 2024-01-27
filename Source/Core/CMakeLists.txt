@@ -21,7 +21,10 @@ set_target_properties(DeployDxcompiler PROPERTIES FOLDER "Core")
 
 
 add_library(ShaderConductor "SHARED"
+    ${PROJECT_SOURCE_DIR}/Source/Core/ErrorHandling.cpp
     ${PROJECT_SOURCE_DIR}/Source/Core/ShaderConductor.cpp
+    ${PROJECT_SOURCE_DIR}/Source/Core/ComPtr.hpp
+    ${PROJECT_SOURCE_DIR}/Source/Core/ErrorHandling.hpp
     ${PROJECT_SOURCE_DIR}/Include/ShaderConductor/ShaderConductor.hpp
 )
 
@@ -51,7 +54,6 @@ target_link_libraries(ShaderConductor
 if(NOT WIN32)
     target_link_libraries(ShaderConductor
         PRIVATE
-            LLVMDxcSupport
             dl
     )
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

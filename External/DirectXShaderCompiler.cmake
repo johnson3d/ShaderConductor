@@ -114,13 +114,11 @@ set_target_properties(DxcPackage PROPERTIES
     IMPORTED_LOCATION ${dxcPackageBinary}
 )
 
-if(NOT usePrebuilt)
-    add_dependencies(DxcPackage dxcompiler)
-endif()
-
-if(WIN32 AND usePrebuilt)
-    # On Windows, prebuilt package is complete. No need to sync the repository of DirectXShaderCompiler.
+if(usePrebuilt)
+    # The prebuilt package is complete. No need to sync the repository of DirectXShaderCompiler.
     return()
+else()
+    add_dependencies(DxcPackage dxcompiler)
 endif()
 
 set(DirectXShaderCompiler_REV "18328d51057863c0d643a23d3b72ee77912d4b54")
