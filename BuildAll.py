@@ -179,6 +179,9 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		if compiler.startswith("vc"):
 			batCmd.AddCommand("set CC=cl.exe")
 			batCmd.AddCommand("set CXX=cl.exe")
+		elif compiler == "mingw":
+			batCmd.AddCommand("set CC=gcc.exe")
+			batCmd.AddCommand("set CXX=g++.exe")
 
 	cmakeGenOptions = ""
 	cmakeBuildOptions = ""
@@ -195,7 +198,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		cmakeGenOptions += f' -DSC_PREBUILT_DXC_DIR="{prebuiltDxcDir}"'
 	if prebuiltDxcUrl != None:
 		cmakeGenOptions += f' -DSC_PREBUILT_DXC_URL="{prebuiltDxcUrl}"'
-	if hostPlatform != "win":
+	if (not compiler.startswith("vc")) or (buildSys == "ninja"):
 		cmakeGenOptions += f' -DSC_ARCH_NAME="{arch}"'
 	batCmd.AddCommand(f"cmake -G {generator} {cmakeGenOptions} ../../")
 
@@ -275,6 +278,8 @@ if __name__ == "__main__":
 	prebuiltDxcUrl = None
 	if "PREBUILT_DXC_URL" in os.environ:
 		prebuiltDxcUrl = os.environ["PREBUILT_DXC_URL"]
+	if (compiler == "mingw") and (prebuiltDxcDir == None) and (prebuiltDxcUrl == None):
+		prebuiltDxcUrl = "AUTO"
 
 	tblgenPath = None
 	if (prebuiltDxcDir == None) and (prebuiltDxcUrl == None) and (hostArch != arch) and (not ((hostArch == "x64") and (arch == "x86"))):

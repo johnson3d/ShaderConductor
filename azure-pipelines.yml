@@ -27,11 +27,16 @@ stages:
       PREBUILT_DXC_URL: AUTO
       PREBUILT_DXC_NAME: AUTO
       testCommand: './$(buildFolder)/bin/ShaderConductorTest'
-      artifactBinaries_Windows: |
+      artifactBinaries_Msvc: |
         bin/ShaderConductor.dll
         bin/ShaderConductorCmd.exe
         bin/dxcompiler.dll
         lib/ShaderConductor.lib
+      artifactBinaries_MinGW: |
+        bin/libShaderConductor.dll
+        bin/ShaderConductorCmd.exe
+        bin/dxcompiler.dll
+        lib/libShaderConductor.dll.a
       artifactBinaries_Nix: |
         bin/ShaderConductorCmd
         lib/libdxcompiler.*
@@ -45,7 +50,7 @@ stages:
           combination: 'win-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: 'choco install ninja'
-          artifactBinaries: $(artifactBinaries_Windows)
+          artifactBinaries: $(artifactBinaries_Msvc)
         Windows_vc142_arm64:
           vmImage: windows-2019
           compiler: vc142
@@ -54,14 +59,14 @@ stages:
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: 'choco install ninja'
           testCommand: ''
-          artifactBinaries: $(artifactBinaries_Windows)
+          artifactBinaries: $(artifactBinaries_Msvc)
         Windows_vc143_x64:
           vmImage: windows-2022
           compiler: vc143
           combination: 'win-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: 'choco install ninja'
-          artifactBinaries: $(artifactBinaries_Windows)
+          artifactBinaries: $(artifactBinaries_Msvc)
         Windows_vc143_arm64:
           vmImage: windows-2022
           compiler: vc143
@@ -70,7 +75,16 @@ stages:
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: 'choco install ninja'
           testCommand: ''
-          artifactBinaries: $(artifactBinaries_Windows)
+          artifactBinaries: $(artifactBinaries_Msvc)
+        Windows_gcc13:
+          vmImage: windows-2019
+          compiler: mingw
+          combination: 'win-$(compiler)-$(platform)-$(configuration)'
+          buildFolder: 'Build/ninja-$(combination)'
+          installCommand: 'choco install ninja'
+          artifactBinaries: $(artifactBinaries_MinGW)
+          CC: gcc
+          CXX: g++
         Linux_gcc11:
           vmImage: Ubuntu-20.04
           compiler: gcc11
@@ -139,6 +153,12 @@ stages:
 
       - bash: eval '$(installCommand)'
         displayName: 'Install'
+
+      - pwsh: |
+          $mingwPath = "C:\msys64\mingw64\bin"
+          Write-Host "##vso[task.setvariable variable=PATH;]$mingwPath;${env:PATH}";
+        displayName: 'Config msys2 PATH'
+        condition: eq(variables.compiler, 'mingw')
 
       - script: |
           git config --global user.email "dummy@example.com"

@@ -29,21 +29,76 @@
 #include <atomic>
 #include <cassert>
 #include <cctype>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <tuple>
 
 #ifdef _WIN32
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <Unknwnbase.h>
 #include <Windows.h>
+#ifdef __MINGW32__
+#include <_mingw.h>
+#endif
 #else
 #include <clocale>
 #endif
 
+#ifdef __MINGW32__
+namespace
+{
+    constexpr uint8_t NybbleFromHex(char c)
+    {
+        return ((c >= '0' && c <= '9')
+                    ? (c - '0')
+                    : ((c >= 'a' && c <= 'f') ? (c - 'a' + 10) : ((c >= 'A' && c <= 'F') ? (c - 'A' + 10) : /* Should be an error */ -1)));
+    }
+
+    constexpr uint8_t ByteFromHexstr(const char str[2])
+    {
+        return (NybbleFromHex(str[0]) << 4) | NybbleFromHex(str[1]);
+    }
+
+    constexpr uint32_t GetGuidData1FromString(const char str[37])
+    {
+        return (static_cast<uint32_t>(ByteFromHexstr(str)) << 24) | (static_cast<uint32_t>(ByteFromHexstr(str + 2)) << 16) |
+               (static_cast<uint32_t>(ByteFromHexstr(str + 4)) << 8) | ByteFromHexstr(str + 6);
+    }
+
+    constexpr uint16_t GetGuidData2FromString(const char str[37])
+    {
+        return (static_cast<uint16_t>(ByteFromHexstr(str + 9)) << 8) | ByteFromHexstr(str + 11);
+    }
+
+    constexpr uint16_t GetGuidData3FromString(const char str[37])
+    {
+        return (static_cast<uint16_t>(ByteFromHexstr(str + 14)) << 8) | ByteFromHexstr(str + 16);
+    }
+
+    constexpr uint8_t GetGuidData4FromString(const char str[37], uint32_t index)
+    {
+        return ByteFromHexstr(str + 19 + index * 2 + (index >= 2 ? 1 : 0));
+    }
+} // namespace
+
+#define CROSS_PLATFORM_UUIDOF(type, spec)                                                                                                  \
+    class type;                                                                                                                            \
+    __CRT_UUID_DECL(type, GetGuidData1FromString(spec), GetGuidData2FromString(spec), GetGuidData3FromString(spec),                        \
+                    GetGuidData4FromString(spec, 0), GetGuidData4FromString(spec, 1), GetGuidData4FromString(spec, 2),                     \
+                    GetGuidData4FromString(spec, 3), GetGuidData4FromString(spec, 4), GetGuidData4FromString(spec, 5),                     \
+                    GetGuidData4FromString(spec, 6), GetGuidData4FromString(spec, 7))
+#endif
 #include <dxc/WinAdapter.h>
+#ifdef __MINGW32__
+#define _Maybenull_
+#endif
 #include <dxc/dxcapi.h>
 
 #include <spirv-tools/libspirv.h>
@@ -60,6 +115,11 @@
 #include <directx/d3d12shader.h>
 #ifndef _WIN32
 #undef interface
+#endif
+
+#ifdef __MINGW32__
+CROSS_PLATFORM_UUIDOF(ID3D12LibraryReflection, "8E349D19-54DB-4A56-9DC9-119D87BDB804")
+CROSS_PLATFORM_UUIDOF(ID3D12ShaderReflection, "E913C351-783D-48CA-A1D1-4F306284AD56")
 #endif
 
 #include "ComPtr.hpp"
@@ -261,7 +321,8 @@ namespace
             if (m_dxcompilerDll != nullptr)
             {
 #ifdef _WIN32
-                m_createInstanceFunc = reinterpret_cast<DxcCreateInstanceProc>(::GetProcAddress(m_dxcompilerDll, functionName));
+                m_createInstanceFunc =
+                    reinterpret_cast<DxcCreateInstanceProc>(reinterpret_cast<void*>(::GetProcAddress(m_dxcompilerDll, functionName)));
 #else
                 m_createInstanceFunc = reinterpret_cast<DxcCreateInstanceProc>(::dlsym(m_dxcompilerDll, functionName));
 #endif
