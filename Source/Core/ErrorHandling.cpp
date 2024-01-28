@@ -28,16 +28,19 @@
 #include <sstream>
 #include <stdexcept>
 
-[[noreturn]] void ThrowFileLine(std::stringstream& errorLog, const char* file, uint32_t line)
+namespace
 {
-    if (file)
+    [[noreturn]] void ThrowFileLine(std::stringstream& errorLog, const char* file, uint32_t line)
     {
-        errorLog << " at " << file << ':' << line;
-    }
-    errorLog << '.';
+        if (file)
+        {
+            errorLog << " at " << file << ':' << line;
+        }
+        errorLog << '.';
 
-    throw std::runtime_error(errorLog.str());
-}
+        throw std::runtime_error(errorLog.str());
+    }
+} // namespace
 
 [[noreturn]] void ThrowFileLine(const char* file, uint32_t line)
 {

@@ -76,6 +76,15 @@ stages:
           installCommand: 'choco install ninja'
           testCommand: ''
           artifactBinaries: $(artifactBinaries_Msvc)
+        Windows_clangcl12:
+          vmImage: windows-2019
+          compiler: clangcl
+          combination: 'win-$(compiler)-$(platform)-$(configuration)'
+          buildFolder: 'Build/ninja-$(combination)'
+          installCommand: 'choco install ninja'
+          artifactBinaries: $(artifactBinaries_Msvc)
+          CC: clang-cl
+          CXX: clang-cl
         Windows_gcc13:
           vmImage: windows-2019
           compiler: mingw

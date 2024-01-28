@@ -39,7 +39,7 @@ def FindProgramFilesFolder():
 			programFilesFolder = "C:\\Program Files"
 	return programFilesFolder
 
-def FindVS2017OrUpFolder(programFilesFolder, vsVersion, vsName):
+def FindVS2017OrUpFolder(programFilesFolder, vsVersion, vsName, required = True):
 	tryVcvarsall = "VCVARSALL.BAT"
 	tryVswhereLocation = programFilesFolder + "\\Microsoft Visual Studio\\Installer\\vswhere.exe"
 	if os.path.exists(tryVswhereLocation):
@@ -60,19 +60,20 @@ def FindVS2017OrUpFolder(programFilesFolder, vsVersion, vsName):
 				tryFolder = programFilesFolder + f"\\Microsoft Visual Studio\\{name}\\{sku}\\VC\\Auxiliary\\Build\\"
 				if os.path.exists(tryFolder + tryVcvarsall):
 					return tryFolder
-	LogError(f"Could NOT find VS{vsName}.\n")
-	return ""
+	if required:
+		LogError(f"Could NOT find VS{vsName}.\n")
+	return None
 
-def FindVS2022Folder(programFilesFolder):
-	return FindVS2017OrUpFolder(programFilesFolder, 17, "2022")
+def FindVS2022Folder(programFilesFolder, required = True):
+	return FindVS2017OrUpFolder(programFilesFolder, 17, "2022", required)
 
-def FindVS2019Folder(programFilesFolder):
-	return FindVS2017OrUpFolder(programFilesFolder, 16, "2019")
+def FindVS2019Folder(programFilesFolder, required = True):
+	return FindVS2017OrUpFolder(programFilesFolder, 16, "2019", required)
 
-def FindVS2017Folder(programFilesFolder):
-	return FindVS2017OrUpFolder(programFilesFolder, 15, "2017")
+def FindVS2017Folder(programFilesFolder, required = True):
+	return FindVS2017OrUpFolder(programFilesFolder, 15, "2017", required)
 
-def FindVS2015Folder(programFilesFolder):
+def FindVS2015Folder(programFilesFolder, required = True):
 	env = os.environ
 	if "VS140COMNTOOLS" in env:
 		return env["VS140COMNTOOLS"] + "..\\..\\VC\\"
@@ -82,7 +83,9 @@ def FindVS2015Folder(programFilesFolder):
 		if os.path.exists(tryFolder + tryVcvarsall):
 			return tryFolder
 		else:
-			LogError("Could NOT find VS2015.\n")
+			if required:
+				LogError("Could NOT find VS2015.\n")
+			return None
 
 class BatchCommand:
 	def __init__(self, hostPlatform):
@@ -126,16 +129,21 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 	buildDir = os.path.abspath(os.curdir)
 
 	batCmd = BatchCommand(hostPlatform)
-	if compiler.startswith("vc"):
+	if compiler.startswith("vc") or (compiler == "clangcl"):
 		programFilesFolder = FindProgramFilesFolder()
-		if (buildSys == "vs2022") or ((buildSys == "ninja") and (compiler == "vc143")):
-			vsFolder = FindVS2022Folder(programFilesFolder)
-		elif (buildSys == "vs2019") or ((buildSys == "ninja") and (compiler == "vc142")):
-			vsFolder = FindVS2019Folder(programFilesFolder)
-		elif (buildSys == "vs2017") or ((buildSys == "ninja") and (compiler == "vc141")):
-			vsFolder = FindVS2017Folder(programFilesFolder)
-		elif (buildSys == "vs2015") or ((buildSys == "ninja") and (compiler == "vc140")):
-			vsFolder = FindVS2015Folder(programFilesFolder)
+		if (buildSys == "ninja") and (compiler == "clangcl"):
+			vsFolder = FindVS2022Folder(programFilesFolder, False)
+			if vsFolder == None:
+				vsFolder = FindVS2019Folder(programFilesFolder)
+		else:
+			if (buildSys == "vs2022") or ((buildSys == "ninja") and (compiler == "vc143")):
+				vsFolder = FindVS2022Folder(programFilesFolder)
+			elif (buildSys == "vs2019") or ((buildSys == "ninja") and (compiler == "vc142")):
+				vsFolder = FindVS2019Folder(programFilesFolder)
+			elif (buildSys == "vs2017") or ((buildSys == "ninja") and (compiler == "vc141")):
+				vsFolder = FindVS2017Folder(programFilesFolder)
+			elif (buildSys == "vs2015") or ((buildSys == "ninja") and (compiler == "vc140")):
+				vsFolder = FindVS2015Folder(programFilesFolder)
 
 		if "x64" == arch:
 			vcOption = "amd64"
@@ -162,7 +170,11 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		elif ((buildSys == "vs2022") or (buildSys == "vs2019") or (buildSys == "vs2017")) and (compiler == "vc140"):
 			vcOption += " -vcvars_ver=14.0"
 			vcToolset = "v140,"
+		elif ((buildSys == "vs2022") or (buildSys == "vs2019")) and (compiler == "clangcl"):
+			vcToolset = "ClangCL,"
 
+		if compiler == "clangcl":
+			batCmd.AddCommand(f'@set PATH={vsFolder}../../Tools/Llvm/{vcArch}/bin;%PATH%')
 		batCmd.AddCommand(f'@call "{vsFolder}VCVARSALL.BAT" {vcOption}')
 		batCmd.AddCommand(f'@cd /d "{buildDir}"')
 
@@ -179,6 +191,9 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		if compiler.startswith("vc"):
 			batCmd.AddCommand("set CC=cl.exe")
 			batCmd.AddCommand("set CXX=cl.exe")
+		elif compiler == "clangcl":
+			batCmd.AddCommand("set CC=clang-cl.exe")
+			batCmd.AddCommand("set CXX=clang-cl.exe")
 		elif compiler == "mingw":
 			batCmd.AddCommand("set CC=gcc.exe")
 			batCmd.AddCommand("set CXX=g++.exe")
@@ -198,7 +213,7 @@ def Build(hostPlatform, hostArch, buildSys, compiler, arch, configuration, tblge
 		cmakeGenOptions += f' -DSC_PREBUILT_DXC_DIR="{prebuiltDxcDir}"'
 	if prebuiltDxcUrl != None:
 		cmakeGenOptions += f' -DSC_PREBUILT_DXC_URL="{prebuiltDxcUrl}"'
-	if (not compiler.startswith("vc")) or (buildSys == "ninja"):
+	if (not compiler.startswith("vc")) and (compiler != "clangcl"):
 		cmakeGenOptions += f' -DSC_ARCH_NAME="{arch}"'
 	batCmd.AddCommand(f"cmake -G {generator} {cmakeGenOptions} ../../")
 
@@ -278,7 +293,7 @@ if __name__ == "__main__":
 	prebuiltDxcUrl = None
 	if "PREBUILT_DXC_URL" in os.environ:
 		prebuiltDxcUrl = os.environ["PREBUILT_DXC_URL"]
-	if (compiler == "mingw") and (prebuiltDxcDir == None) and (prebuiltDxcUrl == None):
+	if ((compiler == "mingw") or (compiler == "clangcl")) and (prebuiltDxcDir == None) and (prebuiltDxcUrl == None):
 		prebuiltDxcUrl = "AUTO"
 
 	tblgenPath = None

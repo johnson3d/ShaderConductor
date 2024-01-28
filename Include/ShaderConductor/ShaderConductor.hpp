@@ -392,7 +392,7 @@ namespace ShaderConductor
 
             uint32_t FullVersion() const noexcept
             {
-                return (major_ver << 8) | minor_ver;
+                return static_cast<uint32_t>(major_ver << 8) | minor_ver;
             }
 
             bool operator<(const ShaderModel& other) const noexcept
@@ -423,9 +423,9 @@ namespace ShaderConductor
             const char* fileName;
             const char* entryPoint;
             ShaderStage stage;
-            const MacroDefine* defines;
-            uint32_t numDefines;
-            std::function<Blob(const char* includeName)> loadIncludeCallback;
+            const MacroDefine* defines = nullptr;
+            uint32_t numDefines = 0;
+            std::function<Blob(const char* includeName)> loadIncludeCallback = nullptr;
         };
 
         struct Options
@@ -450,8 +450,8 @@ namespace ShaderConductor
         struct TargetDesc
         {
             ShadingLanguage language;
-            const char* version;
-            bool asModule;
+            const char* version = nullptr;
+            bool asModule = false;
         };
 
         struct ResultDesc

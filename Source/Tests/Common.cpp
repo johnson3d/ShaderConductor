@@ -48,7 +48,7 @@ namespace ShaderConductor
             file.seekg(0, std::ios::end);
             ret.resize(static_cast<size_t>(file.tellg()));
             file.seekg(0, std::ios::beg);
-            file.read(reinterpret_cast<char*>(ret.data()), ret.size());
+            file.read(reinterpret_cast<char*>(ret.data()), static_cast<std::streamsize>(ret.size()));
             ret.resize(static_cast<size_t>(file.gcount()));
         }
         return ret;
@@ -67,7 +67,7 @@ namespace ShaderConductor
                     mode |= std::ios_base::binary;
                 }
                 std::ofstream actualFile(TEST_DATA_DIR "Result/" + compareName, mode);
-                actualFile.write(reinterpret_cast<const char*>(actual.data()), actual.size());
+                actualFile.write(reinterpret_cast<const char*>(actual.data()), static_cast<std::streamsize>(actual.size()));
             }
         }
 

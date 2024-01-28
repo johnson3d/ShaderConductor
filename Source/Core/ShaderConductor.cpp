@@ -129,10 +129,12 @@ using namespace ShaderConductor;
 
 namespace
 {
+#ifndef _WIN32
 #ifdef __APPLE__
     constexpr const char* Utf8Locale = "en_US.UTF-8";
 #else
     constexpr const char* Utf8Locale = "en_US.utf8";
+#endif
 #endif
 
     std::wstring Utf8ToWide(const char* utf8Str)
