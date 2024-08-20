@@ -79,8 +79,8 @@
     %v4float = OpTypeVector %float 4
     %v3float = OpTypeVector %float 3
 %_arr_v3float_uint_4 = OpTypeArray %v3float %uint_4
-      %Scene = OpTypeStruct %float %v4float %_arr_v3float_uint_4
-%type_cbSimulationConstants = OpTypeStruct %float %Scene
+      %Scene = OpTypeStruct %v4float %v4float %_arr_v3float_uint_4
+%type_cbSimulationConstants = OpTypeStruct %v4float %Scene
 %_ptr_Uniform_type_cbSimulationConstants = OpTypePointer Uniform %type_cbSimulationConstants
     %v2float = OpTypeVector %float 2
    %Particle = OpTypeStruct %v2float %v2float
@@ -99,8 +99,8 @@
          %39 = OpTypeFunction %void
 %_ptr_StorageBuffer_v2float = OpTypePointer StorageBuffer %v2float
 %_ptr_Uniform_v3float = OpTypePointer Uniform %v3float
-%_ptr_Uniform_float = OpTypePointer Uniform %float
 %_ptr_Uniform_v4float = OpTypePointer Uniform %v4float
+%_ptr_Uniform_float = OpTypePointer Uniform %float
 %cbSimulationConstants = OpVariable %_ptr_Uniform_type_cbSimulationConstants Uniform
 %particlesRW = OpVariable %_ptr_StorageBuffer_type_RWStructuredBuffer_Particle StorageBuffer
 %particlesRO = OpVariable %_ptr_StorageBuffer_type_StructuredBuffer_Particle StorageBuffer
@@ -126,7 +126,7 @@
          %60 = OpDot %float %57 %59
          %61 = OpVectorShuffle %v2float %59 %59 0 1
          %62 = OpExtInst %float %1 NMin %60 %float_0
-         %63 = OpAccessChain %_ptr_Uniform_float %cbSimulationConstants %int_1 %int_0
+         %63 = OpAccessChain %_ptr_Uniform_float %cbSimulationConstants %int_1 %int_0 %int_0
          %64 = OpLoad %float %63
          %65 = OpFNegate %float %64
          %66 = OpFMul %float %62 %65
@@ -160,7 +160,7 @@
          %94 = OpLoad %v4float %93
          %95 = OpVectorShuffle %v2float %94 %94 0 1
          %96 = OpFAdd %v2float %92 %95
-         %97 = OpAccessChain %_ptr_Uniform_float %cbSimulationConstants %int_0
+         %97 = OpAccessChain %_ptr_Uniform_float %cbSimulationConstants %int_0 %int_0
          %98 = OpLoad %float %97
          %99 = OpVectorTimesScalar %v2float %96 %98
         %100 = OpFAdd %v2float %52 %99

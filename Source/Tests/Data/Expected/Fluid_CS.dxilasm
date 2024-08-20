@@ -10,7 +10,7 @@
 ; Name                 Index   Mask Register SysValue  Format   Used
 ; -------------------- ----- ------ -------- -------- ------- ------
 ; no parameters
-; shader hash: f63fb7487112aeb66ca00a305149222f
+; shader hash: ********************************
 ;
 ; Pipeline Runtime Information: 
 ;
@@ -66,8 +66,8 @@ target triple = "dxil-ms-dx"
 %"class.StructuredBuffer<ParticleForces>" = type { %struct.ParticleForces }
 %struct.ParticleForces = type { <2 x float> }
 %"class.RWStructuredBuffer<Particle>" = type { %struct.Particle }
-%cbSimulationConstants = type { float, %struct.Scene }
-%struct.Scene = type { float, <4 x float>, [4 x <3 x float>] }
+%cbSimulationConstants = type { <4 x float>, %struct.Scene }
+%struct.Scene = type { <4 x float>, <4 x float>, [4 x <3 x float>] }
 
 define void @main() {
   %1 = call %dx.types.Handle @dx.op.createHandle(i32 57, i8 1, i32 0, i32 0, i1 false)  ; CreateHandle(resourceClass,rangeId,index,nonUniformIndex)
@@ -186,7 +186,7 @@ attributes #2 = { nounwind }
 !dx.resources = !{!4}
 !dx.entryPoints = !{!14}
 
-!0 = !{!"dxc(private) 1.7.0.3636 (bdb110f42)"}
+!0 = !{!"dxc(private) **********************"}
 !1 = !{i32 1, i32 0}
 !2 = !{i32 1, i32 7}
 !3 = !{!"cs", i32 6, i32 0}

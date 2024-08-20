@@ -5,6 +5,7 @@
 ; Schema: 0
                OpCapability Shader
                OpCapability InputAttachment
+               OpCapability StorageImageReadWithoutFormat
                OpExtension "SPV_GOOGLE_hlsl_functionality1"
                OpExtension "SPV_GOOGLE_user_type"
                OpMemoryModel Logical GLSL450
@@ -36,7 +37,7 @@
                OpDecorate %subpassInput1 Binding 1
                OpDecorate %subpassInput2 DescriptorSet 0
                OpDecorate %subpassInput2 Binding 2
-               OpDecorateString %subpassInput0 UserTypeGOOGLE "subpassinput:<vector<float,4> >"
+               OpDecorateString %subpassInput0 UserTypeGOOGLE "subpassinput"
                OpDecorateString %subpassInput1 UserTypeGOOGLE "subpassinput:<uint>"
                OpDecorateString %subpassInput2 UserTypeGOOGLE "subpassinputms:<float2>"
         %int = OpTypeInt 32 1

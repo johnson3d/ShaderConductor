@@ -23,20 +23,41 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef SHADER_CONDUCTOR_TEST_COMMON_HPP
-#define SHADER_CONDUCTOR_TEST_COMMON_HPP
+#include "ErrorHandling.hpp"
 
-#pragma once
+#include <sstream>
+#include <stdexcept>
 
-#include <cstdint>
-#include <string>
-#include <vector>
-
-namespace ShaderConductor
+namespace
 {
-    std::vector<uint8_t> LoadFile(const std::string& name, bool isText);
-    void CompareWithExpected(const std::vector<uint8_t>& actual, bool isText, const std::string& compareName);
-    void RemoveDxilAsmHash(std::vector<uint8_t>& text);
-} // namespace ShaderConductor
+    [[noreturn]] void ThrowFileLine(std::stringstream& errorLog, const char* file, uint32_t line)
+    {
+        if (file)
+        {
+            errorLog << " at " << file << ':' << line;
+        }
+        errorLog << '.';
 
+        throw std::runtime_error(errorLog.str());
+    }
+} // namespace
+
+[[noreturn]] void ThrowFileLine(const char* file, uint32_t line)
+{
+    std::stringstream errorLog;
+    ThrowFileLine(errorLog, file, line);
+}
+
+#if defined(_DEBUG) || !defined(SC_BUILTIN_UNREACHABLE)
+[[noreturn]] void UnreachableInternal(const char* msg, const char* file, uint32_t line)
+{
+    std::stringstream errorLog;
+    if (msg)
+    {
+        errorLog << msg << '\n';
+    }
+    errorLog << "Run into UNREACHABLE";
+
+    ThrowFileLine(errorLog, file, line);
+}
 #endif

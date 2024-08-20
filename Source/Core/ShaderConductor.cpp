@@ -25,30 +25,79 @@
 
 #include <ShaderConductor/ShaderConductor.hpp>
 
-#include <dxc/Support/Global.h>
-#include <dxc/Support/WinAdapter.h>
-#include <dxc/Support/WinIncludes.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <cctype>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <memory>
-#include <sstream>
 #include <tuple>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Unknwnbase.h>
+#include <Windows.h>
+#ifdef __MINGW32__
+#include <_mingw.h>
+#endif
+#else
 #include <clocale>
 #endif
 
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations" // Deprecated std::iterator
+#ifdef __MINGW32__
+namespace
+{
+    constexpr uint8_t NybbleFromHex(char c)
+    {
+        return ((c >= '0' && c <= '9')
+                    ? (c - '0')
+                    : ((c >= 'a' && c <= 'f') ? (c - 'a' + 10) : ((c >= 'A' && c <= 'F') ? (c - 'A' + 10) : /* Should be an error */ -1)));
+    }
+
+    constexpr uint8_t ByteFromHexstr(const char str[2])
+    {
+        return (NybbleFromHex(str[0]) << 4) | NybbleFromHex(str[1]);
+    }
+
+    constexpr uint32_t GetGuidData1FromString(const char str[37])
+    {
+        return (static_cast<uint32_t>(ByteFromHexstr(str)) << 24) | (static_cast<uint32_t>(ByteFromHexstr(str + 2)) << 16) |
+               (static_cast<uint32_t>(ByteFromHexstr(str + 4)) << 8) | ByteFromHexstr(str + 6);
+    }
+
+    constexpr uint16_t GetGuidData2FromString(const char str[37])
+    {
+        return (static_cast<uint16_t>(ByteFromHexstr(str + 9)) << 8) | ByteFromHexstr(str + 11);
+    }
+
+    constexpr uint16_t GetGuidData3FromString(const char str[37])
+    {
+        return (static_cast<uint16_t>(ByteFromHexstr(str + 14)) << 8) | ByteFromHexstr(str + 16);
+    }
+
+    constexpr uint8_t GetGuidData4FromString(const char str[37], uint32_t index)
+    {
+        return ByteFromHexstr(str + 19 + index * 2 + (index >= 2 ? 1 : 0));
+    }
+} // namespace
+
+#define CROSS_PLATFORM_UUIDOF(type, spec)                                                                                                  \
+    class type;                                                                                                                            \
+    __CRT_UUID_DECL(type, GetGuidData1FromString(spec), GetGuidData2FromString(spec), GetGuidData3FromString(spec),                        \
+                    GetGuidData4FromString(spec, 0), GetGuidData4FromString(spec, 1), GetGuidData4FromString(spec, 2),                     \
+                    GetGuidData4FromString(spec, 3), GetGuidData4FromString(spec, 4), GetGuidData4FromString(spec, 5),                     \
+                    GetGuidData4FromString(spec, 6), GetGuidData4FromString(spec, 7))
 #endif
-#include <dxc/DxilContainer/DxilContainer.h>
-#if defined(__clang__)
-#pragma clang diagnostic pop
+#include <dxc/WinAdapter.h>
+#ifdef __MINGW32__
+#define _Maybenull_
 #endif
 #include <dxc/dxcapi.h>
 
@@ -60,45 +109,32 @@
 #include <spirv_hlsl.hpp>
 #include <spirv_msl.hpp>
 
-#ifdef _WIN32
-#include <d3d12shader.h>
+#ifndef _WIN32
+#define interface struct
+#endif
+#include <directx/d3d12shader.h>
+#ifndef _WIN32
+#undef interface
 #endif
 
-#define SC_UNUSED(x) (void)(x);
+#ifdef __MINGW32__
+CROSS_PLATFORM_UUIDOF(ID3D12LibraryReflection, "8E349D19-54DB-4A56-9DC9-119D87BDB804")
+CROSS_PLATFORM_UUIDOF(ID3D12ShaderReflection, "E913C351-783D-48CA-A1D1-4F306284AD56")
+#endif
+
+#include "ComPtr.hpp"
+#include "ErrorHandling.hpp"
 
 using namespace ShaderConductor;
 
 namespace
 {
-#if defined(__clang__)
-#define SC_BUILTIN_UNREACHABLE __builtin_unreachable()
-#elif defined(__GNUC__)
-#define SC_BUILTIN_UNREACHABLE __builtin_unreachable()
-#elif defined(_MSC_VER)
-#define SC_BUILTIN_UNREACHABLE __assume(false)
-#endif
-
-#if defined(_DEBUG) || !defined(SC_BUILTIN_UNREACHABLE)
-    [[noreturn]] void UnreachableInternal(const char* msg, const char* file, uint32_t line)
-    {
-        std::stringstream errorLog;
-        if (msg)
-        {
-            errorLog << msg << '\n';
-        }
-        errorLog << "Run into UNREACHABLE";
-        if (file)
-        {
-            errorLog << " at " << file << ':' << line;
-        }
-        errorLog << '.';
-
-        throw std::runtime_error(errorLog.str());
-    }
-
-#define SC_UNREACHABLE(msg) UnreachableInternal(msg, __FILE__, __LINE__)
+#ifndef _WIN32
+#ifdef __APPLE__
+    constexpr const char* Utf8Locale = "en_US.UTF-8";
 #else
-#define SC_UNREACHABLE(msg) SC_BUILTIN_UNREACHABLE
+    constexpr const char* Utf8Locale = "en_US.utf8";
+#endif
 #endif
 
     std::wstring Utf8ToWide(const char* utf8Str)
@@ -116,13 +152,13 @@ namespace
                 ::MultiByteToWideChar(CP_UTF8, 0, utf8Str, static_cast<int>(utf8Len), wideStr.data(), wideLen);
             }
 #else
-            char* const locale = std::setlocale(LC_CTYPE, CPToLocale(CP_UTF8));
+            char* const locale = std::setlocale(LC_CTYPE, Utf8Locale);
 
-            const size_t wideLen = ::mbstowcs(nullptr, utf8Str, utf8Len);
+            const size_t wideLen = ::mbstowcs(nullptr, utf8Str, 0);
             if (wideLen > 0)
             {
                 wideStr.resize(wideLen);
-                ::mbstowcs(wideStr.data(), utf8Str, utf8Len);
+                ::mbstowcs(wideStr.data(), utf8Str, wideLen);
             }
 
             std::setlocale(LC_CTYPE, locale);
@@ -148,13 +184,13 @@ namespace
                                       nullptr, nullptr);
             }
 #else
-            char* const locale = std::setlocale(LC_CTYPE, CPToLocale(CP_UTF8));
+            char* const locale = std::setlocale(LC_CTYPE, Utf8Locale);
 
-            const size_t utf8Len = ::wcstombs(nullptr, wideStr, wideLen);
+            const size_t utf8Len = ::wcstombs(nullptr, wideStr, 0);
             if (utf8Len > 0)
             {
                 utf8Str.resize(utf8Len);
-                ::wcstombs(utf8Str.data(), wideStr, wideLen);
+                ::wcstombs(utf8Str.data(), wideStr, utf8Len);
             }
 
             std::setlocale(LC_CTYPE, locale);
@@ -162,6 +198,25 @@ namespace
         }
 
         return utf8Str;
+    }
+
+    std::filesystem::path DllSelfPath()
+    {
+#if defined(_WIN32)
+        HMODULE dllModule;
+        ::GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                             reinterpret_cast<LPCSTR>(DllSelfPath), &dllModule);
+
+        char rawDllPath[MAX_PATH];
+        ::GetModuleFileNameA(dllModule, rawDllPath, sizeof(rawDllPath));
+        const std::filesystem::path dllPath(rawDllPath);
+#else
+        Dl_info dlInfo;
+        ::dladdr(reinterpret_cast<const void*>(DllSelfPath), &dlInfo);
+        const std::filesystem::path dllPath(dlInfo.dli_fname);
+#endif
+
+        return std::filesystem::absolute(dllPath);
     }
 
     class Dxcompiler
@@ -183,25 +238,20 @@ namespace
             m_dllDetaching = detaching;
         }
 
-        IDxcUtils* Utils() const noexcept
+        IDxcUtils& Utils() const noexcept
         {
-            return m_utils;
+            return *m_utils;
         }
 
-        IDxcCompiler3* Compiler() const noexcept
+        IDxcCompiler3& Compiler() const noexcept
         {
-            return m_compiler;
+            return *m_compiler;
         }
 
-        IDxcContainerReflection* ContainerReflection() const noexcept
+        ComPtr<IDxcLinker> CreateLinker() const
         {
-            return m_containerReflection;
-        }
-
-        CComPtr<IDxcLinker> CreateLinker() const
-        {
-            CComPtr<IDxcLinker> linker;
-            const HRESULT hr = m_createInstanceFunc(CLSID_DxcLinker, __uuidof(IDxcLinker), reinterpret_cast<void**>(&linker));
+            ComPtr<IDxcLinker> linker;
+            const HRESULT hr = m_createInstanceFunc(CLSID_DxcLinker, __uuidof(IDxcLinker), linker.PutVoid());
             if (FAILED(hr))
             {
                 linker = nullptr;
@@ -220,7 +270,6 @@ namespace
             {
                 m_compiler = nullptr;
                 m_utils = nullptr;
-                m_containerReflection = nullptr;
 
                 m_createInstanceFunc = nullptr;
 
@@ -240,7 +289,6 @@ namespace
             {
                 m_compiler.Detach();
                 m_utils.Detach();
-                m_containerReflection.Detach();
 
                 m_createInstanceFunc = nullptr;
 
@@ -257,7 +305,7 @@ namespace
             }
 
 #ifdef _WIN32
-            const wchar_t* dllName = L"dxcompiler.dll";
+            const char* dllName = "dxcompiler.dll";
 #elif __APPLE__
             const char* dllName = "libdxcompiler.dylib";
 #else
@@ -265,31 +313,26 @@ namespace
 #endif
             const char* functionName = "DxcCreateInstance";
 
+            const std::filesystem::path dllPath = DllSelfPath().parent_path() / dllName;
 #ifdef _WIN32
-            m_dxcompilerDll = ::LoadLibraryW(dllName);
+            m_dxcompilerDll = ::LoadLibraryW(dllPath.wstring().c_str());
 #else
-            m_dxcompilerDll = ::dlopen(dllName, RTLD_LAZY);
+            m_dxcompilerDll = ::dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #endif
 
             if (m_dxcompilerDll != nullptr)
             {
 #ifdef _WIN32
-                m_createInstanceFunc = (DxcCreateInstanceProc)::GetProcAddress(m_dxcompilerDll, functionName);
+                m_createInstanceFunc =
+                    reinterpret_cast<DxcCreateInstanceProc>(reinterpret_cast<void*>(::GetProcAddress(m_dxcompilerDll, functionName)));
 #else
-                m_createInstanceFunc = (DxcCreateInstanceProc)::dlsym(m_dxcompilerDll, functionName);
+                m_createInstanceFunc = reinterpret_cast<DxcCreateInstanceProc>(::dlsym(m_dxcompilerDll, functionName));
 #endif
 
                 if (m_createInstanceFunc != nullptr)
                 {
-                    IFT(m_createInstanceFunc(CLSID_DxcUtils, __uuidof(IDxcUtils), reinterpret_cast<void**>(&m_utils)));
-                    IFT(m_createInstanceFunc(CLSID_DxcCompiler, __uuidof(IDxcCompiler3), reinterpret_cast<void**>(&m_compiler)));
-
-                    const HRESULT hr = m_createInstanceFunc(CLSID_DxcContainerReflection, __uuidof(IDxcContainerReflection),
-                                                            reinterpret_cast<void**>(&m_containerReflection));
-                    if (FAILED(hr))
-                    {
-                        m_containerReflection = nullptr;
-                    }
+                    TIFHR(m_createInstanceFunc(CLSID_DxcUtils, __uuidof(IDxcUtils), m_utils.PutVoid()));
+                    TIFHR(m_createInstanceFunc(CLSID_DxcCompiler, __uuidof(IDxcCompiler3), m_compiler.PutVoid()));
                 }
                 else
                 {
@@ -312,9 +355,8 @@ namespace
         HMODULE m_dxcompilerDll = nullptr;
         DxcCreateInstanceProc m_createInstanceFunc = nullptr;
 
-        CComPtr<IDxcUtils> m_utils;
-        CComPtr<IDxcCompiler3> m_compiler;
-        CComPtr<IDxcContainerReflection> m_containerReflection;
+        ComPtr<IDxcUtils> m_utils;
+        ComPtr<IDxcCompiler3> m_compiler;
 
         bool m_linkerSupport = false;
     };
@@ -350,8 +392,8 @@ namespace
             }
 
             *includeSource = nullptr;
-            return Dxcompiler::Instance().Utils()->CreateBlob(source.Data(), source.Size(), CP_UTF8,
-                                                              reinterpret_cast<IDxcBlobEncoding**>(includeSource));
+            return Dxcompiler::Instance().Utils().CreateBlob(source.Data(), source.Size(), CP_UTF8,
+                                                             reinterpret_cast<IDxcBlobEncoding**>(includeSource));
         }
 
         ULONG STDMETHODCALLTYPE AddRef() override
@@ -484,28 +526,26 @@ namespace
         return shaderProfile;
     }
 
-#ifdef _WIN32
     Reflection MakeDxilReflection(IDxcBlob* dxilBlob, bool asModule);
-#endif
     Reflection MakeSpirVReflection(const spirv_cross::Compiler& compiler);
 
     void ConvertDxcResult(Compiler::ResultDesc& result, IDxcResult* dxcResult, ShadingLanguage targetLanguage, bool asModule,
                           bool needReflection)
     {
         HRESULT status;
-        IFT(dxcResult->GetStatus(&status));
+        TIFHR(dxcResult->GetStatus(&status));
 
         result.target.Reset();
         result.errorWarningMsg.Reset();
 
         if (dxcResult->HasOutput(DXC_OUT_ERRORS))
         {
-            CComPtr<IDxcBlobUtf8> errors;
-            IFT(dxcResult->GetOutput(DXC_OUT_ERRORS, __uuidof(IDxcBlobUtf8), reinterpret_cast<void**>(&errors), nullptr));
+            ComPtr<IDxcBlobUtf8> errors;
+            TIFHR(dxcResult->GetOutput(DXC_OUT_ERRORS, __uuidof(IDxcBlobUtf8), errors.PutVoid(), nullptr));
             if (errors != nullptr)
             {
                 result.errorWarningMsg.Reset(errors->GetBufferPointer(), static_cast<uint32_t>(errors->GetBufferSize()));
-                errors = nullptr;
+                errors.Reset();
             }
         }
 
@@ -526,8 +566,8 @@ namespace
 
             if (outKind != DXC_OUT_NONE)
             {
-                CComPtr<IDxcBlob> resultBlob;
-                IFT(dxcResult->GetOutput(outKind, __uuidof(IDxcBlob), reinterpret_cast<void**>(&resultBlob), nullptr));
+                ComPtr<IDxcBlob> resultBlob;
+                TIFHR(dxcResult->GetOutput(outKind, __uuidof(IDxcBlob), resultBlob.PutVoid(), nullptr));
                 if (resultBlob != nullptr)
                 {
                     result.target.Reset(resultBlob->GetBufferPointer(), static_cast<uint32_t>(resultBlob->GetBufferSize() - sizeAdjust));
@@ -537,28 +577,25 @@ namespace
 
             if (needReflection)
             {
-#ifdef _WIN32
                 if (targetLanguage == ShadingLanguage::Dxil)
                 {
                     // Gather reflection information only for ShadingLanguage::Dxil. SPIR-V reflection is gathered when cross-compiling.
 
-                    CComPtr<IDxcBlob> reflectionBlob;
+                    ComPtr<IDxcBlob> reflectionBlob;
                     if (dxcResult->HasOutput(DXC_OUT_REFLECTION))
                     {
-                        IFT(dxcResult->GetOutput(DXC_OUT_REFLECTION, __uuidof(IDxcBlob), reinterpret_cast<void**>(&reflectionBlob),
-                                                 nullptr));
+                        TIFHR(dxcResult->GetOutput(DXC_OUT_REFLECTION, __uuidof(IDxcBlob), reflectionBlob.PutVoid(), nullptr));
                     }
                     else
                     {
-                        IFT(dxcResult->GetResult(&reflectionBlob));
+                        TIFHR(dxcResult->GetResult(reflectionBlob.Put()));
                     }
 
-                    result.reflection = MakeDxilReflection(reflectionBlob, asModule);
+                    if (reflectionBlob != nullptr)
+                    {
+                        result.reflection = MakeDxilReflection(reflectionBlob.Get(), asModule);
+                    }
                 }
-#else
-                SC_UNUSED(targetLanguage);
-                SC_UNUSED(asModule);
-#endif
             }
         }
     }
@@ -577,7 +614,7 @@ namespace
         sourceBuf.Ptr = source.source;
         sourceBuf.Size = std::strlen(source.source);
         sourceBuf.Encoding = CP_UTF8;
-        IFTARG(sourceBuf.Size >= 4);
+        TIFFALSE(sourceBuf.Size >= 4);
 
         std::vector<std::wstring> dxcArgStrings;
 
@@ -600,6 +637,8 @@ namespace
         // modify by johnson
         if (source.hlslExtVersion != nullptr)
             dxcArgStrings.push_back(L"-HV " + Utf8ToWide(source.hlslExtVersion));
+        if (source.dxcArgString != nullptr)
+            dxcArgStrings.push_back(Utf8ToWide(source.dxcArgString));
         // end modify
         
         // HLSL matrices are translated into SPIR-V OpTypeMatrixs in a transposed manner,
@@ -713,13 +752,13 @@ namespace
             dxcArgs.push_back(arg.c_str());
         }
 
-        CComPtr<IDxcIncludeHandler> includeHandler = new ScIncludeHandler(source.loadIncludeCallback);
-        CComPtr<IDxcResult> compileResult;
-        IFT(Dxcompiler::Instance().Compiler()->Compile(&sourceBuf, dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()), includeHandler,
-                                                       __uuidof(IDxcResult), reinterpret_cast<void**>(&compileResult)));
+        ComPtr<IDxcIncludeHandler> includeHandler(new ScIncludeHandler(source.loadIncludeCallback));
+        ComPtr<IDxcResult> compileResult;
+        TIFHR(Dxcompiler::Instance().Compiler().Compile(&sourceBuf, dxcArgs.data(), static_cast<UINT32>(dxcArgs.size()),
+                                                        includeHandler.Get(), __uuidof(IDxcResult), compileResult.PutVoid()));
 
         Compiler::ResultDesc ret{};
-        ConvertDxcResult(ret, compileResult, target.language, target.asModule, options.needReflection);
+        ConvertDxcResult(ret, compileResult.Get(), target.language, target.asModule, options.needReflection);
 
         return ret;
     }
@@ -1033,63 +1072,9 @@ namespace
         }
     }
 
-#ifdef _WIN32
     template <typename T>
     void ExtractDxilResourceDesc(std::vector<Reflection::ResourceDesc>& resourceDescs,
-                                 std::vector<Reflection::ConstantBuffer>& constantBuffers, T* d3d12Reflection, uint32_t resourceIndex)
-    {
-        D3D12_SHADER_INPUT_BIND_DESC bindDesc;
-        d3d12Reflection->GetResourceBindingDesc(resourceIndex, &bindDesc);
-
-        Reflection::ResourceDesc reflectionDesc{};
-
-        std::strncpy(reflectionDesc.name, bindDesc.Name, sizeof(reflectionDesc.name));
-        reflectionDesc.name[sizeof(reflectionDesc.name) - 1] = '\0';
-        reflectionDesc.space = bindDesc.Space;
-        reflectionDesc.bindPoint = bindDesc.BindPoint;
-        reflectionDesc.bindCount = bindDesc.BindCount;
-
-        if (bindDesc.Type == D3D_SIT_CBUFFER || bindDesc.Type == D3D_SIT_TBUFFER)
-        {
-            reflectionDesc.type = ShaderResourceType::ConstantBuffer;
-
-            ID3D12ShaderReflectionConstantBuffer* d3d12CBuffer = d3d12Reflection->GetConstantBufferByName(bindDesc.Name);
-            constantBuffers.emplace_back(Reflection::ReflectionImpl::Make(d3d12CBuffer));
-        }
-        else
-        {
-            switch (bindDesc.Type)
-            {
-            case D3D_SIT_TEXTURE:
-                reflectionDesc.type = ShaderResourceType::Texture;
-                break;
-
-            case D3D_SIT_SAMPLER:
-                reflectionDesc.type = ShaderResourceType::Sampler;
-                break;
-
-            case D3D_SIT_STRUCTURED:
-            case D3D_SIT_BYTEADDRESS:
-                reflectionDesc.type = ShaderResourceType::ShaderResourceView;
-                break;
-
-            case D3D_SIT_UAV_RWTYPED:
-            case D3D_SIT_UAV_RWSTRUCTURED:
-            case D3D_SIT_UAV_RWBYTEADDRESS:
-            case D3D_SIT_UAV_APPEND_STRUCTURED:
-            case D3D_SIT_UAV_CONSUME_STRUCTURED:
-            case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
-                reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
-                break;
-
-            default:
-                SC_UNREACHABLE("Unknown bind type.");
-            }
-        }
-
-        resourceDescs.emplace_back(std::move(reflectionDesc));
-    }
-#endif
+                                 std::vector<Reflection::ConstantBuffer>& constantBuffers, T* d3d12Reflection, uint32_t resourceIndex);
 } // namespace
 
 namespace ShaderConductor
@@ -1187,11 +1172,10 @@ namespace ShaderConductor
     class Reflection::VariableType::VariableTypeImpl
     {
     public:
-#ifdef _WIN32
         explicit VariableTypeImpl(ID3D12ShaderReflectionType* d3d12Type)
         {
             D3D12_SHADER_TYPE_DESC d3d12ShaderTypeDesc;
-            IFT(d3d12Type->GetDesc(&d3d12ShaderTypeDesc));
+            TIFHR(d3d12Type->GetDesc(&d3d12ShaderTypeDesc));
 
             if (d3d12ShaderTypeDesc.Name)
             {
@@ -1240,7 +1224,7 @@ namespace ShaderConductor
                         member.type = Make(d3d12MemberType);
 
                         D3D12_SHADER_TYPE_DESC d3d12MemberTypeDesc;
-                        IFT(d3d12MemberType->GetDesc(&d3d12MemberTypeDesc));
+                        TIFHR(d3d12MemberType->GetDesc(&d3d12MemberTypeDesc));
 
                         member.offset = d3d12MemberTypeDesc.Offset;
                         if (d3d12MemberTypeDesc.Elements == 0)
@@ -1279,7 +1263,6 @@ namespace ShaderConductor
                 m_elementStride = 0;
             }
         }
-#endif
 
         VariableTypeImpl(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& spirvParentReflectionType,
                          uint32_t variableIndex, const spirv_cross::SPIRType& spirvReflectionType)
@@ -1442,14 +1425,12 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef _WIN32
         static VariableType Make(ID3D12ShaderReflectionType* d3d12ReflectionType)
         {
             VariableType ret;
             ret.m_impl = new VariableTypeImpl(d3d12ReflectionType);
             return ret;
         }
-#endif
 
         static VariableType Make(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& spirvParentReflectionType,
                                  uint32_t variableIndex, const spirv_cross::SPIRType& spirvReflectionType)
@@ -1519,46 +1500,55 @@ namespace ShaderConductor
 
     const char* Reflection::VariableType::Name() const noexcept
     {
+        assert(Valid());
         return m_impl->Name();
     }
 
     Reflection::VariableType::DataType Reflection::VariableType::Type() const noexcept
     {
+        assert(Valid());
         return m_impl->Type();
     }
 
     uint32_t Reflection::VariableType::Rows() const noexcept
     {
+        assert(Valid());
         return m_impl->Rows();
     }
 
     uint32_t Reflection::VariableType::Columns() const noexcept
     {
+        assert(Valid());
         return m_impl->Columns();
     }
 
     uint32_t Reflection::VariableType::Elements() const noexcept
     {
+        assert(Valid());
         return m_impl->Elements();
     }
 
     uint32_t Reflection::VariableType::ElementStride() const noexcept
     {
+        assert(Valid());
         return m_impl->ElementStride();
     }
 
     uint32_t Reflection::VariableType::NumMembers() const noexcept
     {
+        assert(Valid());
         return m_impl->NumMembers();
     }
 
     const Reflection::VariableDesc* Reflection::VariableType::MemberByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->MemberByIndex(index);
     }
 
     const Reflection::VariableDesc* Reflection::VariableType::MemberByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->MemberByName(name);
     }
 
@@ -1566,11 +1556,10 @@ namespace ShaderConductor
     class Reflection::ConstantBuffer::ConstantBufferImpl
     {
     public:
-#ifdef _WIN32
         explicit ConstantBufferImpl(ID3D12ShaderReflectionConstantBuffer* constantBuffer)
         {
             D3D12_SHADER_BUFFER_DESC bufferDesc;
-            IFT(constantBuffer->GetDesc(&bufferDesc));
+            TIFHR(constantBuffer->GetDesc(&bufferDesc));
 
             m_name = bufferDesc.Name;
 
@@ -1578,7 +1567,7 @@ namespace ShaderConductor
             {
                 ID3D12ShaderReflectionVariable* variable = constantBuffer->GetVariableByIndex(variableIndex);
                 D3D12_SHADER_VARIABLE_DESC d3d12VariableDesc;
-                IFT(variable->GetDesc(&d3d12VariableDesc));
+                TIFHR(variable->GetDesc(&d3d12VariableDesc));
 
                 VariableDesc variableDesc{};
 
@@ -1595,9 +1584,8 @@ namespace ShaderConductor
 
             m_size = bufferDesc.Size;
         }
-#endif
 
-        explicit ConstantBufferImpl(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
+        ConstantBufferImpl(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
         {
             const auto& cbufferType = compiler.get_type(resource.type_id);
 
@@ -1717,26 +1705,31 @@ namespace ShaderConductor
 
     const char* Reflection::ConstantBuffer::Name() const noexcept
     {
+        assert(Valid());
         return m_impl->Name();
     }
 
     uint32_t Reflection::ConstantBuffer::Size() const noexcept
     {
+        assert(Valid());
         return m_impl->Size();
     }
 
     uint32_t Reflection::ConstantBuffer::NumVariables() const noexcept
     {
+        assert(Valid());
         return m_impl->NumVariables();
     }
 
     const Reflection::VariableDesc* Reflection::ConstantBuffer::VariableByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->VariableByIndex(index);
     }
 
     const Reflection::VariableDesc* Reflection::ConstantBuffer::VariableByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->VariableByName(name);
     }
 
@@ -1744,11 +1737,10 @@ namespace ShaderConductor
     class Reflection::Function::FunctionImpl
     {
     public:
-#ifdef _WIN32
         explicit FunctionImpl(ID3D12FunctionReflection* d3d12FuncReflection)
         {
             D3D12_FUNCTION_DESC d3d12FuncDesc;
-            IFT(d3d12FuncReflection->GetDesc(&d3d12FuncDesc));
+            TIFHR(d3d12FuncReflection->GetDesc(&d3d12FuncDesc));
 
             m_name = d3d12FuncDesc.Name;
 
@@ -1757,7 +1749,6 @@ namespace ShaderConductor
                 ExtractDxilResourceDesc(m_resourceDescs, m_constantBuffers, d3d12FuncReflection, resourceIndex);
             }
         }
-#endif
 
         const char* Name() const noexcept
         {
@@ -1820,14 +1811,12 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef _WIN32
         static Function Make(ID3D12FunctionReflection* d3d12FuncReflection)
         {
             Function ret;
             ret.m_impl = new FunctionImpl(d3d12FuncReflection);
             return ret;
         }
-#endif
 
     private:
         std::string m_name;
@@ -1885,36 +1874,43 @@ namespace ShaderConductor
 
     const char* Reflection::Function::Name() const noexcept
     {
+        assert(Valid());
         return m_impl->Name();
     }
 
     uint32_t Reflection::Function::NumResources() const noexcept
     {
+        assert(Valid());
         return m_impl->NumResources();
     }
 
     const Reflection::ResourceDesc* Reflection::Function::ResourceByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->ResourceByIndex(index);
     }
 
     const Reflection::ResourceDesc* Reflection::Function::ResourceByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->ResourceByName(name);
     }
 
     uint32_t Reflection::Function::NumConstantBuffers() const noexcept
     {
+        assert(Valid());
         return m_impl->NumConstantBuffers();
     }
 
     const Reflection::ConstantBuffer* Reflection::Function::ConstantBufferByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->ConstantBufferByIndex(index);
     }
 
     const Reflection::ConstantBuffer* Reflection::Function::ConstantBufferByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->ConstantBufferByName(name);
     }
 
@@ -1922,22 +1918,22 @@ namespace ShaderConductor
     class Reflection::ReflectionImpl
     {
     public:
-#ifdef _WIN32
         ReflectionImpl(IDxcBlob* dxilBlob, bool asModule)
         {
+            auto& utils = Dxcompiler::Instance().Utils();
+
+            DxcBuffer reflectionBuffer;
+            reflectionBuffer.Ptr = dxilBlob->GetBufferPointer();
+            reflectionBuffer.Size = dxilBlob->GetBufferSize();
+            reflectionBuffer.Encoding = DXC_CP_ACP;
+
             if (asModule)
             {
-                CComPtr<ID3D12LibraryReflection> libReflection;
-
-                DxcBuffer reflectionBuffer;
-                reflectionBuffer.Ptr = dxilBlob->GetBufferPointer();
-                reflectionBuffer.Size = dxilBlob->GetBufferSize();
-                reflectionBuffer.Encoding = DXC_CP_ACP;
-                IFT(Dxcompiler::Instance().Utils()->CreateReflection(&reflectionBuffer, __uuidof(ID3D12LibraryReflection),
-                                                                     reinterpret_cast<void**>(&libReflection)));
+                ComPtr<ID3D12LibraryReflection> libReflection;
+                TIFHR(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12LibraryReflection), libReflection.PutVoid()));
 
                 D3D12_LIBRARY_DESC d3d12LibDesc;
-                IFT(libReflection->GetDesc(&d3d12LibDesc));
+                TIFHR(libReflection->GetDesc(&d3d12LibDesc));
 
                 for (uint32_t funcIndex = 0; funcIndex < d3d12LibDesc.FunctionCount; ++funcIndex)
                 {
@@ -1947,25 +1943,19 @@ namespace ShaderConductor
             }
             else
             {
-                CComPtr<ID3D12ShaderReflection> shaderReflection;
-
-                DxcBuffer reflectionBuffer;
-                reflectionBuffer.Ptr = dxilBlob->GetBufferPointer();
-                reflectionBuffer.Size = dxilBlob->GetBufferSize();
-                reflectionBuffer.Encoding = DXC_CP_ACP;
-                IFT(Dxcompiler::Instance().Utils()->CreateReflection(&reflectionBuffer, __uuidof(ID3D12ShaderReflection),
-                                                                     reinterpret_cast<void**>(&shaderReflection)));
+                ComPtr<ID3D12ShaderReflection> shaderReflection;
+                TIFHR(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12ShaderReflection), shaderReflection.PutVoid()));
 
                 // modify by johnson3d
                 m_shaderReflection = shaderReflection;
                 // end modify
 
                 D3D12_SHADER_DESC shaderDesc;
-                IFT(shaderReflection->GetDesc(&shaderDesc));
+                TIFHR(shaderReflection->GetDesc(&shaderDesc));
 
                 for (uint32_t resourceIndex = 0; resourceIndex < shaderDesc.BoundResources; ++resourceIndex)
                 {
-                    ExtractDxilResourceDesc(m_resourceDescs, m_constantBuffers, shaderReflection.p, resourceIndex);
+                    ExtractDxilResourceDesc(m_resourceDescs, m_constantBuffers, shaderReflection.Get(), resourceIndex);
                 }
 
                 for (uint32_t inputParamIndex = 0; inputParamIndex < shaderDesc.InputParameters; ++inputParamIndex)
@@ -2387,12 +2377,10 @@ namespace ShaderConductor
                 shaderReflection->GetThreadGroupSize(&m_csBlockSizeX, &m_csBlockSizeY, &m_csBlockSizeZ);
             }
         }
-
-        // modify by johnson3d
-        CComPtr<ID3D12ShaderReflection> m_shaderReflection;
+		
+		// modify by johnson3d
+        ComPtr<ID3D12ShaderReflection> m_shaderReflection;
         // end modify
-#endif
-
         explicit ReflectionImpl(const spirv_cross::Compiler& compiler)
         {
             const auto& modes = compiler.get_execution_mode_bitset();
@@ -2906,14 +2894,12 @@ namespace ShaderConductor
             return nullptr;
         }
 
-#ifdef _WIN32
         static Reflection Make(IDxcBlob* dxilBlob, bool asModule)
         {
             Reflection ret;
             ret.m_impl = new ReflectionImpl(dxilBlob, asModule);
             return ret;
         }
-#endif
 
         static Reflection Make(const spirv_cross::Compiler& compiler)
         {
@@ -2922,14 +2908,12 @@ namespace ShaderConductor
             return ret;
         }
 
-#ifdef _WIN32
         static ConstantBuffer Make(ID3D12ShaderReflectionConstantBuffer* constantBuffer)
         {
             ConstantBuffer ret;
             ret.m_impl = new ConstantBuffer::ConstantBufferImpl(constantBuffer);
             return ret;
         }
-#endif
 
         static ConstantBuffer Make(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
         {
@@ -3113,138 +3097,164 @@ namespace ShaderConductor
 
     uint32_t Reflection::NumResources() const noexcept
     {
+        assert(Valid());
         return m_impl->NumResources();
     }
 
     const Reflection::ResourceDesc* Reflection::ResourceByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->ResourceByIndex(index);
     }
 
     const Reflection::ResourceDesc* Reflection::ResourceByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->ResourceByName(name);
     }
 
     uint32_t Reflection::NumConstantBuffers() const noexcept
     {
+        assert(Valid());
         return m_impl->NumConstantBuffers();
     }
 
     const Reflection::ConstantBuffer* Reflection::ConstantBufferByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->ConstantBufferByIndex(index);
     }
 
     const Reflection::ConstantBuffer* Reflection::ConstantBufferByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->ConstantBufferByName(name);
     }
 
     uint32_t Reflection::NumInputParameters() const noexcept
     {
+        assert(Valid());
         return m_impl->NumInputParameters();
     }
 
     const Reflection::SignatureParameterDesc* Reflection::InputParameter(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->InputParameter(index);
     }
 
     uint32_t Reflection::NumOutputParameters() const noexcept
     {
+        assert(Valid());
         return m_impl->NumOutputParameters();
     }
 
     const Reflection::SignatureParameterDesc* Reflection::OutputParameter(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->OutputParameter(index);
     }
 
     Reflection::PrimitiveTopology Reflection::GSHSInputPrimitive() const noexcept
     {
+        assert(Valid());
         return m_impl->GSHSInputPrimitive();
     }
 
     Reflection::PrimitiveTopology Reflection::GSOutputTopology() const noexcept
     {
+        assert(Valid());
         return m_impl->GSOutputTopology();
     }
 
     uint32_t Reflection::GSMaxNumOutputVertices() const noexcept
     {
+        assert(Valid());
         return m_impl->GSMaxNumOutputVertices();
     }
 
     uint32_t Reflection::GSNumInstances() const noexcept
     {
+        assert(Valid());
         return m_impl->GSNumInstances();
     }
 
     Reflection::TessellatorOutputPrimitive Reflection::HSOutputPrimitive() const noexcept
     {
+        assert(Valid());
         return m_impl->HSOutputPrimitive();
     }
 
     Reflection::TessellatorPartitioning Reflection::HSPartitioning() const noexcept
     {
+        assert(Valid());
         return m_impl->HSPartitioning();
     }
 
     Reflection::TessellatorDomain Reflection::HSDSTessellatorDomain() const noexcept
     {
+        assert(Valid());
         return m_impl->HSDSTessellatorDomain();
     }
 
     uint32_t Reflection::HSDSNumPatchConstantParameters() const noexcept
     {
+        assert(Valid());
         return m_impl->HSDSNumPatchConstantParameters();
     }
 
     const Reflection::SignatureParameterDesc* Reflection::HSDSPatchConstantParameter(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->HSDSPatchConstantParameter(index);
     }
 
     uint32_t Reflection::HSDSNumConrolPoints() const noexcept
     {
+        assert(Valid());
         return m_impl->HSDSNumConrolPoints();
     }
 
     uint32_t Reflection::CSBlockSizeX() const noexcept
     {
+        assert(Valid());
         return m_impl->CSBlockSizeX();
     }
 
     uint32_t Reflection::CSBlockSizeY() const noexcept
     {
+        assert(Valid());
         return m_impl->CSBlockSizeY();
     }
 
     uint32_t Reflection::CSBlockSizeZ() const noexcept
     {
+        assert(Valid());
         return m_impl->CSBlockSizeZ();
     }
 
     uint32_t Reflection::NumFunctions() const noexcept
     {
+        assert(Valid());
         return m_impl->NumFunctions();
     }
 
     const Reflection::Function* Reflection::FunctionByIndex(uint32_t index) const noexcept
     {
+        assert(Valid());
         return m_impl->FunctionByIndex(index);
     }
 
     const Reflection::Function* Reflection::FunctionByName(const char* name) const noexcept
     {
+        assert(Valid());
         return m_impl->FunctionByName(name);
     }
     
     // modify by johnson3d
     void* Reflection::GetD3D12ShaderReflection() const noexcept
     {
-        return m_impl->m_shaderReflection;
+        return m_impl->m_shaderReflection.Get();
     }
     // end modify
 
@@ -3349,11 +3359,10 @@ namespace ShaderConductor
             sourceBuf.Size = source.binary.Size();
             sourceBuf.Encoding = CP_UTF8;
 
-            CComPtr<IDxcResult> disassemblyResult;
-            IFT(Dxcompiler::Instance().Compiler()->Disassemble(&sourceBuf, __uuidof(IDxcResult),
-                                                               reinterpret_cast<void**>(&disassemblyResult)));
+            ComPtr<IDxcResult> disassemblyResult;
+            TIFHR(Dxcompiler::Instance().Compiler().Disassemble(&sourceBuf, __uuidof(IDxcResult), disassemblyResult.PutVoid()));
 
-            ConvertDxcResult(ret, disassemblyResult, source.language, false, false);
+            ConvertDxcResult(ret, disassemblyResult.Get(), source.language, false, false);
         }
 
         return ret;
@@ -3367,37 +3376,36 @@ namespace ShaderConductor
     Compiler::ResultDesc Compiler::Link(const LinkDesc& modules, const Compiler::Options& options, const TargetDesc& target)
     {
         auto linker = Dxcompiler::Instance().CreateLinker();
-        IFTPTR(linker);
+        TIFFALSE(linker);
 
-        auto* utils = Dxcompiler::Instance().Utils();
+        auto& utils = Dxcompiler::Instance().Utils();
 
         std::vector<std::wstring> moduleNames(modules.numModules);
         std::vector<const wchar_t*> moduleNamesWide(modules.numModules);
-        std::vector<CComPtr<IDxcBlobEncoding>> moduleBlobs(modules.numModules);
+        std::vector<ComPtr<IDxcBlobEncoding>> moduleBlobs(modules.numModules);
         for (uint32_t i = 0; i < modules.numModules; ++i)
         {
-            IFTARG(modules.modules[i] != nullptr);
+            TIFFALSE(modules.modules[i] != nullptr);
 
-            IFT(utils->CreateBlob(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8, &moduleBlobs[i]));
-            IFTARG(moduleBlobs[i]->GetBufferSize() >= 4);
+            TIFHR(utils.CreateBlob(modules.modules[i]->target.Data(), modules.modules[i]->target.Size(), CP_UTF8, moduleBlobs[i].Put()));
+            TIFFALSE(moduleBlobs[i]->GetBufferSize() >= 4);
 
             moduleNames[i] = Utf8ToWide(modules.modules[i]->name);
             moduleNamesWide[i] = moduleNames[i].c_str();
-            IFT(linker->RegisterLibrary(moduleNamesWide[i], moduleBlobs[i]));
+            TIFHR(linker->RegisterLibrary(moduleNamesWide[i], moduleBlobs[i].Get()));
         }
 
         const std::wstring entryPointWide = Utf8ToWide(modules.entryPoint);
 
         const std::wstring shaderProfile = ShaderProfileName(modules.stage, options.shaderModel, false);
-        CComPtr<IDxcOperationResult> linkOpResult;
-        IFT(linker->Link(entryPointWide.c_str(), shaderProfile.c_str(), moduleNamesWide.data(), static_cast<UINT32>(moduleNamesWide.size()),
-                         nullptr, 0, &linkOpResult));
+        ComPtr<IDxcOperationResult> linkOpResult;
+        TIFHR(linker->Link(entryPointWide.c_str(), shaderProfile.c_str(), moduleNamesWide.data(),
+                           static_cast<UINT32>(moduleNamesWide.size()), nullptr, 0, linkOpResult.Put()));
 
-        CComPtr<IDxcResult> linkResult;
-        IFT(linkOpResult.QueryInterface(&linkResult));
+        ComPtr<IDxcResult> linkResult = linkOpResult.As<IDxcResult>();
 
         Compiler::ResultDesc binaryResult{};
-        ConvertDxcResult(binaryResult, linkResult, ShadingLanguage::Dxil, false, options.needReflection);
+        ConvertDxcResult(binaryResult, linkResult.Get(), ShadingLanguage::Dxil, false, options.needReflection);
 
         Compiler::SourceDesc source{};
         source.entryPoint = modules.entryPoint;
@@ -3408,24 +3416,76 @@ namespace ShaderConductor
 
 namespace
 {
-#ifdef _WIN32
     Reflection MakeDxilReflection(IDxcBlob* dxilBlob, bool asModule)
     {
         return Reflection::ReflectionImpl::Make(dxilBlob, asModule);
     }
-#endif
 
     Reflection MakeSpirVReflection(const spirv_cross::Compiler& compiler)
     {
         return Reflection::ReflectionImpl::Make(compiler);
     }
+
+    template <typename T>
+    void ExtractDxilResourceDesc(std::vector<Reflection::ResourceDesc>& resourceDescs,
+                                 std::vector<Reflection::ConstantBuffer>& constantBuffers, T* d3d12Reflection, uint32_t resourceIndex)
+    {
+        D3D12_SHADER_INPUT_BIND_DESC bindDesc;
+        d3d12Reflection->GetResourceBindingDesc(resourceIndex, &bindDesc);
+
+        Reflection::ResourceDesc reflectionDesc{};
+
+        std::strncpy(reflectionDesc.name, bindDesc.Name, sizeof(reflectionDesc.name));
+        reflectionDesc.name[sizeof(reflectionDesc.name) - 1] = '\0';
+        reflectionDesc.space = bindDesc.Space;
+        reflectionDesc.bindPoint = bindDesc.BindPoint;
+        reflectionDesc.bindCount = bindDesc.BindCount;
+
+        if (bindDesc.Type == D3D_SIT_CBUFFER || bindDesc.Type == D3D_SIT_TBUFFER)
+        {
+            reflectionDesc.type = ShaderResourceType::ConstantBuffer;
+
+            ID3D12ShaderReflectionConstantBuffer* d3d12CBuffer = d3d12Reflection->GetConstantBufferByName(bindDesc.Name);
+            constantBuffers.emplace_back(Reflection::ReflectionImpl::Make(d3d12CBuffer));
+        }
+        else
+        {
+            switch (bindDesc.Type)
+            {
+            case D3D_SIT_TEXTURE:
+                reflectionDesc.type = ShaderResourceType::Texture;
+                break;
+
+            case D3D_SIT_SAMPLER:
+                reflectionDesc.type = ShaderResourceType::Sampler;
+                break;
+
+            case D3D_SIT_STRUCTURED:
+            case D3D_SIT_BYTEADDRESS:
+                reflectionDesc.type = ShaderResourceType::ShaderResourceView;
+                break;
+
+            case D3D_SIT_UAV_RWTYPED:
+            case D3D_SIT_UAV_RWSTRUCTURED:
+            case D3D_SIT_UAV_RWBYTEADDRESS:
+            case D3D_SIT_UAV_APPEND_STRUCTURED:
+            case D3D_SIT_UAV_CONSUME_STRUCTURED:
+            case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
+                reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
+                break;
+
+            default:
+                SC_UNREACHABLE("Unknown bind type.");
+            }
+        }
+
+        resourceDescs.emplace_back(std::move(reflectionDesc));
+    }
 } // namespace
 
 #ifdef _WIN32
-BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
+BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE instance, DWORD reason, LPVOID reserved)
 {
-    SC_UNUSED(instance);
-
     BOOL result = TRUE;
     if (reason == DLL_PROCESS_DETACH)
     {

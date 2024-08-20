@@ -928,14 +928,14 @@ namespace
                         const Reflection::VariableDesc* variable = cbuffer->VariableByIndex(0);
                         EXPECT_NE(variable, nullptr);
                         EXPECT_STREQ(variable->name, "timeStep");
-                        EXPECT_STREQ(variable->type.Name(), "float");
+                        EXPECT_STREQ(variable->type.Name(), "float4");
                         EXPECT_EQ(variable->type.Type(), Reflection::VariableType::DataType::Float);
                         EXPECT_EQ(variable->type.Rows(), 1U);
-                        EXPECT_EQ(variable->type.Columns(), 1U);
+                        EXPECT_EQ(variable->type.Columns(), 4U);
                         EXPECT_EQ(variable->type.Elements(), 0U);
                         EXPECT_EQ(variable->type.ElementStride(), 0U);
                         EXPECT_EQ(variable->offset, 0U);
-                        EXPECT_EQ(variable->size, 4U);
+                        EXPECT_EQ(variable->size, 16U);
                     }
                     {
                         const Reflection::VariableDesc* variable = cbuffer->VariableByIndex(1);
@@ -946,7 +946,7 @@ namespace
                         EXPECT_EQ(variable->type.Rows(), 1U);
                         if (testTarget.target.language == ShadingLanguage::Dxil)
                         {
-                            EXPECT_EQ(variable->type.Columns(), 17U);
+                            EXPECT_EQ(variable->type.Columns(), 20U);
                         }
                         else
                         {
@@ -969,14 +969,14 @@ namespace
                             const Reflection::VariableDesc* member = variable->type.MemberByIndex(0);
                             EXPECT_NE(member, nullptr);
                             EXPECT_STREQ(member->name, "wallStiffness");
-                            EXPECT_STREQ(member->type.Name(), "float");
+                            EXPECT_STREQ(member->type.Name(), "float4");
                             EXPECT_EQ(member->type.Type(), Reflection::VariableType::DataType::Float);
                             EXPECT_EQ(member->type.Rows(), 1U);
-                            EXPECT_EQ(member->type.Columns(), 1U);
+                            EXPECT_EQ(member->type.Columns(), 4U);
                             EXPECT_EQ(member->type.Elements(), 0U);
                             EXPECT_EQ(member->type.ElementStride(), 0U);
                             EXPECT_EQ(member->offset, 0U);
-                            EXPECT_EQ(member->size, 4U);
+                            EXPECT_EQ(member->size, 16U);
                         }
                         {
                             const Reflection::VariableDesc* member = variable->type.MemberByIndex(1);

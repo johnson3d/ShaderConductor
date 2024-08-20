@@ -41,9 +41,9 @@
                OpDecorate %bloomTex Binding 2
                OpDecorate %cbPS DescriptorSet 0
                OpDecorate %cbPS Binding 0
-               OpDecorateString %colorTex UserTypeGOOGLE "texture2d:<vector<float,4> >"
-               OpDecorateString %lumTex UserTypeGOOGLE "texture2d:<vector<float,4> >"
-               OpDecorateString %bloomTex UserTypeGOOGLE "texture2d:<vector<float,4> >"
+               OpDecorateString %colorTex UserTypeGOOGLE "texture2d"
+               OpDecorateString %lumTex UserTypeGOOGLE "texture2d"
+               OpDecorateString %bloomTex UserTypeGOOGLE "texture2d"
                OpMemberDecorate %type_cbPS 0 Offset 0
                OpDecorate %type_cbPS Block
                OpDecorateString %cbPS UserTypeGOOGLE "cbuffer"

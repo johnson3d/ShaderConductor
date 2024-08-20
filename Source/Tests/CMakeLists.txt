@@ -1,18 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-set(EXE_NAME ShaderConductorTest)
-
-set(HEADER_FILES
-    Common.hpp
-)
-
-set(SOURCE_FILES
-    Common.cpp
-    CrossCompileTest.cpp
-    ReflectionTest.cpp
-)
-
 set(DATA_INC_FILES
     Data/Input/Inc/HeaderA.hlsli
     Data/Input/Inc/HeaderB.hlsli
@@ -45,21 +33,26 @@ set_source_files_properties(${DATA_FILES}
     PROPERTIES VS_TOOL_OVERRIDE "None"
 )
 
-source_group("Header Files" FILES ${HEADER_FILES})
-source_group("Source Files" FILES ${SOURCE_FILES})
 source_group("Data Files\\Input" FILES ${DATA_FILES})
 source_group("Data Files\\Input\\Inc" FILES ${DATA_INC_FILES})
 
-add_executable(${EXE_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${DATA_FILES} ${DATA_INC_FILES})
-
-target_compile_definitions(${EXE_NAME}
-    PRIVATE
-        -DTEST_DATA_DIR="${SC_ROOT_DIR}/Source/Tests/Data/"
+add_executable(ShaderConductorTest
+    Common.hpp
+    Common.cpp
+    CrossCompileTest.cpp
+    ReflectionTest.cpp
+    ${DATA_FILES}
+    ${DATA_INC_FILES}
 )
-target_link_libraries(${EXE_NAME}
+
+target_compile_definitions(ShaderConductorTest
+    PRIVATE
+        -DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/Source/Tests/Data/"
+)
+target_link_libraries(ShaderConductorTest
     PRIVATE
         ShaderConductor
         gtest
 )
 
-set_target_properties(${EXE_NAME} PROPERTIES FOLDER "Tests")
+set_target_properties(ShaderConductorTest PROPERTIES FOLDER "Tests")

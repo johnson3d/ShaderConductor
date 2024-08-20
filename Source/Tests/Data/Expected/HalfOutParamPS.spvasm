@@ -5,7 +5,6 @@
 ; Schema: 0
                OpCapability Shader
                OpCapability Float16
-               OpCapability StorageBuffer16BitAccess
                OpExtension "SPV_GOOGLE_hlsl_functionality1"
                OpExtension "SPV_GOOGLE_user_type"
           %1 = OpExtInstImport "GLSL.std.450"

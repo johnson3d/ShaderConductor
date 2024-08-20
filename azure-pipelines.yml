@@ -1,27 +1,3 @@
-variables:
-  configuration: Release
-  platform: x64
-  prebuiltDxcUrl_Windows: 'https://ci.appveyor.com/api/buildjobs/u0p7an7d1nagpod4/artifacts/build/Release/dxc-artifacts.zip'
-  prebuiltDxcUrl_Linux: 'https://ci.appveyor.com/api/buildjobs/qadbviql6d35n27y/artifacts/build/dxc-artifacts.tar.gz'
-  prebuiltDxcExtract_Windows: '7z x -odxc-artifacts dxc-artifacts.zip'
-  prebuiltDxcExtract_Linux: 'tar -xvf dxc-artifacts.tar.gz'
-  prebuiltDxcDir: '$(Agent.TempDirectory)/dxc-artifacts'
-  testCommand_Windows: './$(buildFolder)/bin/ShaderConductorTest.exe'
-  testCommand_Nix: './$(buildFolder)/bin/ShaderConductorTest'
-  artifactBinaries_Windows: |
-    bin/ShaderConductor.dll
-    bin/ShaderConductorCmd.exe
-    bin/dxcompiler.dll
-    lib/ShaderConductor.lib
-  artifactBinaries_Nix: |
-    bin/ShaderConductorCmd
-    lib/libdxcompiler.*
-    lib/libShaderConductor.*
-
-resources:
-- repo: self
-  fetchDepth: 5
-
 stages:
 - stage: ClangFormat
   jobs:
@@ -29,22 +5,13 @@ stages:
     pool:
       vmImage: Ubuntu-20.04
 
-    variables:
-      CC: gcc
-      CXX: g++
-
     steps:
-    - bash: |
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-        sudo apt-get update
-        sudo apt-get install clang-format-10 ninja-build python3
-      displayName: 'Install'
-    - task: PythonScript@0
-      displayName: 'Build'
-      inputs:
-        scriptPath: BuildAll.py
-        arguments: 'ninja gcc linux clangformat'
+    - checkout: self
+      fetchDepth: 1
+
     - script: |
+        cmake -B Build -G "Unix Makefiles" -DSC_CLANGFORMAT=ON .
+        cmake --build Build -t clangformat
         git diff --exit-code $(Build.SourceVersion)
       failOnStderr: true
       displayName: 'Clang-Format'
@@ -53,124 +20,135 @@ stages:
   condition: succeeded('ClangFormat')
   jobs:
   - job: Build
+
+    variables:
+      configuration: Release
+      platform: x64
+      PREBUILT_DXC_URL: AUTO
+      PREBUILT_DXC_NAME: AUTO
+      testCommand: './$(buildFolder)/bin/ShaderConductorTest'
+      artifactBinaries_Msvc: |
+        bin/ShaderConductor.dll
+        bin/ShaderConductorCmd.exe
+        bin/dxcompiler.dll
+        lib/ShaderConductor.lib
+      artifactBinaries_MinGW: |
+        bin/libShaderConductor.dll
+        bin/ShaderConductorCmd.exe
+        bin/dxcompiler.dll
+        lib/libShaderConductor.dll.a
+      artifactBinaries_Nix: |
+        bin/ShaderConductorCmd
+        lib/libdxcompiler.*
+        lib/libShaderConductor.*
+
     strategy:
       matrix:
-        Windows_vc142_x86:
-          vmImage: windows-2019
-          compiler: vc142
-          platform: x86
-          combination: 'win-$(compiler)-$(platform)-$(configuration)'
-          buildFolder: 'Build/ninja-$(combination)'
-          installCommand: 'choco install ninja wget'
-          testCommand: $(testCommand_Windows)
-          artifactBinaries: $(artifactBinaries_Windows)
         Windows_vc142_x64:
           vmImage: windows-2019
           compiler: vc142
           combination: 'win-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
-          installCommand: 'choco install ninja wget'
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Windows)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Windows)
-          testCommand: $(testCommand_Windows)
-          artifactBinaries: $(artifactBinaries_Windows)
+          installCommand: 'choco install ninja'
+          artifactBinaries: $(artifactBinaries_Msvc)
         Windows_vc142_arm64:
           vmImage: windows-2019
           compiler: vc142
           platform: arm64
           combination: 'win-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
-          installCommand: 'choco install ninja wget'
-          artifactBinaries: $(artifactBinaries_Windows)
+          installCommand: 'choco install ninja'
+          testCommand: ''
+          artifactBinaries: $(artifactBinaries_Msvc)
         Windows_vc143_x64:
           vmImage: windows-2022
           compiler: vc143
           combination: 'win-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
-          installCommand: 'choco install ninja wget'
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Windows)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Windows)
-          testCommand: $(testCommand_Windows)
-          artifactBinaries: $(artifactBinaries_Windows)
+          installCommand: 'choco install ninja'
+          artifactBinaries: $(artifactBinaries_Msvc)
         Windows_vc143_arm64:
           vmImage: windows-2022
           compiler: vc143
           platform: arm64
           combination: 'win-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
-          installCommand: 'choco install ninja wget'
-          artifactBinaries: $(artifactBinaries_Windows)
-        Linux_gcc9:
+          installCommand: 'choco install ninja'
+          testCommand: ''
+          artifactBinaries: $(artifactBinaries_Msvc)
+        Windows_clangcl12:
+          vmImage: windows-2019
+          compiler: clangcl
+          combination: 'win-$(compiler)-$(platform)-$(configuration)'
+          buildFolder: 'Build/ninja-$(combination)'
+          installCommand: 'choco install ninja'
+          artifactBinaries: $(artifactBinaries_Msvc)
+          CC: clang-cl
+          CXX: clang-cl
+        Windows_gcc13:
+          vmImage: windows-2019
+          compiler: mingw
+          combination: 'win-$(compiler)-$(platform)-$(configuration)'
+          buildFolder: 'Build/ninja-$(combination)'
+          installCommand: 'choco install ninja'
+          artifactBinaries: $(artifactBinaries_MinGW)
+          CC: gcc
+          CXX: g++
+        Linux_gcc11:
           vmImage: Ubuntu-20.04
-          compiler: gcc9
+          compiler: gcc11
           combination: 'linux-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: |
             sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt-get update
-            sudo apt-get install g++-9 ninja-build python3
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Nix)
+            sudo apt-get install g++-11 ninja-build python3
           artifactBinaries: $(artifactBinaries_Nix)
-          CC: gcc-9
-          CXX: g++-9
-        Linux_gcc10:
-          vmImage: Ubuntu-20.04
-          compiler: gcc10
+          CC: gcc-11
+          CXX: g++-11
+        Linux_gcc12:
+          vmImage: Ubuntu-22.04
+          compiler: gcc12
           combination: 'linux-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: |
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt-get update
-            sudo apt-get install g++-10 ninja-build python3
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Nix)
+            sudo apt-get install g++-12 ninja-build python3
           artifactBinaries: $(artifactBinaries_Nix)
-          CC: gcc-10
-          CXX: g++-10
-        Linux_clang11:
+          CC: gcc-12
+          CXX: g++-12
+        Linux_clang14:
           vmImage: Ubuntu-20.04
-          compiler: clang11
-          combination: 'linux-$(compiler)-$(platform)-$(configuration)'
-          buildFolder: 'Build/ninja-$(combination)'
-          installCommand: |
-            wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-            sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main"
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            sudo apt-get update
-            sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev lld-11 ninja-build python3
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Nix)
-          artifactBinaries: $(artifactBinaries_Nix)
-          CC: clang-11
-          CXX: clang++-11
-        Linux_clang13:
-          vmImage: Ubuntu-20.04
-          compiler: clang13
+          compiler: clang14
           combination: 'linux-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: |
             wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-            sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main"
             sudo apt-get update
-            sudo apt-get install clang-13 libc++-13-dev libc++abi-13-dev lld-13 ninja-build python3
-          prebuiltDxcUrl: $(prebuiltDxcUrl_Linux)
-          prebuiltDxcExtract: $(prebuiltDxcExtract_Linux)
-          testCommand: $(testCommand_Nix)
+            sudo apt-get install clang-14 libc++-14-dev libc++abi-14-dev lld-14 ninja-build python3
           artifactBinaries: $(artifactBinaries_Nix)
-          CC: clang-13
-          CXX: clang++-13
+          CC: clang-14
+          CXX: clang++-14
+        Linux_clang15:
+          vmImage: Ubuntu-22.04
+          compiler: clang15
+          combination: 'linux-$(compiler)-$(platform)-$(configuration)'
+          buildFolder: 'Build/ninja-$(combination)'
+          installCommand: |
+            wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+            sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-15 main"
+            sudo apt-get update
+            sudo apt-get install clang-15 libc++-15-dev libc++abi-15-dev lld-15 ninja-build python3
+          artifactBinaries: $(artifactBinaries_Nix)
+          CC: clang-15
+          CXX: clang++-15
         macOS_11_clang:
           vmImage: macOS-11
           compiler: clang13
           combination: 'osx-$(compiler)-$(platform)-$(configuration)'
           buildFolder: 'Build/ninja-$(combination)'
           installCommand: brew install ninja
-          testCommand: $(testCommand_Nix)
           artifactBinaries: $(artifactBinaries_Nix)
           CC: clang
           CXX: clang++
@@ -179,8 +157,17 @@ stages:
       vmImage: $(vmImage)
 
     steps:
+      - checkout: self
+        fetchDepth: 5
+
       - bash: eval '$(installCommand)'
         displayName: 'Install'
+
+      - pwsh: |
+          $mingwPath = "C:\msys64\mingw64\bin"
+          Write-Host "##vso[task.setvariable variable=PATH;]$mingwPath;${env:PATH}";
+        displayName: 'Config msys2 PATH'
+        condition: eq(variables.compiler, 'mingw')
 
       - script: |
           git config --global user.email "dummy@example.com"
@@ -192,14 +179,6 @@ stages:
           versionSpec: '3.x'
           addToPath: true
           architecture: 'x64'
-
-      - bash: |
-          wget $(prebuiltDxcUrl)
-          eval '$(prebuiltDxcExtract)'
-        workingDirectory: $(Agent.TempDirectory)
-        displayName: 'Download DXC package'
-        condition: ne(variables.prebuiltDxcUrl, '')
-        continueOnError: true
 
       - task: Cache@2
         inputs:

@@ -14,7 +14,7 @@ struct ParticleForces
 
 struct Scene
 {
-    float wallStiffness;
+    float4 wallStiffness; // Use float4 to for legacy HLSL packing
 
     float4 gravity;
     float3 planes[4];
@@ -22,7 +22,7 @@ struct Scene
 
 cbuffer cbSimulationConstants : register(b0)
 {
-    float timeStep;
+    float4 timeStep; // Use float4 to for legacy HLSL packing
     Scene scene;
 };
 
@@ -44,13 +44,13 @@ void main(uint3 dtid : SV_DispatchThreadID, uint gi : SV_GroupIndex)
     for (uint i = 0 ; i < 4 ; ++i)
     {
         float dist = dot(float3(position, 1), scene.planes[i]);
-        acceleration += min(dist, 0) * -scene.wallStiffness * scene.planes[i].xy;
+        acceleration += min(dist, 0) * -scene.wallStiffness.x * scene.planes[i].xy;
     }
 
     acceleration += scene.gravity.xy;
 
-    velocity += timeStep * acceleration;
-    position += timeStep * velocity;
+    velocity += timeStep.x * acceleration;
+    position += timeStep.x * velocity;
 
     particlesRW[p_id].position = position;
     particlesRW[p_id].velocity = velocity;
