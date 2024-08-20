@@ -28,7 +28,7 @@
 #include <cassert>
 #include <type_traits>
 
-#include <dxc/WinAdapter.h>
+//#include <dxc/WinAdapter.h>
 
 #include "ErrorHandling.hpp"
 

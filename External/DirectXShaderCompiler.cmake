@@ -49,6 +49,11 @@ if(NOT (SC_PREBUILT_DXC_URL STREQUAL ""))
     set(SC_PREBUILT_DXC_DIR ${prebuiltDxcDir})
 endif()
 
+#modify by johnson
+set(SC_PREBUILT_DXC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/PrebuiltDxc")
+message(STATUS "SC_PREBUILT_DXC_DIR: ${SC_PREBUILT_DXC_DIR}")
+#end modify
+
 if(WIN32)
     set(dxcompilerName "dxcompiler.dll")
     set(dxcompilerLibDir "bin")

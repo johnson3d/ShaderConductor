@@ -95,7 +95,7 @@ namespace
                     GetGuidData4FromString(spec, 3), GetGuidData4FromString(spec, 4), GetGuidData4FromString(spec, 5),                     \
                     GetGuidData4FromString(spec, 6), GetGuidData4FromString(spec, 7))
 #endif
-#include <dxc/WinAdapter.h>
+//#include <dxc/WinAdapter.h>
 #ifdef __MINGW32__
 #define _Maybenull_
 #endif
