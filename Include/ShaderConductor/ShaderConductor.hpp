@@ -55,6 +55,8 @@ namespace ShaderConductor
         HullShader,
         DomainShader,
         ComputeShader,
+        AmplificationShader,
+        MeshShader,
 
         NumShaderStages,
     };

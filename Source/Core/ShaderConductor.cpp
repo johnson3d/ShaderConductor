@@ -513,6 +513,13 @@ namespace
                 shaderProfile = L"cs";
                 break;
 
+            case ShaderStage::AmplificationShader:
+                shaderProfile = L"as";
+                break;
+
+            case ShaderStage::MeshShader:
+                shaderProfile = L"ms";
+                break;
             default:
                 SC_UNREACHABLE("Invalid shader stage.");
             }
