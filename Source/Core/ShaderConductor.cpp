@@ -1939,6 +1939,10 @@ namespace ShaderConductor
                 ComPtr<ID3D12LibraryReflection> libReflection;
                 TIFHR(utils.CreateReflection(&reflectionBuffer, __uuidof(ID3D12LibraryReflection), libReflection.PutVoid()));
 
+                // modify by johnson3d
+                m_LibraryReflection = libReflection;
+                // end modify
+                
                 D3D12_LIBRARY_DESC d3d12LibDesc;
                 TIFHR(libReflection->GetDesc(&d3d12LibDesc));
 
@@ -2387,6 +2391,7 @@ namespace ShaderConductor
 		
 		// modify by johnson3d
         ComPtr<ID3D12ShaderReflection> m_shaderReflection;
+        ComPtr<ID3D12LibraryReflection> m_LibraryReflection;
         // end modify
         explicit ReflectionImpl(const spirv_cross::Compiler& compiler)
         {
@@ -3263,6 +3268,10 @@ namespace ShaderConductor
     {
         return m_impl->m_shaderReflection.Get();
     }
+    void* Reflection::GetD3D12LibraryReflection() const noexcept
+    {
+        return m_impl->m_LibraryReflection.Get();
+    }
     // end modify
 
     Compiler::ResultDesc Compiler::Compile(const SourceDesc& source, const Options& options, const TargetDesc& target)
@@ -3481,6 +3490,9 @@ namespace
                 reflectionDesc.type = ShaderResourceType::UnorderedAccessView;
                 break;
 
+            case D3D_SIT_RTACCELERATIONSTRUCTURE:
+                reflectionDesc.type = ShaderResourceType::ShaderResourceView;
+                break;
             default:
                 SC_UNREACHABLE("Unknown bind type.");
             }

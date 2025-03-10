@@ -381,6 +381,7 @@ namespace ShaderConductor
 
         // modify by johnson3d
         void* GetD3D12ShaderReflection() const noexcept;
+        void* GetD3D12LibraryReflection() const noexcept;
         // end modify
     private:
         ReflectionImpl* m_impl = nullptr;
