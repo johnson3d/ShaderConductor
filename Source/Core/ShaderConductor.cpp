@@ -607,6 +607,28 @@ namespace
         }
     }
 
+    std::vector<std::string> split(const std::string& str, const std::string& delim)
+    {
+        std::vector<std::string> tokens;
+        size_t prev = 0, pos = 0;
+
+        do
+        {
+            pos = str.find(delim, prev);
+            if (pos == std::string::npos)
+                pos = str.length();
+
+            std::string token = str.substr(prev, pos - prev);
+            if (!token.empty())
+            { // ¿ÉÑ¡£ºÌø¹ý¿Õtoken
+                tokens.push_back(token);
+            }
+            prev = pos + delim.length();
+        } while (pos < str.length() && prev < str.length());
+
+        return tokens;
+    }
+
     Compiler::ResultDesc CompileToBinary(const Compiler::SourceDesc& source, const Compiler::Options& options,
                                          const Compiler::TargetDesc& target)
     {
@@ -614,7 +636,7 @@ namespace
         if (target.asModule && (target.language != ShadingLanguage::Dxil))
         {
             // Check https://github.com/microsoft/DirectXShaderCompiler/issues/2633 for details
-            SC_UNREACHABLE("Spir-V module is not supported.");
+            //SC_UNREACHABLE("Spir-V module is not supported.");
         }
 
         DxcBuffer sourceBuf;
@@ -645,7 +667,14 @@ namespace
         if (source.hlslExtVersion != nullptr)
             dxcArgStrings.push_back(L"-HV " + Utf8ToWide(source.hlslExtVersion));
         if (source.dxcArgString != nullptr)
-            dxcArgStrings.push_back(Utf8ToWide(source.dxcArgString));
+        {
+            auto segs = split(source.dxcArgString, " ");
+            for (auto& i : segs)
+            {
+                dxcArgStrings.push_back(Utf8ToWide(i.c_str()));
+            }
+            //dxcArgStrings.push_back(Utf8ToWide(source.dxcArgString));
+        }
         // end modify
         
         // HLSL matrices are translated into SPIR-V OpTypeMatrixs in a transposed manner,
